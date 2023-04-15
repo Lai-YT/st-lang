@@ -1,5 +1,11 @@
 #!/usr/bin/env sh
 
+LEXER=./lexer
+if ! command -v "$LEXER" >/dev/null 2>&1; then
+    echo "${LEXER}: not found"
+    exit 1
+fi
+
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NO_COLOR='\033[0m'
