@@ -5,12 +5,12 @@ RED='\033[0;31m'
 NO_COLOR='\033[0m'
 
 status=0
-find tests/ -name '*.t' ! -name 'expect*.t' >tmp
+find tests/ -name '*.t' >tmp
 while IFS= read -r file; do
     echo "--------Test using" "$file" "--------"
-    filename="${file##*/}"
+    filename=$(basename "$file" .t)
     ./lexer <"$file" >out
-    if diff "tests/expect_${filename}" out -y --width=60 --suppress-common-lines; then
+    if diff "tests/expect_${filename}.txt" out -y --width=60 --suppress-common-lines; then
         echo "${GREEN}PASSED${NO_COLOR}"
     else
         echo "${RED}FAILED${NO_COLOR}"
