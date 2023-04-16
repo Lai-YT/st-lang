@@ -149,9 +149,16 @@ when        token(WHEN);
   strcat(string, "\"");
 }
 <STRING>\" {
+  // XXX: what is the token name of string literals?
   tokenString(string, string);
   string[0] = '\0';
   BEGIN(INITIAL);
+}
+<STRING>\n {
+  RECORD_LINE;
+  printf("%d: %s", linenum, line);
+  puts("EOL in string");
+  exit(-1);
 }
 <STRING>[^"\n]* {
   RECORD_LINE;

@@ -1,0 +1,15 @@
+<CONST>
+<identifier:s>
+<ASSIGN>
+<string:a string with escaped quote (")>
+1: const s := "a string with escaped quote ("")"
+<CONST>
+<identifier:t>
+<ASSIGN>
+<string:back-slash-escaped characters \n are treated as two characters>
+2: const t := "back-slash-escaped characters \n are treated as two characters"
+<CONST>
+<identifier:u>
+<ASSIGN>
+3: const u := "a string that spans multiple
+EOL in string
