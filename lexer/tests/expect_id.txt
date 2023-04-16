@@ -1,0 +1,14 @@
+<VAR>
+<identifier:mixingNumbers123WithAlphasIsOk>
+<':'>
+<INT>
+1: var mixingNumbers123WithAlphasIsOk: int
+<VAR>
+<integer:123>
+<identifier:LeadingWithNumbersIsAnIntAndAnId>
+<':'>
+<INT>
+2: var 123LeadingWithNumbersIsAnIntAndAnId: int
+<VAR>
+4:var _
+bad character:'_'

@@ -16,8 +16,7 @@
 <identifier:s>
 <')'>
 <'='>
-<integer:1>
-<integer:0>
+<integer:10>
 5:     exit when length(s) = 10
 <identifier:s>
 <ASSIGN>

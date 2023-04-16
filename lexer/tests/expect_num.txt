@@ -1,0 +1,10 @@
+<CONST>
+<identifier:oneBit>
+<ASSIGN>
+<integer:1>
+1: const oneBit := 1
+<CONST>
+<identifier:multiBits>
+<ASSIGN>
+<integer:12345678>
+2: const multiBits := 12345678
