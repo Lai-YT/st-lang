@@ -1,0 +1,37 @@
+<CONST>
+<identifier:a>
+<ASSIGN>
+<integer:0>
+1: const a := 0
+<CONST>
+<identifier:b>
+<ASSIGN>
+<integer:1>
+2: const b := 1
+3: 
+<CONST>
+<identifier:shouldBeLexedAsNe>
+<ASSIGN>
+<'('>
+<identifier:a>
+<NE>
+<integer:1>
+<')'>
+4: const shouldBeLexedAsNe := (a not= 1)
+5: 
+<CONST>
+<identifier:c>
+<ASSIGN>
+<TRUE>
+6: const c := true
+7: 
+<CONST>
+<identifier:e>
+<ASSIGN>
+<'('>
+<NOT>
+<identifier:c>
+<'='>
+<TRUE>
+<')'>
+8: const e := (not c = true)
