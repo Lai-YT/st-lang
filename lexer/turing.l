@@ -75,7 +75,6 @@ ESCAPED_QUOTE \"\"
    * Single-character operators
    */
 "+"  token('+');
-\\   token('\\');
 "-"  token('-');
 "*"  token('*');
 "/"  token('/');
