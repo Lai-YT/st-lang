@@ -60,4 +60,5 @@ void symtab_delete(SymbolTable *table) {
     entry_delete(tmp->val);
     free(tmp);
   }
+  free(table);
 }
