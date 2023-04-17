@@ -50,9 +50,10 @@ void test_symtab_dump_should_return_all_inserted_entries() {
 
   // index 0, 1, and 2 corresponds to a, b, and c, respectively
   bool found[3] = {0};
+  List *curr = entry_dump;
   for (int i = 0; i < 3; i++) {
     assert(entry_dump);
-    Entry *entry = entry_dump->val;
+    Entry *entry = curr->val;
     if (strcmp(entry->name, "a") == 0) {
       assert(!found[0]);
       found[0] = true;
@@ -69,9 +70,10 @@ void test_symtab_dump_should_return_all_inserted_entries() {
       // unknown symbol
       assert(false);
     }
-    entry_dump = entry_dump->rest;
+    curr = curr->rest;
   }
-  assert(entry_dump == NULL);
+  assert(curr == NULL);
+  list_delete(entry_dump);
 
   symtab_delete(table);
 }

@@ -49,7 +49,14 @@ Entry *symtab_insert(SymbolTable *table, const char *name, Type type) {
 }
 
 List *symtab_dump(SymbolTable *table) {
-  return table->entries;
+  // shallow copying the list
+  List *dump = NULL;
+  List *curr = table->entries;
+  while (curr) {
+    dump = list_create(curr->val, dump);
+    curr = curr->rest;
+  }
+  return dump;
 }
 
 void symtab_delete(SymbolTable *table) {

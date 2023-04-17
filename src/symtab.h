@@ -34,6 +34,8 @@ Entry *symtab_lookup(SymbolTable *, const char *name);
 Entry *symtab_insert(SymbolTable *, const char *name, Type);
 
 /// @return All the entries in the table. The order is unspecified.
+/// @note The ownership of the dumped list is taken by the caller, but the
+/// entries are not. Call list_delete after inspection.
 List *symtab_dump(SymbolTable *);
 
 /// @brief Deletes the symbol table and all the entries in it.
