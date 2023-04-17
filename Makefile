@@ -4,6 +4,10 @@ SRC := $(shell find src/ -name *.c)
 OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
 TEST_HEADER := $(shell find test/ -name *.h)
 
+# for customizing, e.g., make fmt FMTFLAG='--dry-run --Werror'
+FMTFLAG := -i
+TIDYFLAG := --quiet
+
 .PHONY: dirs clean tests fmt tidy
 
 all: dirs tests
@@ -34,10 +38,10 @@ valgrind: bin/tests
 		$<
 
 fmt:
-	clang-format -i -style=file \
+	clang-format -style=file $(FMTFLAG) \
 		src/*.h src/*.c test/*.h test/*.c
 
 tidy:
-	clang-tidy --quiet \
+	clang-tidy $(TIDYFLAG) \
 		src/*.h src/*.c test/*.h test/*.c \
 		-- $(CFLAG)
