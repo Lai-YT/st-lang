@@ -4,7 +4,7 @@ SRC := $(shell find src/ -name *.c)
 OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
 TEST_HEADER := $(shell find test/ -name *.h)
 
-.PHONY: dirs clean fmt tests
+.PHONY: dirs clean tests fmt tidy
 
 all: dirs tests
 
@@ -27,3 +27,8 @@ dirs:
 fmt:
 	clang-format -i -style=file \
 		src/*.h src/*.c test/*.h test/*.c
+
+tidy:
+	clang-tidy --quiet \
+		src/*.h src/*.c test/*.h test/*.c \
+		-- $(CFLAG)

@@ -5,38 +5,38 @@
 
 #define MAX_NAME_LENGTH 255
 
-enum type {
+typedef enum Type {
   INT = 1,
   STRING = 2,
   BOOLEAN = 3,
-};
+} Type;
 
-typedef struct entry {
+typedef struct Entry {
   char name[MAX_NAME_LENGTH + 1];  // terminate character
-  enum type type;
-} entry_t;
+  Type type;
+} Entry;
 
 /// @brief A symbol table that supports insert and lookup.
-typedef struct symtab symtab_t;
+typedef struct SymbolTable SymbolTable;
 
 /// @return An empty symbol table.
-symtab_t *symtab_create();
+SymbolTable *symtab_create();
 
 /// @param name The name of the entry to lookup.
 /// @return The entry with the specified name. NULL is not exist.
-entry_t *symtab_lookup(symtab_t *, const char *name);
+Entry *symtab_lookup(SymbolTable *, const char *name);
 
 /// @brief Inserts a new entry with name and type if the name isn't already
 /// exist.
 /// @note Behaves like the symtab_lookup function when an entry with name
 /// already exist.
 /// @return The inserted entry.
-entry_t *symtab_insert(symtab_t *, const char *name, enum type);
+Entry *symtab_insert(SymbolTable *, const char *name, Type);
 
 /// @return All the entries in the table. The order is unspecified.
-list_t *symtab_dump(symtab_t *);
+List *symtab_dump(SymbolTable *);
 
 /// @brief Deletes the symbol table and all the entries in it.
-void symtab_delete(symtab_t *);
+void symtab_delete(SymbolTable *);
 
 #endif /* end of include guard: SRC_SYMTAB_H */

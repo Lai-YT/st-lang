@@ -1,12 +1,12 @@
 #ifndef SRC_LIST_H
 #define SRC_LIST_H
 
-typedef struct list {
+typedef struct List {
   void *val;
-  struct list *rest;
-} list_t;
+  struct List *rest;
+} List;
 
-list_t *list_create(void *val, list_t *rest);
-void list_delete(list_t *);
+List *list_create(void *val, List *rest);
+void list_delete(List *);
 
 #endif /* end of include guard: SRC_LIST_H */

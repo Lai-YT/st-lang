@@ -2,16 +2,16 @@
 
 #include <stdlib.h>
 
-list_t *list_create(void *val, list_t *rest) {
-  list_t *new_list = malloc(sizeof(list_t));
+List *list_create(void *val, List *rest) {
+  List *new_list = malloc(sizeof(List));
   new_list->val = val;
   new_list->rest = rest;
   return new_list;
 }
 
-void list_delete(list_t *list) {
+void list_delete(List *list) {
   while (list) {
-    list_t *rest = list->rest;
+    List *rest = list->rest;
     free(list);
     list = rest;
   }

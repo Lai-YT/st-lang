@@ -5,31 +5,31 @@
 
 #include "list.h"
 
-struct symtab {
-  list_t *entries;
+struct SymbolTable {
+  List *entries;
 };
 
-static entry_t *entry_create(const char *name, enum type type) {
-  entry_t *entry = malloc(sizeof(entry_t));
+static Entry *entry_create(const char *name, Type type) {
+  Entry *entry = malloc(sizeof(Entry));
   strncpy(entry->name, name, MAX_NAME_LENGTH);
   entry->type = type;
   return entry;
 }
 
-static inline void entry_delete(entry_t *entry) {
+static inline void entry_delete(Entry *entry) {
   free(entry);
 }
 
-symtab_t *symtab_create() {
-  symtab_t *table = malloc(sizeof(symtab_t));
+SymbolTable *symtab_create() {
+  SymbolTable *table = malloc(sizeof(SymbolTable));
   table->entries = NULL;
   return table;
 }
 
-entry_t *symtab_lookup(symtab_t *table, const char *name) {
-  list_t *curr = table->entries;
+Entry *symtab_lookup(SymbolTable *table, const char *name) {
+  List *curr = table->entries;
   while (curr) {
-    entry_t *entry = curr->val;
+    Entry *entry = curr->val;
     if (strcmp(entry->name, name) == 0) {
       return entry;
     }
@@ -38,8 +38,8 @@ entry_t *symtab_lookup(symtab_t *table, const char *name) {
   return NULL;
 }
 
-entry_t *symtab_insert(symtab_t *table, const char *name, enum type type) {
-  entry_t *entry;
+Entry *symtab_insert(SymbolTable *table, const char *name, Type type) {
+  Entry *entry;
   if ((entry = symtab_lookup(table, name))) {
     return entry;
   }
@@ -48,14 +48,14 @@ entry_t *symtab_insert(symtab_t *table, const char *name, enum type type) {
   return entry;
 }
 
-list_t *symtab_dump(symtab_t *table) {
+List *symtab_dump(SymbolTable *table) {
   return table->entries;
 }
 
-void symtab_delete(symtab_t *table) {
-  list_t *curr = table->entries;
+void symtab_delete(SymbolTable *table) {
+  List *curr = table->entries;
   while (curr) {
-    list_t *tmp = curr;
+    List *tmp = curr;
     curr = curr->rest;
     entry_delete(tmp->val);
     free(tmp);
