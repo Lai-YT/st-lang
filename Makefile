@@ -1,5 +1,5 @@
 CC := gcc
-CFLAG := -std=c99
+CFLAG := -std=c99 -g3 -O0
 SRC := $(shell find src/ -name *.c)
 OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
 TEST_HEADER := $(shell find test/ -name *.h)
@@ -23,6 +23,15 @@ clean:
 
 dirs:
 	mkdir -p bin obj
+
+valgrind: bin/tests
+	@valgrind \
+		--track-origins=yes \
+		--show-leak-kinds=all \
+		--leak-check=full \
+		--leak-resolution=high \
+		--error-exitcode=1 \
+		$<
 
 fmt:
 	clang-format -i -style=file \
