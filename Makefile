@@ -2,7 +2,10 @@ CC := gcc
 CFLAG := -std=c99 -g3 -O0
 SRC := $(shell find src/ -name *.c)
 OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
-TEST_HEADER := $(shell find test/ -name *.h)
+
+# headers of test cases has their name suffixed with `test_`, and has no .c file
+TEST_HEADER := $(shell find test/ -name test_*.h)
+TEST_SRC := $(shell find test/ -name *.c ! -name main.c)
 
 # for customizing, e.g., make fmt FMTFLAG='--dry-run --Werror'
 FMTFLAG := -i
@@ -16,8 +19,9 @@ tests: bin/tests
 	@echo "Run tests..."
 	@./$<
 
-bin/tests: test/main.c $(OBJ) $(TEST_HEADER)
-	$(CC) -o $@ $< $(OBJ) $(CFLAG)
+# TEST_SRCs are separately compiled into object files, which is for convenience
+bin/tests: test/main.c $(OBJ) $(TEST_SRC) $(TEST_HEADER)
+	$(CC) -o $@ $< $(OBJ) $(TEST_SRC) $(CFLAG)
 
 obj/%.o: src/%.c
 	$(CC) -c -o $@ $< $(CFLAG)

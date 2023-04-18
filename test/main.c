@@ -1,15 +1,5 @@
-#include <stddef.h>
-
 #include "test_symtab.h"
-
-typedef void (*TestCase)();
-
-int run_all_tests(TestCase cases[], size_t num_of_cases) {
-  while (num_of_cases--) {
-    cases[num_of_cases]();
-  }
-  return 0;
-}
+#include "util.h"
 
 int main() {
   TestCase cases[] = {
