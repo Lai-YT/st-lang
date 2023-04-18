@@ -9,15 +9,15 @@
 #include "../src/symtab.h"
 
 void test_symtab_lookup_inserted_symbols() {
-  SymbolTable *table = symtab_create();
+  SymbolTable* table = symtab_create();
 
   symtab_insert(table, "a", INT);
   symtab_insert(table, "b", STRING);
   symtab_insert(table, "c", BOOLEAN);
 
-  Entry *a = symtab_lookup(table, "a");
-  Entry *b = symtab_lookup(table, "b");
-  Entry *c = symtab_lookup(table, "c");
+  Entry* a = symtab_lookup(table, "a");
+  Entry* b = symtab_lookup(table, "b");
+  Entry* c = symtab_lookup(table, "c");
 
   assert(a);
   assert(a->type == INT);
@@ -30,9 +30,9 @@ void test_symtab_lookup_inserted_symbols() {
 }
 
 void test_symtab_lookup_without_insert() {
-  SymbolTable *table = symtab_create();
+  SymbolTable* table = symtab_create();
 
-  Entry *unknown = symtab_lookup(table, "an unknown symbol");
+  Entry* unknown = symtab_lookup(table, "an unknown symbol");
 
   assert(unknown == NULL);
 
@@ -40,20 +40,20 @@ void test_symtab_lookup_without_insert() {
 }
 
 void test_symtab_dump_should_return_all_inserted_entries() {
-  SymbolTable *table = symtab_create();
+  SymbolTable* table = symtab_create();
 
   symtab_insert(table, "a", INT);
   symtab_insert(table, "b", STRING);
   symtab_insert(table, "c", BOOLEAN);
 
-  List *entry_dump = symtab_dump(table);
+  List* entry_dump = symtab_dump(table);
 
   // index 0, 1, and 2 corresponds to a, b, and c, respectively
   bool found[3] = {0};
-  List *curr = entry_dump;
+  List* curr = entry_dump;
   for (int i = 0; i < 3; i++) {
     assert(entry_dump);
-    Entry *entry = curr->val;
+    Entry* entry = curr->val;
     if (strcmp(entry->name, "a") == 0) {
       assert(!found[0]);
       found[0] = true;

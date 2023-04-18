@@ -6,30 +6,30 @@
 #include "list.h"
 
 struct SymbolTable {
-  List *entries;
+  List* entries;
 };
 
-static Entry *entry_create(const char *name, Type type) {
-  Entry *entry = malloc(sizeof(Entry));
+static Entry* entry_create(const char* name, Type type) {
+  Entry* entry = malloc(sizeof(Entry));
   strncpy(entry->name, name, MAX_NAME_LENGTH);
   entry->type = type;
   return entry;
 }
 
-static inline void entry_delete(Entry *entry) {
+static inline void entry_delete(Entry* entry) {
   free(entry);
 }
 
-SymbolTable *symtab_create() {
-  SymbolTable *table = malloc(sizeof(SymbolTable));
+SymbolTable* symtab_create() {
+  SymbolTable* table = malloc(sizeof(SymbolTable));
   table->entries = NULL;
   return table;
 }
 
-Entry *symtab_lookup(SymbolTable *table, const char *name) {
-  List *curr = table->entries;
+Entry* symtab_lookup(SymbolTable* table, const char* name) {
+  List* curr = table->entries;
   while (curr) {
-    Entry *entry = curr->val;
+    Entry* entry = curr->val;
     if (strcmp(entry->name, name) == 0) {
       return entry;
     }
@@ -38,8 +38,8 @@ Entry *symtab_lookup(SymbolTable *table, const char *name) {
   return NULL;
 }
 
-Entry *symtab_insert(SymbolTable *table, const char *name, Type type) {
-  Entry *entry;
+Entry* symtab_insert(SymbolTable* table, const char* name, Type type) {
+  Entry* entry;
   if ((entry = symtab_lookup(table, name))) {
     return entry;
   }
@@ -48,10 +48,10 @@ Entry *symtab_insert(SymbolTable *table, const char *name, Type type) {
   return entry;
 }
 
-List *symtab_dump(SymbolTable *table) {
+List* symtab_dump(SymbolTable* table) {
   // shallow copying the list
-  List *dump = NULL;
-  List *curr = table->entries;
+  List* dump = NULL;
+  List* curr = table->entries;
   while (curr) {
     dump = list_create(curr->val, dump);
     curr = curr->rest;
@@ -59,10 +59,10 @@ List *symtab_dump(SymbolTable *table) {
   return dump;
 }
 
-void symtab_delete(SymbolTable *table) {
-  List *curr = table->entries;
+void symtab_delete(SymbolTable* table) {
+  List* curr = table->entries;
   while (curr) {
-    List *tmp = curr;
+    List* tmp = curr;
     curr = curr->rest;
     entry_delete(tmp->val);
     free(tmp);
