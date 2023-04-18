@@ -69,3 +69,18 @@ void symtab_delete(SymbolTable* table) {
   }
   free(table);
 }
+
+const char* type_to_str(Type type) {
+  switch (type) {
+    case NO_TYPE:
+      return "NO_TYPE";
+    case INT:
+      return "INT";
+    case STRING:
+      return "STRING";
+    case BOOLEAN:
+      return "BOOLEAN";
+    default:
+      return "";
+  }
+}
