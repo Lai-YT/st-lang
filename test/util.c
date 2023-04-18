@@ -4,8 +4,8 @@
 
 #include <setjmp.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 
 static jmp_buf env;
 
@@ -21,11 +21,11 @@ int run_all_tests(TestCase cases[], size_t num_of_cases) {
   sigemptyset(&act.sa_mask);  // block other signals when one is handling
   sigaction(SIGABRT, &act, NULL);
 
-  bool has_error = false;
-  while (num_of_cases--) {
-    cases[num_of_cases]();  // execute the test case
+  int num_of_errors = 0;
+  for (size_t i = 0; i < num_of_cases; i++) {
+    cases[i]();  // execute the test case
     if (setjmp(env) == SIGABRT) {
-      has_error = true;
+      num_of_errors++;
     }
   }
 
@@ -33,5 +33,7 @@ int run_all_tests(TestCase cases[], size_t num_of_cases) {
   act.sa_handler = SIG_DFL;
   sigaction(SIGABRT, &act, NULL);
 
-  return has_error ? 1 : 0;
+  printf("%ld tests ran.\n", num_of_cases);
+  printf("%d tests failed.\n", num_of_errors);
+  return num_of_errors ? 1 : 0;
 }
