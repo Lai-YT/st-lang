@@ -1,4 +1,4 @@
-.PHONY: tests clean
+.PHONY: tests clean fmt tidy
 
 CC := gcc
 LSRC := turing.l
@@ -15,6 +15,9 @@ USE_POSIX_SYMBOLS =	-D_POSIX_C_SOURCE
 SRC := $(wildcard ../src/*.c)
 OBJ := $(addprefix ../obj/, $(notdir $(SRC:.c=.o)))
 
+FMTFLAGS := -i
+TIDYFLAGS := --quiet
+
 $(LEXER): $(CGEN) lextest.c $(OBJ) $(SRC)
 	$(CC) -o $@ $(CGEN) lextest.c $(OBJ) $(CFLAGS) $(USE_POSIX_SYMBOLS)
 
@@ -26,6 +29,15 @@ $(CGEN): $(LSRC)
 
 tests:
 	@./test.sh
+
+fmt:
+	clang-format -style=file $(FMTFLAGS) \
+		$(filter-out $(CGEN), $(wildcard *.c *.h))
+
+tidy:
+	clang-tidy $(TIDYFLAGS) \
+		$(filter-out $(CGEN), $(wildcard *.c *.h)) \
+		-- $(CFLAGS)
 
 clean:
 	rm -f $(CGEN) $(LEXER)
