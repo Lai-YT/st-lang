@@ -155,7 +155,6 @@ when        token(WHEN);
   strcat(string, "\"");
 }
 <STRING>\" {
-  // XXX: what is the token name of string literals?
   tokenString(string, string);
   string[0] = '\0';
   BEGIN(INITIAL);
