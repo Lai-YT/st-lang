@@ -1,0 +1,16 @@
+<PUT>
+<SKIP>
+1: put skip % starts 2 new lines, one by skip and one by put itself
+<PUT>
+<string:no new line with ..>
+<'.'>
+<'.'>
+2: put "no new line with .." ..
+<PUT>
+<string:, keep going>
+3: put ", keep going"
+<PUT>
+<SKIP>
+<'.'>
+<'.'>
+4: put skip .. % starts a new line
