@@ -1,11 +1,11 @@
 CC := gcc
 CFLAG := -std=c99 -g3 -O0
-SRC := $(shell find src/ -name *.c)
+SRC := $(wildcard src/*.c)
 OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
 
 # headers of test cases has their name suffixed with `test_`, and has no .c file
-TEST_HEADER := $(shell find test/ -name test_*.h)
-TEST_SRC := $(shell find test/ -name *.c ! -name main.c)
+TEST_HEADER := $(wildcard test/test_*.h)
+TEST_SRC := $(filter-out test/main.c, $(wildcard test/*.c))
 
 # for customizing, e.g., make fmt FMTFLAG='--dry-run --Werror'
 FMTFLAG := -i
