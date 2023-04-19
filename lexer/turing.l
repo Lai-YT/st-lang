@@ -19,7 +19,8 @@ char line[MAX_LINE_LENG];
 #define token(t) { RECORD_LINE; printf("<%s>\n", #t); }
 #define tokenInteger(i) { RECORD_LINE; printf("<integer:%d>\n", i); }
 #define tokenReal(r) { RECORD_LINE; printf("<real:%f>\n", r); }
-#define tokenString(t, s) { RECORD_LINE; printf("<%s:%s>\n", #t, s); }
+#define tokenString(s) { RECORD_LINE; printf("<string:%s>\n", s); }
+#define tokenIdentifier(i) { RECORD_LINE; printf("<identifier:%s>\n", i); }
 
 // no longer than a single line
 char string[MAX_LINE_LENG];
@@ -141,7 +142,10 @@ when        token(WHEN);
   /*
    * Identifiers
    */
-{ID} tokenString(identifier, yytext); symtab_insert(symtab, yytext, 0 /* no type */);
+{ID} {
+  tokenIdentifier(yytext);
+  symtab_insert(symtab, yytext, 0 /* no type */);
+}
 
   /*
    * String constants
@@ -155,7 +159,7 @@ when        token(WHEN);
   strcat(string, "\"");
 }
 <STRING>\" {
-  tokenString(string, string);
+  tokenString(string);
   string[0] = '\0';
   BEGIN(INITIAL);
 }
