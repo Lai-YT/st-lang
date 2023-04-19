@@ -16,11 +16,11 @@ int linenum = 1;
 char line[MAX_LINE_LENG];
 #define RECORD_LINE strcat(line, yytext)
 #define CLEAR_LINE line[0] = '\0'
-#define token(t) { RECORD_LINE; printf("<%s>\n", #t); }
-#define tokenInteger(i) { RECORD_LINE; printf("<integer:%d>\n", i); }
-#define tokenReal(r) { RECORD_LINE; printf("<real:%f>\n", r); }
-#define tokenString(s) { RECORD_LINE; printf("<string:%s>\n", s); }
-#define tokenIdentifier(i) { RECORD_LINE; printf("<identifier:%s>\n", i); }
+#define TOKEN(t) { RECORD_LINE; printf("<%s>\n", #t); }
+#define TOKEN_INTEGER(i) { RECORD_LINE; printf("<integer:%d>\n", i); }
+#define TOKEN_REAL(r) { RECORD_LINE; printf("<real:%f>\n", r); }
+#define TOKEN_STRING(s) { RECORD_LINE; printf("<string:%s>\n", s); }
+#define TOKEN_IDENTIFIER(i) { RECORD_LINE; printf("<identifier:%s>\n", i); }
 
 // no longer than a single line
 char string[MAX_LINE_LENG];
@@ -54,40 +54,40 @@ ESCAPED_QUOTE \"\"
    */
 {NE} {
   /* NE has common prefix with NOT but has higher priority */
-  token(NE);
+  TOKEN(NE);
 }
-{AND}     token(AND);
-{OR}      token(OR);
-{MOD}     token(MOD);
-{LE}      token(LE);
-{GE}      token(GE);
-{NOT}     token(NOT);
-{ASSIGN}  token(ASSIGN);
+{AND}     TOKEN(AND);
+{OR}      TOKEN(OR);
+{MOD}     TOKEN(MOD);
+{LE}      TOKEN(LE);
+{GE}      TOKEN(GE);
+{NOT}     TOKEN(NOT);
+{ASSIGN}  TOKEN(ASSIGN);
 
   /*
    * Delimiters
    */
-"."  token('.');
-","  token(',');
-":"  token(':');
-";"  token(';');
-"("  token('(');
-")"  token(')');
-"["  token('[');
-"]"  token(']');
-"{"  token('{');
-"}"  token('}');
+"."  TOKEN('.');
+","  TOKEN(',');
+":"  TOKEN(':');
+";"  TOKEN(';');
+"("  TOKEN('(');
+")"  TOKEN(')');
+"["  TOKEN('[');
+"]"  TOKEN(']');
+"{"  TOKEN('{');
+"}"  TOKEN('}');
 
   /*
    * Single-character operators
    */
-"+"  token('+');
-"-"  token('-');
-"*"  token('*');
-"/"  token('/');
-"<"  token('<');
-">"  token('>');
-"="  token('=');
+"+"  TOKEN('+');
+"-"  TOKEN('-');
+"*"  TOKEN('*');
+"/"  TOKEN('/');
+"<"  TOKEN('<');
+">"  TOKEN('>');
+"="  TOKEN('=');
 
   /*
    * White spaces
@@ -102,48 +102,48 @@ ESCAPED_QUOTE \"\"
   /*
    * Keywords
    */
-array       token(ARRAY);
-begin       token(BEGIN_);
-bool        token(BOOL);
-char        token(CHAR);
-const       token(CONST);
-decreasing  token(DECREASING);
-default     token(DEFAULT);
-do          token(DO);
-else        token(ELSE);
-end         token(END);
-exit        token(EXIT);
-false       token(FALSE);
-for         token(FOR);
-function    token(FUNCTION);
-get         token(GET);
-if          token(IF);
-int         token(INT);
-loop        token(LOOP);
-of          token(OF);
-put         token(PUT);
-procedure   token(PROCEDURE);
-real        token(REAL);
-result      token(RESULT);
-return      token(RETURN);
-skip        token(SKIP);
-string      token(STRING);
-then        token(THEN);
-true        token(TRUE);
-var         token(VAR);
-when        token(WHEN);
+array       TOKEN(ARRAY);
+begin       TOKEN(BEGIN_);
+bool        TOKEN(BOOL);
+char        TOKEN(CHAR);
+const       TOKEN(CONST);
+decreasing  TOKEN(DECREASING);
+default     TOKEN(DEFAULT);
+do          TOKEN(DO);
+else        TOKEN(ELSE);
+end         TOKEN(END);
+exit        TOKEN(EXIT);
+false       TOKEN(FALSE);
+for         TOKEN(FOR);
+function    TOKEN(FUNCTION);
+get         TOKEN(GET);
+if          TOKEN(IF);
+int         TOKEN(INT);
+loop        TOKEN(LOOP);
+of          TOKEN(OF);
+put         TOKEN(PUT);
+procedure   TOKEN(PROCEDURE);
+real        TOKEN(REAL);
+result      TOKEN(RESULT);
+return      TOKEN(RETURN);
+skip        TOKEN(SKIP);
+string      TOKEN(STRING);
+then        TOKEN(THEN);
+true        TOKEN(TRUE);
+var         TOKEN(VAR);
+when        TOKEN(WHEN);
 
   /*
    * Numerical constants
    */
-{INT} tokenInteger(atoi(yytext));
-{REAL} tokenReal(atof(yytext));
+{INT} TOKEN_INTEGER(atoi(yytext));
+{REAL} TOKEN_REAL(atof(yytext));
 
   /*
    * Identifiers
    */
 {ID} {
-  tokenIdentifier(yytext);
+  TOKEN_IDENTIFIER(yytext);
   symtab_insert(symtab, yytext, 0 /* no type */);
 }
 
@@ -159,7 +159,7 @@ when        token(WHEN);
   strcat(string, "\"");
 }
 <STRING>\" {
-  tokenString(string);
+  TOKEN_STRING(string);
   string[0] = '\0';
   BEGIN(INITIAL);
 }
