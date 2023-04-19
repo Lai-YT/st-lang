@@ -15,8 +15,8 @@ USE_POSIX_SYMBOLS =	-D_POSIX_C_SOURCE
 SRC := $(wildcard ../src/*.c)
 OBJ := $(addprefix ../obj/, $(notdir $(SRC:.c=.o)))
 
-$(LEXER): $(CGEN) $(OBJ) $(SRC)
-	$(CC) -o $@ $(CGEN) $(OBJ) $(CFLAGS) $(USE_POSIX_SYMBOLS)
+$(LEXER): $(CGEN) lextest.c $(OBJ) $(SRC)
+	$(CC) -o $@ $(CGEN) lextest.c $(OBJ) $(CFLAGS) $(USE_POSIX_SYMBOLS)
 
 ../obj/%.o: ../src/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)

@@ -8,7 +8,7 @@
 
 #define MAX_LINE_LENG 256
 
-SymbolTable* symtab;
+extern SymbolTable* symtab;
 
 int linenum = 1;
 
@@ -216,26 +216,3 @@ when        token(WHEN);
 }
 
 %%
-
-#include "list.h"
-
-int main() {
-  symtab = symtab_create();
-
-  yylex();
-
-  puts("");
-  puts("Symbol Table:");
-  List* dump = symtab_dump(symtab);
-  List* curr = dump;
-  while (curr) {
-    Entry* entry = curr->val;
-    printf("%s: %s\n", entry->name, type_to_str(entry->type));
-    curr = curr->rest;
-  }
-  list_delete(dump);
-
-  symtab_delete(symtab);
-
-  return 0;
-}
