@@ -1,5 +1,5 @@
 CC := gcc
-CFLAG := -std=c99 -g3 -O0
+CFLAGS := -std=c99 -g3 -O0
 SRC := $(wildcard src/*.c)
 OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
 
@@ -7,9 +7,9 @@ OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
 TEST_HEADER := $(wildcard test/test_*.h)
 TEST_SRC := $(filter-out test/main.c, $(wildcard test/*.c))
 
-# for customizing, e.g., make fmt FMTFLAG='--dry-run --Werror'
-FMTFLAG := -i
-TIDYFLAG := --quiet
+# for customizing, e.g., make fmt FMTFLAGS='--dry-run --Werror'
+FMTFLAGS := -i
+TIDYFLAGS := --quiet
 
 .PHONY: dirs clean tests fmt tidy
 
@@ -21,10 +21,10 @@ tests: bin/tests
 
 # TEST_SRCs are separately compiled into object files, which is for convenience
 bin/tests: test/main.c $(OBJ) $(TEST_SRC) $(TEST_HEADER)
-	$(CC) -o $@ $< $(OBJ) $(TEST_SRC) $(CFLAG)
+	$(CC) -o $@ $< $(OBJ) $(TEST_SRC) $(CFLAGS)
 
 obj/%.o: src/%.c
-	$(CC) -c -o $@ $< $(CFLAG)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
 	rm -rf obj/ bin/
@@ -42,10 +42,10 @@ valgrind: bin/tests
 		$<
 
 fmt:
-	clang-format -style=file $(FMTFLAG) \
+	clang-format -style=file $(FMTFLAGS) \
 		src/*.h src/*.c test/*.h test/*.c
 
 tidy:
-	clang-tidy $(TIDYFLAG) \
+	clang-tidy $(TIDYFLAGS) \
 		src/*.h src/*.c test/*.h test/*.c \
-		-- $(CFLAG)
+		-- $(CFLAGS)
