@@ -17,7 +17,8 @@ char line[MAX_LINE_LENG];
 #define RECORD_LINE strcat(line, yytext)
 #define CLEAR_LINE line[0] = '\0'
 #define token(t) { RECORD_LINE; printf("<%s>\n", #t); }
-#define tokenInteger(t, i) { RECORD_LINE; printf("<%s:%d>\n", #t, i); }
+#define tokenInteger(i) { RECORD_LINE; printf("<integer:%d>\n", i); }
+#define tokenReal(r) { RECORD_LINE; printf("<real:%f>\n", r); }
 #define tokenString(t, s) { RECORD_LINE; printf("<%s:%s>\n", #t, s); }
 
 // no longer than a single line
@@ -40,7 +41,8 @@ ASSIGN :=
 ID [a-zA-Z][a-zA-Z0-9]*
 
 INT [0-9][0-9]*
-REAL　[0-9](.[0-9]*)?
+  /* not supporting optional integer / fractional part */
+REAL  [0-9]+\.[0-9]+
 
 ESCAPED_QUOTE \"\"
 
@@ -132,9 +134,9 @@ when        token(WHEN);
 
   /*
    * Numerical constants
-   * XXX: support floating-point numbers?
    */
-{INT} tokenInteger(integer, atoi(yytext));
+{INT} tokenInteger(atoi(yytext));
+{REAL} tokenReal(atof(yytext));
 
   /*
    * Identifiers

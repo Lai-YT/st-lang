@@ -8,3 +8,8 @@
 <ASSIGN>
 <integer:12345678>
 2: const multiBits := 12345678
+<CONST>
+<identifier:someReal>
+<ASSIGN>
+<real:0.010000>
+3: const someReal := 0.01
