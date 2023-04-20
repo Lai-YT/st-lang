@@ -1,6 +1,7 @@
 CC := gcc
 LIB := -lm
-CFLAGS := -std=c99 -g3 -O0 $(LIB)
+CFLAGS := -std=c99 -g3 -O0 $(LIB) \
+	-MMD # generate dependency files
 SRC := $(wildcard src/*.c)
 OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
 
@@ -50,3 +51,5 @@ tidy:
 	clang-tidy $(TIDYFLAGS) \
 		src/*.h src/*.c test/*.h test/*.c \
 		-- $(CFLAGS)
+
+-include $(SRC:.c=.d)
