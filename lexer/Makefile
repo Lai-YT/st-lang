@@ -1,4 +1,4 @@
-.PHONY: tests clean fmt tidy
+.PHONY: dirs tests clean fmt tidy
 
 CC := gcc
 LSRC := turing.l
@@ -14,15 +14,17 @@ CFLAGS := -std=c99 $(LIB) -I../src
 USE_POSIX_SYMBOLS =	-D_POSIX_C_SOURCE
 
 SRC := $(wildcard ../src/*.c)
-OBJ := $(addprefix ../obj/, $(notdir $(SRC:.c=.o)))
+OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
 
 FMTFLAGS := -i
 TIDYFLAGS := --quiet
 
+all: dirs $(LEXER)
+
 $(LEXER): $(CGEN) lextest.c $(OBJ) $(SRC)
 	$(CC) -o $@ $(CGEN) lextest.c $(OBJ) $(CFLAGS) $(USE_POSIX_SYMBOLS)
 
-../obj/%.o: ../src/%.c
+obj/%.o: ../src/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(CGEN): $(LSRC)
@@ -40,5 +42,8 @@ tidy:
 		$(filter-out $(CGEN), $(wildcard *.c *.h)) \
 		-- $(CFLAGS)
 
+dirs:
+	mkdir -p obj/
+
 clean:
-	rm -f $(CGEN) $(LEXER)
+	rm -rf $(CGEN) $(LEXER) obj/
