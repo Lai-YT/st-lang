@@ -6,7 +6,8 @@ CGEN := turing-lex.c
 LEX := flex
 LFLAGS := -l -o $(CGEN)
 LEXER := lexer
-CFLAGS := -std=c99 -I../src
+LIB := -lm  # used by SRC
+CFLAGS := -std=c99 $(LIB) -I../src
 # Particularly resolving the implicit declaration warning on "fileno" used in
 # Flex generated scanner.
 # See also https://github.com/westes/flex/issues/263.
