@@ -1,5 +1,6 @@
 CC := gcc
-CFLAGS := -std=c99 -g3 -O0
+LIB := -lm
+CFLAGS := -std=c99 -g3 -O0 $(LIB)
 SRC := $(wildcard src/*.c)
 OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
 
