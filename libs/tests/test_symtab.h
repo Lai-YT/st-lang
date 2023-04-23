@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "../src/list.h"
-#include "../src/symtab.h"
+#include "list.h"
+#include "symtab.h"
 
 void test_symtab_lookup_inserted_symbols() {
   SymbolTable* table = symtab_create();
