@@ -63,6 +63,11 @@ Case of letters is relevant, i.e. `ident`, `Ident`, and `IDENT` are different id
 
 A numerical constant is a sequence of one or more digits and optionally followed by a dot and a sequence of one or more digits. Therefore, `.123` and `2.` are not valid numerical constants.
 
+Note that _sT_ does support explicit signed constants, but there may be a separator between the sign and the number, which makes them two separate lexemes. The sign and the unsigned constant are considered to form a signed constant only if the sign is a prefix operator, and not an infix operator. For example, in the following, `-4` is an unsigned constant, but `-7` is not:
+```
+if x -7 > -4 then ...
+```
+
 ### String Constants
 
 A string constant is a sequence of zero or more _ASCII_ characters appearing between double-quote (`"`) delimiters.
