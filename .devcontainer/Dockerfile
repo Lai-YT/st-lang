@@ -12,12 +12,12 @@ ARG USERNAME=nonroot
 #
 # Static GID/UID is also useful for chown'ing files outside the container where
 # such a user does not exist.
-# See https://github.com/hexops/dockerfile.
+# See https://github.com/hexops/dockerfile#use-a-static-uid-and-gid.
 RUN addgroup --gid 10001 --system $USERNAME \
     && adduser --uid 10000 --system --ingroup $USERNAME --home /home/$USERNAME $USERNAME
 COPY .. /home/$USERNAME/st-lang
 RUN apt-get update \
-    && apt-get install -y sudo \
+    && apt-get install -y dumb-init sudo \
     && apt-get install -y vim git gcc make \
     && apt-get install -y flex bison clang-format clang-tidy valgrind \
     # Clean up the apt cache, see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#run.
@@ -31,4 +31,8 @@ RUN chown -R $USERNAME:$USERNAME /home/$USERNAME/
 USER $USERNAME
 WORKDIR /home/$USERNAME/st-lang
 
+# dumb-init acts as PID 1 and immediately spawns the command as a child process,
+# taking care to properly handle and forward signals as they are received.
+# See https://github.com/Yelp/dumb-init#dumb-init.
+ENTRYPOINT [ "/usr/bin/dumb-init", "--" ]
 CMD [ "/bin/bash" ]
