@@ -54,5 +54,5 @@ You will then be taken into the container. Here you have all the tools you need,
 
 ## Resources
 
-- [The lexical definition of sT](./lexer/st-lexical-definition.pdf)
+- [The lexical definition of sT](./lexer/lexical-definition.md)
 - [The Turing Language Report](https://txl.ca/tplus/Turing_Report.pdf)
