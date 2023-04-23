@@ -2,7 +2,7 @@
 
 ## About
 
-This project is to implement a compiler for a simplified _[Turing](https://en.wikipedia.org/wiki/Turing_(programming_language))_ programming language, which is [not fully compatible](#known-incompatibility).
+This project aims to implement a compiler for a simplified version of the _[Turing](https://en.wikipedia.org/wiki/Turing_(programming_language))_ programming language, which is [not fully compatible](#known-incompatibility).
 
 It's split into 3 phases:
 1. [Lexer & The symbol table](./lexer/)
@@ -36,12 +36,14 @@ The dev container contains all the tools you'll need during the development, suc
 
 The dev container works with [VSCode](https://code.visualstudio.com/). You'll need to install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
 
-After the installation, click the green status bar item at the far left and select `Reopen in container`.  It will start building the image and then run a container for you.
+After the installation, click the green status bar item at the far left and select `Reopen in container`. This will start building the image and then run a container for you.
+> **Note**
+> You'll need to click `Reopen in container` every time you want to enter the dev container. It will start the same container you previously ran.
 
-It will then take you into the container. Here you have all the tools you need, including some useful _VSCode_ extensions. Enjoy your journey!
+You will then be taken into the container. Here you have all the tools you need, including some useful _VSCode_ extensions. Enjoy your journey!
 > Learn more about [Developing inside a Container](https://code.visualstudio.com/docs/devcontainers/containers).
 
-## Known incompatibilities
+## Known Incompatibilities
 
 > The definition of _incompatibility_ here is that the code using the syntax mentioned below compiled with the _sT_ compiler but does not compiled with the [tpc](https://txl.ca/txl-tplusdownload.html) compiler.
 
