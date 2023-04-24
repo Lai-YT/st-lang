@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(Lexer C)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../libs Libs)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../lib Lib)
 
 # Add the lexer executable and link against library
 file(GLOB C_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
@@ -23,5 +23,5 @@ target_compile_definitions(Lexer PRIVATE
 )
 target_link_libraries(Lexer
     PRIVATE  # The Lexer has nothing for others to include, so PRIVATE suffices.
-    lexer_compiler_flags Libs
+    lexer_compiler_flags Lib
 )

@@ -4,7 +4,7 @@ CC := gcc
 FMTFLAGS := -i
 TIDYFLAGS := --quiet
 BUILD_DIR := build
-TEST_EXE := DataStructureTest
+TEST_EXE := LibTest
 
 .PHONY: build tests fmt tidy clean
 
