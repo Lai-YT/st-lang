@@ -11,8 +11,8 @@ TEST_EXE := LibTest
 all: build
 
 build:
-  # CMAKE_EXPORT_COMPILE_COMMANDS=ON is required for generating the
-  # compile_commands.json file used by Clang-Tidy
+    # CMAKE_EXPORT_COMPILE_COMMANDS=ON is required for generating the
+    # compile_commands.json file used by Clang-Tidy
 	@exec 1>/dev/null \
 	&& mkdir -p $(BUILD_DIR) \
 	&& cd $(BUILD_DIR) \
