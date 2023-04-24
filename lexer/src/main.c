@@ -15,6 +15,7 @@ extern int yylex();
 extern FILE* yyin;
 
 void dump_symbols(SymbolTable*);
+void usage(const char* prog);
 
 int main(int argc, char* argv[]) {
   struct option options[] = {
@@ -30,13 +31,13 @@ int main(int argc, char* argv[]) {
         symbol_dump = true;
         break;
       default:
-        fprintf(stderr, "usage: %s [-d] FILE\n", argv[0]);
+        usage(argv[0]);
         exit(EXIT_FAILURE);
     }
   }
 
   if (optind + 1 != argc) {
-    fprintf(stderr, "usage: %s [-d] FILE\n", argv[0]);
+    usage(argv[0]);
     exit(EXIT_FAILURE);
   }
 
@@ -54,7 +55,7 @@ int main(int argc, char* argv[]) {
   yylex();
 
   if (symbol_dump) {
-    puts("");
+    putchar('\n');
     dump_symbols(symtab);
   }
 
@@ -62,6 +63,17 @@ int main(int argc, char* argv[]) {
   fclose(yyin);
 
   return 0;
+}
+
+void usage(const char* prog) {
+  fprintf(stderr,
+          "usage: %s [-d] FILE\n"
+          "\n"
+          "  FILE            The file to be lexical analyzed\n"
+          "\n"
+          "Options:\n"
+          "  -d, --dump      Dumps the identifiers and their attributes\n",
+          prog);
 }
 
 void dump_symbols(SymbolTable* table) {
