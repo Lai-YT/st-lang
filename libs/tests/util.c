@@ -1,5 +1,3 @@
-#define _GNU_SOURCE  // NOLINT: for action handling with sigaction
-
 #include "util.h"
 
 #include <setjmp.h>

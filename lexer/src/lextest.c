@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
 
 void dump_symbols(SymbolTable* table) {
   puts("Symbol Table:");
-  List* dump = symtab_dump(symtab);
+  List* dump = symtab_dump(table);
   List* curr = dump;
   while (curr) {
     Entry* entry = curr->val;
