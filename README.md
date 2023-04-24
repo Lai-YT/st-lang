@@ -31,13 +31,13 @@ Then, run a new container in interactive mode with a pseudo-TTY allocated. We've
 ```
 $ docker run -it st-lang
 ```
-> Alternatively, use `docker run -it st-lang /bin/bash` to use the _Bourne again shell_ (_Bash_) instead of _Bourne shell_ (_sh_).
+> Alternatively, use `docker run -it st-lang /bin/bash` to use the _Bourne again shell_ (_Bash_) instead of the _Bourne shell_ (_sh_).
 
 You're now inside the container. You should see a hashtag (`#`) waiting for your commands. Go play around!
 
 ### Dev Container
 
-The dev container contains all the tools you'll need during the development, such as [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html), [Clang-Tidy](https://clang.llvm.org/extra/clang-tidy/) and [Valgrind](https://valgrind.org/).
+The dev container contains all the tools you'll need during the development, such as [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html), [Clang-Tidy](https://clang.llvm.org/extra/clang-tidy/), and [Valgrind](https://valgrind.org/).
 
 The dev container works with [VSCode](https://code.visualstudio.com/). You'll need to install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
 

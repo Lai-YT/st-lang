@@ -16,7 +16,7 @@ $ make tests
 
 ## Development
 
-Run the tests with the symbols collected (`-g`) and less optimizations (`-O0`).
+Run the tests with the symbols collected (`-g`) and fewer optimizations (`-O0`).
 
 ```
 $ make tests BUILD_TYPE=Debug

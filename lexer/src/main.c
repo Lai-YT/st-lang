@@ -69,7 +69,7 @@ void usage(const char* prog) {
   fprintf(stderr,
           "usage: %s [-d] FILE\n"
           "\n"
-          "  FILE            The file to be lexical analyzed\n"
+          "  FILE            The file to be lexically analyzed\n"
           "\n"
           "Options:\n"
           "  -d, --dump      Dumps the identifiers and their attributes\n",

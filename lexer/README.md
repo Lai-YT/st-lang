@@ -12,7 +12,7 @@ You need `gcc`, `make`, `cmake`, and `flex`.
 
 ### Installing
 
-To compiler the _Lexer_, make sure your under `{root}/lexer/`.
+To compiler the _Lexer_, make sure you are under `{root}/lexer/`.
 
 ```shell
 $ make
@@ -22,7 +22,7 @@ The executable will be located in the `build/` folder and named `Lexer`.
 
 ## Running the tests
 
-The way we test the _Lexer_ is to compare its output, which are the tokens, to our expecting output, and see whether they match.
+The way we test the _Lexer_ is to compare its output, which is the tokens, to our expected output, and see whether they match.
 
 ```
 $ make tests
@@ -36,14 +36,14 @@ The _Lexer_ takes a file to parse. It prints out the tokens it recognized and op
 $ ./build/Lexer
 usage: ./build/Lexer [-d] FILE
 
-  FILE            The file to be lexical analyzed
+  FILE            The file to be lexically analyzed
 
 Options:
   -d, --dump      Dumps the identifiers and their attributes
 ```
 
 > **Note**
-> Currently, the _Lexer_ prints out the tokens directly instead of returning on the call of `yylex`. This behavior is subject to change during the development.
+> Currently, the _Lexer_ prints out the tokens directly instead of returning on the call of `yylex`. This behavior is subject to change during development.
 
 ### Example
 
@@ -58,7 +58,7 @@ loop
 end loop
 ```
 
-Pass it to the _Lexer_ for lexical analysis. You can then see the token recognized.
+Pass it to the _Lexer_ for lexical analysis. You can then see the tokens recognized.
 
 ```
 $ ./build/Lexer triangle.t
@@ -96,7 +96,7 @@ $ ./build/Lexer triangle.t
 If the `-d` is set, extra dump messages follow the tokens.
 
 ```
-$ ./build/Lexer triangle.t
+$ ./build/Lexer -d triangle.t
 ...
 
 Symbol Table:
@@ -106,7 +106,7 @@ length: NO_TYPE
 
 ## Development
 
-Run the _Lexer_ with the symbols collected (`-g`) and less optimizations (`-O0`).
+Run the _Lexer_ with the symbols collected (`-g`) and fewer optimizations (`-O0`).
 
 ```
 $ make BUILD_TYPE=Debug
