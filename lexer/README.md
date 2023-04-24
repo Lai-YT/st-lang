@@ -1,0 +1,135 @@
+# Lexer
+
+## About
+
+The _Lexer_ is generated using [flex](https://github.com/westes/flex). The lexical patterns are defined according to the [lexical definition](./lexical-definition.md), located in [src/st.l](src/st.l).
+
+## Getting Started
+
+### Prerequisites
+
+You need `gcc`, `make`, `cmake`, and `flex`.
+
+### Installing
+
+To compiler the _Lexer_, make sure your under `{root}/lexer/`.
+
+```shell
+$ make
+```
+
+The executable will be located in the `build/` folder and named `Lexer`.
+
+## Running the tests
+
+The way we test the _Lexer_ is to compare its output, which are the tokens, to our expecting output, and see whether they match.
+
+```
+$ make tests
+```
+
+## Usage
+
+The _Lexer_ takes a file to parse. It prints out the tokens it recognized and optionally dumps the identifiers.
+
+```
+$ ./build/Lexer
+usage: ./build/Lexer [-d] FILE
+
+  FILE            The file to be lexical analyzed
+
+Options:
+  -d, --dump      Dumps the identifiers and their attributes
+```
+
+> **Note**
+> Currently, the _Lexer_ prints out the tokens directly instead of returning on the call of `yylex`. This behavior is subject to change during the development.
+
+### Example
+
+Assume we have a piece of code written in _sT_, named `triangle.t`. This piece of code prints a triangle with `*`.
+
+```Turing
+var s := "*"
+loop
+    put s
+    exit when length(s) = 10
+    s := s + "*"
+end loop
+```
+
+Pass it to the _Lexer_ for lexical analysis. You can then see the token recognized.
+
+```
+$ ./build/Lexer triangle.t
+<VAR>
+<identifier:s>
+<ASSIGN>
+<string:*>
+1: var s := "*" % implicitly declaring s to be of type string
+<LOOP>
+2: loop
+<PUT>
+<identifier:s>
+3:     put s
+4:     % by default, the maximum length of a string is 255 characters
+<EXIT>
+<WHEN>
+<identifier:length>
+<'('>
+<identifier:s>
+<')'>
+<'='>
+<integer:10>
+5:     exit when length(s) = 10
+<identifier:s>
+<ASSIGN>
+<identifier:s>
+<'+'>
+<string:*>
+6:     s := s + "*"
+<END>
+<LOOP>
+7: end loop
+```
+
+If the `-d` is set, extra dump messages follow the tokens.
+
+```
+$ ./build/Lexer triangle.t
+...
+
+Symbol Table:
+s: NO_TYPE
+length: NO_TYPE
+```
+
+## Development
+
+Run the _Lexer_ with the symbols collected (`-g`) and less optimizations (`-O0`).
+
+```
+$ make BUILD_TYPE=Debug
+```
+
+Similarly, run the tests,
+
+```
+$ make tests BUILD_TYPE=Debug
+```
+
+> The value of `BUILD_TYPE` is passed to `cmake` as `CMAKE_BUILD_TYPE` behind the scene, i.e., `cmake` is configured with `-DCMAKE_BUILD_TYPE=Debug`.
+
+Additionally, you need `ClangFormat` and `Clang-Tidy` as code formatter and linter.
+
+- Code formatting
+
+```
+$ make fmt
+```
+
+- Naming conventions & bug-proneness checking
+
+```
+$ make tidy
+```
