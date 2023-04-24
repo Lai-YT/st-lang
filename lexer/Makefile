@@ -6,6 +6,7 @@ CGEN := src/st-lex.c
 LEX := flex
 LFLAGS := -l -o $(CGEN)
 BUILD_DIR := build
+BUILD_TYPE := Release
 
 FMTFLAGS := -i
 TIDYFLAGS := --quiet
@@ -19,7 +20,9 @@ lexer: $(CGEN)
 	&& mkdir -p $(BUILD_DIR) \
 	&& cd $(BUILD_DIR) \
 	&& cmake .. \
-		-DCMAKE_C_COMPILER=$(CC) -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DCMAKE_C_COMPILER=$(CC) \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
 	&& cmake --build .
 
 $(CGEN): $(LSRC)
