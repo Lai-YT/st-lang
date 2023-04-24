@@ -1,8 +1,8 @@
 .PHONY: lexer tests fmt tidy clean
 
 CC := gcc
-LSRC := src/turing.l
-CGEN := src/turing-lex.c
+LSRC := src/st.l
+CGEN := src/st-lex.c
 LEX := flex
 LFLAGS := -l -o $(CGEN)
 BUILD_DIR := build
