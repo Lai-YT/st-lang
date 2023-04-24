@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-LEXER=./lexer
+LEXER=./build/Lexer
 if ! command -v "$LEXER" >/dev/null 2>&1; then
     echo "${LEXER}: not found"
     exit 1
@@ -15,7 +15,7 @@ find tests/ -name '*.t' >tmp
 while IFS= read -r file; do
     echo "--------Test using" "$file" "--------"
     filename=$(basename "$file" .t)
-    ./lexer "$file" >out
+    $LEXER "$file" >out
     if diff "tests/expect_${filename}.txt" out -y --width=60 --suppress-common-lines; then
         echo "${GREEN}PASSED${NO_COLOR}"
     else

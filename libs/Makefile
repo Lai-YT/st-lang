@@ -1,55 +1,49 @@
 CC := gcc
-LIB := -lm
-CFLAGS := -std=c99 -g3 -O0 $(LIB) \
-	-MMD # generate dependency files
-SRC := $(wildcard src/*.c)
-OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
-
-# headers of test cases has their name suffixed with `test_`, and has no .c file
-TEST_HEADER := $(wildcard test/test_*.h)
-TEST_SRC := $(filter-out test/main.c, $(wildcard test/*.c))
 
 # for customizing, e.g., make fmt FMTFLAGS='--dry-run --Werror'
 FMTFLAGS := -i
 TIDYFLAGS := --quiet
+BUILD_DIR := build
+TEST_EXE := DataStructureTest
 
-.PHONY: dirs clean tests fmt tidy
+.PHONY: build tests fmt tidy clean
 
-all: dirs tests
+all: build
 
-tests: bin/tests
+build:
+  # CMAKE_EXPORT_COMPILE_COMMANDS=ON is required for generating the
+  # compile_commands.json file used by Clang-Tidy
+	@exec 1>/dev/null \
+	&& mkdir -p $(BUILD_DIR) \
+	&& cd $(BUILD_DIR) \
+	&& cmake .. \
+		-DCMAKE_C_COMPILER=$(CC) -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+	&& cmake --build . --target $(TEST_EXE)
+
+tests: build
 	@echo "Run tests..."
-	@./$<
+	@$(BUILD_DIR)/$(TEST_EXE)
 
-# TEST_SRCs are separately compiled into object files, which is for convenience
-bin/tests: test/main.c $(OBJ) $(TEST_SRC) $(TEST_HEADER)
-	$(CC) -o $@ $< $(OBJ) $(TEST_SRC) $(CFLAGS)
-
-obj/%.o: src/%.c
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-clean:
-	rm -rf obj/ bin/
-
-dirs:
-	mkdir -p bin obj
-
-valgrind: bin/tests
+valgrind: build
 	@valgrind \
 		--track-origins=yes \
 		--show-leak-kinds=all \
 		--leak-check=full \
 		--leak-resolution=high \
 		--error-exitcode=1 \
-		$<
+		$(BUILD_DIR)/$(TEST_EXE)
+
+CFILES := $(wildcard include/*.h src/*.c src/*.h tests/*.c tests/*.h)
 
 fmt:
 	clang-format -style=file $(FMTFLAGS) \
-		src/*.h src/*.c test/*.h test/*.c
+		$(CFILES)
 
-tidy:
+# needs the build so we can get the compile_commands.json
+tidy: build
 	clang-tidy $(TIDYFLAGS) \
-		src/*.h src/*.c test/*.h test/*.c \
-		-- $(CFLAGS)
+		$(CFILES) \
+		-p $(BUILD_DIR)
 
--include $(SRC:.c=.d)
+clean:
+	rm -rf $(BUILD_DIR)

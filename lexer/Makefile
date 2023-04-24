@@ -1,49 +1,43 @@
-.PHONY: dirs tests clean fmt tidy
+.PHONY: lexer tests fmt tidy clean
 
 CC := gcc
-LSRC := turing.l
-CGEN := turing-lex.c
+LSRC := src/turing.l
+CGEN := src/turing-lex.c
 LEX := flex
 LFLAGS := -l -o $(CGEN)
-LEXER := lexer
-LIB := -lm  # used by SRC
-CFLAGS := -std=c99 $(LIB) -I../src
-# Particularly resolving the implicit declaration warning on "fileno" used in
-# Flex generated scanner.
-# See also https://github.com/westes/flex/issues/263.
-USE_POSIX_SYMBOLS =	-D_POSIX_C_SOURCE
-
-SRC := $(wildcard ../src/*.c)
-OBJ := $(addprefix obj/, $(notdir $(SRC:.c=.o)))
+BUILD_DIR := build
 
 FMTFLAGS := -i
 TIDYFLAGS := --quiet
 
-all: dirs $(LEXER)
+all: lexer
 
-$(LEXER): $(CGEN) lextest.c $(OBJ) $(SRC)
-	$(CC) -o $@ $(CGEN) lextest.c $(OBJ) $(CFLAGS) $(USE_POSIX_SYMBOLS)
-
-obj/%.o: ../src/%.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+lexer: $(CGEN)
+  # CMAKE_EXPORT_COMPILE_COMMANDS=ON is required for generating the
+  # compile_commands.json file used by Clang-Tidy
+	@exec 1>/dev/null \
+	&& mkdir -p $(BUILD_DIR) \
+	&& cd $(BUILD_DIR) \
+	&& cmake .. \
+		-DCMAKE_C_COMPILER=$(CC) -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+	&& cmake --build .
 
 $(CGEN): $(LSRC)
 	$(LEX) $(LFLAGS) $<
 
-tests:
+tests: lexer
 	@./test.sh
+
+CFILES := $(wildcard src/*.c src/*.h)
 
 fmt:
 	clang-format -style=file $(FMTFLAGS) \
-		$(filter-out $(CGEN), $(wildcard *.c *.h))
+		$(filter-out $(CGEN), $(CFILES))
 
-tidy:
+tidy: lexer
 	clang-tidy $(TIDYFLAGS) \
-		$(filter-out $(CGEN), $(wildcard *.c *.h)) \
-		-- $(CFLAGS)
-
-dirs:
-	mkdir -p obj/
+		$(filter-out $(CGEN), $(CFILES)) \
+		-p $(BUILD_DIR)
 
 clean:
-	rm -rf $(CGEN) $(LEXER) obj/
+	rm -rf $(BUILD_DIR) $(CGEN)
