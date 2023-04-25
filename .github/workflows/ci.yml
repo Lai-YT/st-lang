@@ -1,0 +1,19 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    name: test
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+    - name: Build docker image
+      run: docker build -t st-lang .
+    - name: Run library tests
+      if: always()
+      run: docker run st-lang /bin/sh -c "cd lib && make tests"
+    - name: Run lexer tests
+      if: always()
+      run: docker run st-lang /bin/sh -c "cd lexer && make tests"
