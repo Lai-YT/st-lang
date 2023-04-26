@@ -1,3 +1,5 @@
+#undef NDEBUG  // since our tests rely on assert, always turn it on
+
 #include "test_symtab.h"
 #include "util.h"
 
