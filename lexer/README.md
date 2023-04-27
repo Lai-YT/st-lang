@@ -10,7 +10,7 @@ The _Lexer_ is generated using [flex](https://github.com/westes/flex). The lexic
 
 You need `gcc`, `make`, `cmake`, and `flex`.
 
-### Installing
+### Build Steps
 
 To compiler the _Lexer_, make sure you are under `{root}/lexer/`.
 

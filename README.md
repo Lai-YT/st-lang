@@ -11,7 +11,7 @@ It's split into 3 phases:
 
 ## Getting Started
 
-The tools and dependencies required for each phase are described in detail in their corresponding `README`s.
+The required tools and build steps for each phase are described in detail in their corresponding `README`s.
 
 The common tools required across the phases include `gcc`, as the _sT_ compiler is written in _C_, as well as `make` and `cmake`, which generate the executables.
 All tools required by the _sT_ compiler are packed into containers, which you can use to build or develop the compiler.
