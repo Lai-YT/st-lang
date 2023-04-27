@@ -1,4 +1,8 @@
+  /* terminates after a file reaches the end */
 %option noyywrap
+  /* we're no using input & yyunput, don't generate code for them to avoid compiler warnings */
+%option noinput
+%option nounput
 
 %{
 #include <stdio.h>
