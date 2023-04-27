@@ -205,7 +205,7 @@ when        TOKEN(WHEN);
   printf("%d: %s", linenum++, line);
   CLEAR_LINE;
 }
-<BLOCK_COMMENT>.* RECORD_LINE;
+<BLOCK_COMMENT>. RECORD_LINE;
 
   /*
    * errors

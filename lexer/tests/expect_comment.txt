@@ -9,4 +9,8 @@
 9: {% this is a comment % line with some {% and
 10: % delimiters %}
 11: 
+<VAR>
+<identifier:theCommentEnds>
+<ASSIGN>
+<integer:0>
 12: var theCommentEnds := 0
