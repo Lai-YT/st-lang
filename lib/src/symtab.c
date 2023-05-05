@@ -62,12 +62,12 @@ const char* type_to_str(Type type) {
   switch (type) {
     case NO_TYPE:
       return "NO_TYPE";
-    case INT:
-      return "INT";
-    case STRING:
-      return "STRING";
-    case BOOLEAN:
-      return "BOOLEAN";
+    case INT_TYPE:
+      return "INT_TYPE";
+    case STRING_TYPE:
+      return "STRING_TYPE";
+    case BOOLEAN_TYPE:
+      return "BOOLEAN_TYPE";
     default:
       return "";
   }

@@ -7,9 +7,9 @@
 
 typedef enum Type {
   NO_TYPE = 0,  // not yet determined
-  INT = 1,
-  STRING = 2,
-  BOOLEAN = 3,
+  INT_TYPE = 1,
+  STRING_TYPE = 2,
+  BOOLEAN_TYPE = 3,
 } Type;
 
 const char* type_to_str(Type);
