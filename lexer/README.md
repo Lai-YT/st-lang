@@ -42,9 +42,6 @@ Options:
   -d, --dump      Dumps the identifiers and their attributes
 ```
 
-> **Note**
-> Currently, the _Lexer_ prints out the tokens directly instead of returning on the call of `yylex`. This behavior is subject to change during development.
-
 ### Example
 
 Assume we have a piece of code written in _sT_, named `triangle.t`. This piece of code prints a triangle with `*`.
