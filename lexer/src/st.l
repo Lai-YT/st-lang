@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "st-parse.h"
 #include "symtab.h"
 
 #define MAX_LINE_LENG 256
@@ -20,11 +21,11 @@ int linenum = 1;
 char line[MAX_LINE_LENG];
 #define RECORD_LINE strcat(line, yytext)
 #define CLEAR_LINE line[0] = '\0'
-#define TOKEN(t) { RECORD_LINE; printf("<%s>\n", #t); }
-#define TOKEN_INTEGER(i) { RECORD_LINE; printf("<integer:%d>\n", i); }
-#define TOKEN_REAL(r) { RECORD_LINE; printf("<real:%f>\n", r); }
-#define TOKEN_STRING(s) { RECORD_LINE; printf("<string:%s>\n", s); }
-#define TOKEN_IDENTIFIER(i) { RECORD_LINE; printf("<identifier:%s>\n", i); }
+#define TOKEN(t) { RECORD_LINE; printf("<%s>\n", #t); return t; }
+#define TOKEN_INTEGER() { RECORD_LINE; printf("<integer:%d>\n", yylval.int_const); return INT_CONST; }
+#define TOKEN_REAL() { RECORD_LINE; printf("<real:%f>\n", yylval.real_const); return REAL_CONST; }
+#define TOKEN_STRING() { RECORD_LINE; printf("<string:%s>\n", yylval.str_const); return STR_CONST; }
+#define TOKEN_IDENTIFIER() { RECORD_LINE; printf("<identifier:%s>\n", yylval.symbol->name); return ID; }
 
 // no longer than a single line
 char string[MAX_LINE_LENG];
@@ -140,15 +141,21 @@ when        TOKEN(WHEN);
   /*
    * Numerical constants
    */
-{INT} TOKEN_INTEGER(atoi(yytext));
-{REAL} TOKEN_REAL(atof(yytext));
+{INT} {
+  yylval.int_const = atoi(yytext);
+  TOKEN_INTEGER();
+}
+{REAL} {
+  yylval.real_const = atof(yytext);
+  TOKEN_REAL();
+}
 
   /*
    * Identifiers
    */
 {ID} {
-  TOKEN_IDENTIFIER(yytext);
-  symtab_insert(symtab, yytext, 0 /* no type */);
+  yylval.symbol = symtab_insert(symtab, yytext, NO_TYPE);
+  TOKEN_IDENTIFIER();
 }
 
   /*
@@ -163,9 +170,10 @@ when        TOKEN(WHEN);
   strcat(string, "\"");
 }
 <STRING>\" {
-  TOKEN_STRING(string);
+  strncpy(yylval.str_const, string, MAX_LINE_LENG - strlen(string) - 1);
   string[0] = '\0';
   BEGIN(INITIAL);
+  TOKEN_STRING();
 }
 <STRING>\n {
   RECORD_LINE;

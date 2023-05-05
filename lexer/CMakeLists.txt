@@ -5,8 +5,8 @@ project(Lexer C)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../lib Lib)
 
 # Add the lexer executable and link against library
-file(GLOB C_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
-add_executable(Lexer ${C_SRC_FILES})
+file(GLOB SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
+add_executable(Lexer ${SRC_FILES})
 
 # Specify compiler flags
 add_library(lexer_compiler_flags INTERFACE)

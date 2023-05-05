@@ -5,12 +5,16 @@
 #include <stdlib.h>
 
 #include "list.h"
+#include "st-parse.h"
 #include "symtab.h"
 
 // the symbol table used in the lexer
 SymbolTable* symtab;
 // the flex scanning routine
 extern int yylex();
+// the semantic value of the token
+// defined here since it not compiled with the bison parser
+YYSTYPE yylval;
 // whenever `yylex` is called, it scans tokens from the global input file yyin
 extern FILE* yyin;
 
@@ -50,9 +54,10 @@ int main(int argc, char* argv[]) {
   // a new symbol table for the lexer to use
   symtab = symtab_create();
 
-  // Since we're not using `return` after recognizing a token, `yylex` lexes the
-  // entire file in a single call.
-  yylex();
+  int token;
+  while ((token = yylex()) != YYEOF) {
+    ;
+  }
 
   if (symbol_dump) {
     putchar('\n');
