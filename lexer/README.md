@@ -34,11 +34,12 @@ The _Lexer_ takes a file to parse. It prints out the tokens it recognized and op
 
 ```
 $ ./build/Lexer
-usage: ./build/Lexer [-d] FILE
+usage: ./build/Lexer [-vd] FILE
 
   FILE            The file to be lexically analyzed
 
 Options:
+  -v, --verbose   Prints the tokens and their corresponding lines
   -d, --dump      Dumps the identifiers and their attributes
 ```
 
@@ -55,10 +56,10 @@ loop
 end loop
 ```
 
-Pass it to the _Lexer_ for lexical analysis. You can then see the tokens recognized.
+Pass it to the _Lexer_ for lexical analysis. To see the tokens recognized, enable the verbose printing with `-v`.
 
 ```
-$ ./build/Lexer triangle.t
+$ ./build/Lexer -v triangle.t
 <VAR>
 <identifier:s>
 <ASSIGN>
@@ -93,7 +94,7 @@ $ ./build/Lexer triangle.t
 If the `-d` is set, extra dump messages follow the tokens.
 
 ```
-$ ./build/Lexer -d triangle.t
+$ ./build/Lexer -vd triangle.t
 ...
 
 Symbol Table:
