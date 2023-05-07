@@ -1,5 +1,5 @@
-#ifndef SRC_HASHTAB_H
-#define SRC_HASHTAB_H
+#ifndef LIB_HASHTAB_H
+#define LIB_HASHTAB_H
 
 #include <stdbool.h>
 
@@ -80,4 +80,4 @@ void hashtab_itr_to_next(HashTableIterator*);
     hashtab_itr_delete(itr_name);                          \
   }
 
-#endif /* end of include guard: SRC_HASHTAB_H */
+#endif /* end of include guard: LIB_HASHTAB_H */
