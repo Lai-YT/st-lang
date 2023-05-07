@@ -145,6 +145,9 @@ A *parameter_type* is one of:
 In form (2), the maximum length of a dynamic string is declared as `*`, it inherits the size of its actual parameter.
 In form (3), the _expr_ at the lower bound must be a [compile-time expression](#compile-time-expressions); the upper bound of a dynamic array are declared as `*`, in which case any array whose lower bound are equivalent to the parameter's can be passed to the parameter.
 
+> **Note**
+> For a multi-dimensional array, only the upper bound of the first dimension may be declared as `*`.
+
 For example, the followings are valid function or procedure *subprogram_header*s:
 
 ```turing
@@ -188,8 +191,15 @@ Variables and parameters can be declared to be dynamic arrays, with runtime uppe
 The two *[expr](#expressions)*s give the lower and upper bounds of the range of values of the type. The two *expr*s must be both `int`s.
 The lower bound must be less than or equal to the upper bound. The first _expr_ must be a [compile-time expression](#compile-time-expressions). The second _expr_ must be a compile-time expression as also except when it gives the upper bound of a dynamic array being defined in a *[variable_declaration](#variable-declarations)*.
 
-> **Note**
-> To have a multi-dimensional array, declare an array with *array_type*.
+To have a multi-dimensional array, declare an array with *array_type*, but only the upper bound of the first dimension may be a run-time expression. \
+Examples:
+
+```turing
+var j: int
+get j
+var validArr: array 1..j of array 1..4 of int    % ok
+var invalidArr: array 1..4 of array 1..j of int  % error
+```
 
 ## Statements
 
@@ -289,7 +299,7 @@ end for
 A _block_ is:
 
 - **begin** \
-{ [ *[constant_declaration](#constant-declarations)* ] [ *[variable_declaration](#variable-declarations)* ] [ _statement_ ] }
+{ [ *[constant_declaration](#constant-declarations)* ] [ *[variable_declaration](#variable-declarations)* ] [ _statement_ ] } \
 **end**
 
 It can be used to limit the scope of declarations.
@@ -349,7 +359,7 @@ An _expr_ is one of the following:
 Form (2) includes explicit `bool`, `int`, `real` and `string` constants.
 In form (4), a *binary_op* is one of:
 
-1. **+**:(`int` and `real` addition; `string` concatenation)
+1. **+** (`int` and `real` addition; `string` concatenation)
 2. **-** (`int` and `real` subtraction)
 3. __*__ (`int` and `real` multiplication)
 4. **/** (`int` and `real` division)
@@ -363,7 +373,7 @@ In form (4), a *binary_op* is one of:
 12. **and** (`bool` conjunction)
 13. **or** (`bool` inclusive or)
 
-(1) ~ (5) are [numeric operators](#numeric-operators); (1) is can also be a [string operator](#string-operators) (6) ~ (10) are [comparison operators](#comparison-operators); (11) ~ (13) are [boolean operators](#boolean-operators).
+(1) ~ (5) are [numeric operators](#numeric-operators); (1) can also be a [string operator](#string-operators); (6) ~ (10) are [comparison operators](#comparison-operators); (11) ~ (13) are [boolean operators](#boolean-operators).
 
 In form (5), an *unary_op* is one of:
 
@@ -448,7 +458,7 @@ A *substring* is:
 The **id** must have type `string` and the *expr*s must be positive `int`s.
 
 A *substring* selects a contiguous sequence of the characters in a `string`. For example, if `L := 3`, `R := 5` and `s := "string"`, then the substring of `s` from position `L` to position `R`, written `s[L .. R]`, is `"rin"`. A single character can also be selected, for example, `s[L]` is `"r"`, and in general, for any
-integer expression `e`, `s[e]` is equivalent to `s[e .. e]`.
+integer expression `e`, `s[e]` is equivalent to `s[e .. e]`. \
 The following restrictions apply to `L` and `R`:
 
 - `L >= 1 and R <= length(s) and R - L + 1 >= 0`
