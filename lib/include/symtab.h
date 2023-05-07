@@ -1,5 +1,5 @@
-#ifndef SRC_SYMTAB_H
-#define SRC_SYMTAB_H
+#ifndef LIB_SYMTAB_H
+#define LIB_SYMTAB_H
 
 #include "list.h"
 
@@ -44,4 +44,4 @@ List* symtab_dump(SymbolTable*);
 /// @brief Deletes the symbol table and all the entries in it.
 void symtab_delete(SymbolTable*);
 
-#endif /* end of include guard: SRC_SYMTAB_H */
+#endif /* end of include guard: LIB_SYMTAB_H */
