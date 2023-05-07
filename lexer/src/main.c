@@ -4,50 +4,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "handle_flags.h"
 #include "list.h"
 #include "st-parse.h"
 #include "symtab.h"
 
 // the symbol table used in the lexer
 SymbolTable* symtab;
-// the flex scanning routine
-extern int yylex();
 // the semantic value of the token
 // defined here since it not compiled with the bison parser
 YYSTYPE yylval;
+
+// the flex scanning routine
+extern int yylex();
 // whenever `yylex` is called, it scans tokens from the global input file yyin
 extern FILE* yyin;
 
 void dump_symbols(SymbolTable*);
-void usage(const char* prog);
 
 int main(int argc, char* argv[]) {
-  struct option options[] = {
-      {"dump", no_argument, 0, 'd'},
-  };
+  handle_flags(argc, argv);
 
-  bool symbol_dump = false;
-
-  int arg;
-  while ((arg = getopt_long(argc, argv, "d", options, NULL)) != -1) {
-    switch (arg) {
-      case 'd':
-        symbol_dump = true;
-        break;
-      default:
-        usage(argv[0]);
-        exit(EXIT_FAILURE);
-    }
-  }
-
-  if (optind + 1 != argc) {
-    usage(argv[0]);
-    exit(EXIT_FAILURE);
-  }
-
-  yyin = fopen(argv[optind], "r");
+  yyin = fopen(input_filename, "r");
   if (!yyin) {
-    fprintf(stderr, "error: could not open input file %s\n", argv[optind]);
+    fprintf(stderr, "error: could not open input file %s\n", input_filename);
     exit(EXIT_FAILURE);
   }
 
@@ -68,17 +48,6 @@ int main(int argc, char* argv[]) {
   fclose(yyin);
 
   return 0;
-}
-
-void usage(const char* prog) {
-  fprintf(stderr,
-          "usage: %s [-d] FILE\n"
-          "\n"
-          "  FILE            The file to be lexically analyzed\n"
-          "\n"
-          "Options:\n"
-          "  -d, --dump      Dumps the identifiers and their attributes\n",
-          prog);
 }
 
 void dump_symbols(SymbolTable* table) {

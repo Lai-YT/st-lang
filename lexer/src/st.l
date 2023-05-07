@@ -5,6 +5,7 @@
 %option nounput
 
 %{
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -14,6 +15,7 @@
 #define MAX_LINE_LENG 256
 
 extern SymbolTable* symtab;
+extern bool verbose;
 
 int linenum = 1;
 
@@ -21,11 +23,12 @@ int linenum = 1;
 char line[MAX_LINE_LENG];
 #define RECORD_LINE strcat(line, yytext)
 #define CLEAR_LINE line[0] = '\0'
-#define TOKEN(t) { RECORD_LINE; printf("<%s>\n", #t); return t; }
-#define TOKEN_INTEGER() { RECORD_LINE; printf("<integer:%d>\n", yylval.int_const); return INT_CONST; }
-#define TOKEN_REAL() { RECORD_LINE; printf("<real:%f>\n", yylval.real_const); return REAL_CONST; }
-#define TOKEN_STRING() { RECORD_LINE; printf("<string:%s>\n", yylval.str_const); return STR_CONST; }
-#define TOKEN_IDENTIFIER() { RECORD_LINE; printf("<identifier:%s>\n", yylval.symbol->name); return ID; }
+#define VERBOSE_PRINTF(...) { if (verbose) printf(__VA_ARGS__); }
+#define TOKEN(t) { RECORD_LINE; VERBOSE_PRINTF("<%s>\n", #t); return t; }
+#define TOKEN_INTEGER() { RECORD_LINE; VERBOSE_PRINTF("<integer:%d>\n", yylval.int_const); return INT_CONST; }
+#define TOKEN_REAL() { RECORD_LINE; VERBOSE_PRINTF("<real:%f>\n", yylval.real_const); return REAL_CONST; }
+#define TOKEN_STRING() { RECORD_LINE; VERBOSE_PRINTF("<string:%s>\n", yylval.str_const); return STR_CONST; }
+#define TOKEN_IDENTIFIER() { RECORD_LINE; VERBOSE_PRINTF("<identifier:%s>\n", yylval.symbol->name); return ID; }
 
 // no longer than a single line
 char string[MAX_LINE_LENG];
@@ -100,7 +103,7 @@ ESCAPED_QUOTE \"\"
 [ \t]+  RECORD_LINE;
 \n  {
   RECORD_LINE;
-  printf("%d: %s", linenum++, line);
+  VERBOSE_PRINTF("%d: %s", linenum++, line);
   CLEAR_LINE;
 }
 
@@ -195,7 +198,7 @@ when        TOKEN(WHEN);
 }
 <COMMENT>\n {
   RECORD_LINE;
-  printf("%d: %s", linenum++, line);
+  VERBOSE_PRINTF("%d: %s", linenum++, line);
   CLEAR_LINE;
   BEGIN(INITIAL);
 }
@@ -214,7 +217,7 @@ when        TOKEN(WHEN);
 }
 <BLOCK_COMMENT>\n {
   RECORD_LINE;
-  printf("%d: %s", linenum++, line);
+  VERBOSE_PRINTF("%d: %s", linenum++, line);
   CLEAR_LINE;
 }
 <BLOCK_COMMENT>. RECORD_LINE;
