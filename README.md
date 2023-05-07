@@ -6,7 +6,7 @@ This project aims to implement a compiler for a simplified version of the _[Turi
 
 It's split into 3 phases:
 1. [Lexer](./lexer/)
-2. Parser
+2. [Parser](./parser/)
 3. Code generation: to _Java Bytecode_
 
 ## Getting Started
@@ -56,11 +56,15 @@ You will then be taken into the container. Here you have all the tools you need,
 |:-------|:----:|:--------:|
 | block comment | `{% ... %}` | `/* ... */`
 | escaped quote | `""` | `\"` |
+| array subscript | `arr[1]` | `arr(1)` |
+| substring | `str[1 .. 2]` | `str(1 .. 2)` |
+| function | may have side effects | may NOT have side effects |
 
 ## Resources
 
-- [The lexical definition of sT](./lexer/lexical-definition.md)
-- [The Turing Language Report](https://txl.ca/tplus/Turing_Report.pdf)
+- [The lexical definition of _sT_](./lexer/lexical-definition.md)
+- [The syntactic & semantic definition of _st_](./parser/syntactic_and_semantic_definition.md)
+- [The _Turing_ Language Report](https://txl.ca/tplus/Turing_Report.pdf)
 
 ## License
 
