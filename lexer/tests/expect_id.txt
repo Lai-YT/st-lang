@@ -10,5 +10,5 @@
 <INT>
 2: var 123LeadingWithNumbersIsAnIntAndAnId: int
 <VAR>
-4:var _
+3:var _
 bad character:'_'
