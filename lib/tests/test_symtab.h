@@ -11,20 +11,17 @@
 void test_symtab_lookup_inserted_symbols() {
   SymbolTable* table = symtab_create();
 
-  symtab_insert(table, "a", INT_TYPE);
-  symtab_insert(table, "b", STRING_TYPE);
-  symtab_insert(table, "c", BOOLEAN_TYPE);
+  symtab_insert(table, "a");
+  symtab_insert(table, "b");
+  symtab_insert(table, "c");
 
   Entry* a = symtab_lookup(table, "a");
   Entry* b = symtab_lookup(table, "b");
   Entry* c = symtab_lookup(table, "c");
 
   assert(a);
-  assert(a->type == INT_TYPE);
   assert(b);
-  assert(b->type == STRING_TYPE);
   assert(c);
-  assert(c->type == BOOLEAN_TYPE);
 
   symtab_delete(table);
 }
@@ -42,9 +39,9 @@ void test_symtab_lookup_without_insert() {
 void test_symtab_dump_should_return_all_inserted_entries() {
   SymbolTable* table = symtab_create();
 
-  symtab_insert(table, "a", INT_TYPE);
-  symtab_insert(table, "b", STRING_TYPE);
-  symtab_insert(table, "c", BOOLEAN_TYPE);
+  symtab_insert(table, "a");
+  symtab_insert(table, "b");
+  symtab_insert(table, "c");
 
   List* entry_dump = symtab_dump(table);
 
@@ -57,15 +54,12 @@ void test_symtab_dump_should_return_all_inserted_entries() {
     if (strcmp(entry->name, "a") == 0) {
       assert(!found[0]);
       found[0] = true;
-      entry->type = INT_TYPE;
     } else if (strcmp(entry->name, "b") == 0) {
       assert(!found[1]);
       found[1] = true;
-      entry->type = STRING_TYPE;
     } else if (strcmp(entry->name, "c") == 0) {
       assert(!found[2]);
       found[2] = true;
-      entry->type = BOOLEAN_TYPE;
     } else {
       // unknown symbol
       assert(false);

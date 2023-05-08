@@ -31,12 +31,12 @@ Entry* symtab_lookup(SymbolTable* table, const char* name) {
   return hashtab_search(table->entries, name);
 }
 
-Entry* symtab_insert(SymbolTable* table, const char* name, Type type) {
+Entry* symtab_insert(SymbolTable* table, const char* name) {
   Entry* entry;
   if ((entry = symtab_lookup(table, name))) {
     return entry;
   }
-  entry = entry_create(name, type);
+  entry = entry_create(name, NO_TYPE);
   hashtab_insert(table->entries, name, entry);
   return entry;
 }
