@@ -39,7 +39,7 @@ char string[MAX_LINE_LENG];
 
 %}
 
-%x STRING COMMENT BLOCK_COMMENT
+%x STRING_ COMMENT BLOCK_COMMENT
 
   /* operators that have multiple characters */
 AND and
@@ -169,26 +169,26 @@ when        TOKEN(WHEN);
    * String constants
    */
 \" {
-  BEGIN(STRING);
+  BEGIN(STRING_);
   RECORD_LINE;
 }
-<STRING>{ESCAPED_QUOTE} {
+<STRING_>{ESCAPED_QUOTE} {
   RECORD_LINE;
   strcat(string, "\"");
 }
-<STRING>\" {
+<STRING_>\" {
   strncpy(yylval.str_const, string, MAX_LINE_LENG - strlen(string) - 1);
   string[0] = '\0';
   BEGIN(INITIAL);
   TOKEN_STRING();
 }
-<STRING>\n {
+<STRING_>\n {
   RECORD_LINE;
   printf("%d: %s", YYLINENO, line);
   puts("EOL in string");
   exit(-1);
 }
-<STRING>[^"\n]* {
+<STRING_>[^"\n]* {
   RECORD_LINE;
   strcat(string, yytext);
 }
