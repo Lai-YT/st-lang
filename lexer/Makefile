@@ -43,4 +43,4 @@ tidy: lexer
 		-p $(BUILD_DIR)
 
 clean:
-	rm -rf $(BUILD_DIR) $(CGEN)
+	rm -rf $(BUILD_DIR)
