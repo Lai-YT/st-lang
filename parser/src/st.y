@@ -32,7 +32,7 @@
 %token AND 292 OR 293 MOD 294 LE 295 GE 296 NOT 297 ASSIGN 298 NE 299
 
 %type program decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
-%type array_type scalar_type type const_decl
+%type array_type scalar_type type const_decl explicit_const bool_const
 
 
 %%
@@ -73,7 +73,7 @@ stmt:
 
 var_decl:
   VAR ID ASSIGN expr
-  { TRACE("var %s = expr\n", $2->name); }
+  { TRACE("var %s := expr\n", $2->name); }
 | VAR ID ':' array_type
   { TRACE("var %s: array_type\n", $2->name); }
 | VAR ID ':' scalar_type
@@ -124,8 +124,26 @@ var_ref:
 expr:
   var_ref
   { TRACE("expression\n"); }
-| INT_CONST
-  { TRACE("%d\n", $1); }
+| explicit_const
+  { TRACE("explicit constant\n"); }
+;
+
+explicit_const:
+  INT_CONST
+  { TRACE("int_const: %d\n", $1); }
+| REAL_CONST
+  { TRACE("real_const: %f\n", $1); }
+| STR_CONST
+  { TRACE("str_const: %s\n", $1); }
+| bool_const
+  { TRACE("bool_const: "); }
+;
+
+bool_const:
+  TRUE
+  { TRACE("true\n"); }
+| FALSE
+  { TRACE("false\n"); }
 ;
 
 %%
