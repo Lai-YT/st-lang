@@ -3,6 +3,8 @@
   /* we're no using input & yyunput, don't generate code for them to avoid compiler warnings */
 %option noinput
 %option nounput
+  /* automatically record line number */
+%option yylineno
 
 %{
 #include <stdbool.h>
@@ -17,7 +19,9 @@
 extern SymbolTable* symtab;
 extern bool verbose;
 
-int linenum = 1;
+// use this instead of yylineno in action of patterns that matches newline
+// since yylineno is already advanced when referenced
+#define YYLINENO (yylineno - 1)
 
 // records the line content along with the recognition
 char line[MAX_LINE_LENG];
@@ -103,7 +107,7 @@ ESCAPED_QUOTE \"\"
 [ \t]+  RECORD_LINE;
 \n  {
   RECORD_LINE;
-  VERBOSE_PRINTF("%d: %s", linenum++, line);
+  VERBOSE_PRINTF("%d: %s", YYLINENO, line);
   CLEAR_LINE;
 }
 
@@ -180,7 +184,7 @@ when        TOKEN(WHEN);
 }
 <STRING>\n {
   RECORD_LINE;
-  printf("%d: %s", linenum, line);
+  printf("%d: %s", YYLINENO, line);
   puts("EOL in string");
   exit(-1);
 }
@@ -198,7 +202,7 @@ when        TOKEN(WHEN);
 }
 <COMMENT>\n {
   RECORD_LINE;
-  VERBOSE_PRINTF("%d: %s", linenum++, line);
+  VERBOSE_PRINTF("%d: %s", YYLINENO, line);
   CLEAR_LINE;
   BEGIN(INITIAL);
 }
@@ -217,7 +221,7 @@ when        TOKEN(WHEN);
 }
 <BLOCK_COMMENT>\n {
   RECORD_LINE;
-  VERBOSE_PRINTF("%d: %s", linenum++, line);
+  VERBOSE_PRINTF("%d: %s", YYLINENO, line);
   CLEAR_LINE;
 }
 <BLOCK_COMMENT>. RECORD_LINE;
@@ -228,7 +232,7 @@ when        TOKEN(WHEN);
   /* a all-match pattern with the lowest priority, which catches all the errors */
 . {
   RECORD_LINE;
-  printf("%d:%s\n", linenum + 1, line);
+  printf("%d:%s\n", yylineno, line);
   printf("bad character:'%s'\n", yytext);
   exit(-1);
 }
