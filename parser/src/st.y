@@ -30,6 +30,7 @@
 %token AND 292 OR 293 MOD 294 LE 295 GE 296 NOT 297 ASSIGN 298 NE 299
 
 %type program decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
+%type array_type scalar_type type const_decl
 
 
 %%
@@ -58,6 +59,8 @@ decl_or_stmt:
 decl:
   var_decl
   { TRACE("variable declaration\n"); }
+| const_decl
+  { TRACE("constant declaration\n"); }
 ;
 
   /* TODO */
@@ -66,10 +69,47 @@ stmt:
   { TRACE("variable reference\n"); }
 ;
 
-  /* TODO */
 var_decl:
   VAR ID ASSIGN expr
-  { TRACE("%s = expr\n", $2->name); }
+  { TRACE("var %s = expr\n", $2->name); }
+| VAR ID ':' array_type
+  { TRACE("var %s: array_type\n", $2->name); }
+| VAR ID ':' scalar_type
+  { TRACE("var %s: scalar_type\n", $2->name); }
+| VAR ID ':' scalar_type ASSIGN expr
+  { TRACE("var %s: scalar_type := expr\n", $2->name); }
+;
+
+const_decl:
+  CONST ID ASSIGN expr
+  { TRACE("const %s = expr\n", $2->name); }
+| CONST ID ':' scalar_type ASSIGN expr
+  { TRACE("const %s: scalar_type := expr\n", $2->name); }
+;
+
+scalar_type:
+  INT
+  { TRACE("int\n"); }
+| REAL
+  { TRACE("real\n"); }
+| BOOL
+  { TRACE("bool\n"); }
+| STRING
+  { TRACE("string\n"); }
+| STRING '(' expr ')'
+  { TRACE("string(expr)\n"); }
+;
+
+array_type:
+  ARRAY expr '.' '.' expr OF type
+  { TRACE("array expr..expr of type\n"); }
+;
+
+type:
+  scalar_type
+  { TRACE("scalar_type\n"); }
+| array_type
+  { TRACE("array_type\n"); }
 ;
 
   /* TODO */
