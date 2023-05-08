@@ -590,6 +590,7 @@ char *yytext_ptr;
   /* terminates after a file reaches the end */
   /* we're no using input & yyunput, don't generate code for them to avoid compiler warnings */
 #define YY_NO_INPUT 1
+  /* automatically record line number */
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -602,7 +603,9 @@ char *yytext_ptr;
 extern SymbolTable* symtab;
 extern bool verbose;
 
-int linenum = 1;
+// use this instead of yylineno in action of patterns that matches newline
+// since yylineno is already advanced when referenced
+#define YYLINENO (yylineno - 1)
 
 // records the line content along with the recognition
 char line[MAX_LINE_LENG];
@@ -618,12 +621,12 @@ char line[MAX_LINE_LENG];
 // no longer than a single line
 char string[MAX_LINE_LENG];
 
-#line 622 "src/st-lex.c"
+#line 625 "src/st-lex.c"
 
-#line 41 "src/st.l"
+#line 45 "src/st.l"
   /* operators that have multiple characters */
   /* not supporting optional integer / fractional part */
-#line 627 "src/st-lex.c"
+#line 630 "src/st-lex.c"
 
 #define INITIAL 0
 #define STRING 1
@@ -841,13 +844,13 @@ YY_DECL
 		}
 
 	{
-#line 59 "src/st.l"
+#line 63 "src/st.l"
 
 
   /*
    * Multiple-character operators
    */
-#line 851 "src/st-lex.c"
+#line 854 "src/st-lex.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -916,7 +919,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 64 "src/st.l"
+#line 68 "src/st.l"
 {
   /* NE has common prefix with NOT but has higher priority */
   TOKEN(NE);
@@ -924,37 +927,37 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 68 "src/st.l"
+#line 72 "src/st.l"
 TOKEN(AND);
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 69 "src/st.l"
+#line 73 "src/st.l"
 TOKEN(OR);
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 70 "src/st.l"
+#line 74 "src/st.l"
 TOKEN(MOD);
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 71 "src/st.l"
+#line 75 "src/st.l"
 TOKEN(LE);
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 72 "src/st.l"
+#line 76 "src/st.l"
 TOKEN(GE);
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 73 "src/st.l"
+#line 77 "src/st.l"
 TOKEN(NOT);
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 74 "src/st.l"
+#line 78 "src/st.l"
 TOKEN(ASSIGN);
 	YY_BREAK
 /*
@@ -962,52 +965,52 @@ TOKEN(ASSIGN);
    */
 case 9:
 YY_RULE_SETUP
-#line 79 "src/st.l"
+#line 83 "src/st.l"
 TOKEN('.');
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 80 "src/st.l"
+#line 84 "src/st.l"
 TOKEN(',');
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 81 "src/st.l"
+#line 85 "src/st.l"
 TOKEN(':');
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 82 "src/st.l"
+#line 86 "src/st.l"
 TOKEN(';');
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 83 "src/st.l"
+#line 87 "src/st.l"
 TOKEN('(');
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 84 "src/st.l"
+#line 88 "src/st.l"
 TOKEN(')');
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 85 "src/st.l"
+#line 89 "src/st.l"
 TOKEN('[');
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 86 "src/st.l"
+#line 90 "src/st.l"
 TOKEN(']');
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 87 "src/st.l"
+#line 91 "src/st.l"
 TOKEN('{');
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 88 "src/st.l"
+#line 92 "src/st.l"
 TOKEN('}');
 	YY_BREAK
 /*
@@ -1015,37 +1018,37 @@ TOKEN('}');
    */
 case 19:
 YY_RULE_SETUP
-#line 93 "src/st.l"
+#line 97 "src/st.l"
 TOKEN('+');
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 94 "src/st.l"
+#line 98 "src/st.l"
 TOKEN('-');
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 95 "src/st.l"
+#line 99 "src/st.l"
 TOKEN('*');
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 96 "src/st.l"
+#line 100 "src/st.l"
 TOKEN('/');
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 97 "src/st.l"
+#line 101 "src/st.l"
 TOKEN('<');
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 98 "src/st.l"
+#line 102 "src/st.l"
 TOKEN('>');
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 99 "src/st.l"
+#line 103 "src/st.l"
 TOKEN('=');
 	YY_BREAK
 /*
@@ -1053,16 +1056,16 @@ TOKEN('=');
    */
 case 26:
 YY_RULE_SETUP
-#line 104 "src/st.l"
+#line 108 "src/st.l"
 RECORD_LINE;
 	YY_BREAK
 case 27:
 /* rule 27 can match eol */
 YY_RULE_SETUP
-#line 105 "src/st.l"
+#line 109 "src/st.l"
 {
   RECORD_LINE;
-  VERBOSE_PRINTF("%d: %s", linenum++, line);
+  VERBOSE_PRINTF("%d: %s", YYLINENO, line);
   CLEAR_LINE;
 }
 	YY_BREAK
@@ -1071,152 +1074,152 @@ YY_RULE_SETUP
    */
 case 28:
 YY_RULE_SETUP
-#line 114 "src/st.l"
+#line 118 "src/st.l"
 TOKEN(ARRAY);
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 115 "src/st.l"
+#line 119 "src/st.l"
 TOKEN(BEGIN_);
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 116 "src/st.l"
+#line 120 "src/st.l"
 TOKEN(BOOL);
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 117 "src/st.l"
+#line 121 "src/st.l"
 TOKEN(CHAR);
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 118 "src/st.l"
+#line 122 "src/st.l"
 TOKEN(CONST);
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 119 "src/st.l"
+#line 123 "src/st.l"
 TOKEN(DECREASING);
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 120 "src/st.l"
+#line 124 "src/st.l"
 TOKEN(DEFAULT);
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 121 "src/st.l"
+#line 125 "src/st.l"
 TOKEN(DO);
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 122 "src/st.l"
+#line 126 "src/st.l"
 TOKEN(ELSE);
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 123 "src/st.l"
+#line 127 "src/st.l"
 TOKEN(END);
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 124 "src/st.l"
+#line 128 "src/st.l"
 TOKEN(EXIT);
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 125 "src/st.l"
+#line 129 "src/st.l"
 TOKEN(FALSE);
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 126 "src/st.l"
+#line 130 "src/st.l"
 TOKEN(FOR);
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 127 "src/st.l"
+#line 131 "src/st.l"
 TOKEN(FUNCTION);
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 128 "src/st.l"
+#line 132 "src/st.l"
 TOKEN(GET);
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 129 "src/st.l"
+#line 133 "src/st.l"
 TOKEN(IF);
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 130 "src/st.l"
+#line 134 "src/st.l"
 TOKEN(INT);
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 131 "src/st.l"
+#line 135 "src/st.l"
 TOKEN(LOOP);
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 132 "src/st.l"
+#line 136 "src/st.l"
 TOKEN(OF);
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 133 "src/st.l"
+#line 137 "src/st.l"
 TOKEN(PUT);
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 134 "src/st.l"
+#line 138 "src/st.l"
 TOKEN(PROCEDURE);
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 135 "src/st.l"
+#line 139 "src/st.l"
 TOKEN(REAL);
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 136 "src/st.l"
+#line 140 "src/st.l"
 TOKEN(RESULT);
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 137 "src/st.l"
+#line 141 "src/st.l"
 TOKEN(RETURN);
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 138 "src/st.l"
+#line 142 "src/st.l"
 TOKEN(SKIP);
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 139 "src/st.l"
+#line 143 "src/st.l"
 TOKEN(STRING);
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 140 "src/st.l"
+#line 144 "src/st.l"
 TOKEN(THEN);
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 141 "src/st.l"
+#line 145 "src/st.l"
 TOKEN(TRUE);
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 142 "src/st.l"
+#line 146 "src/st.l"
 TOKEN(VAR);
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 143 "src/st.l"
+#line 147 "src/st.l"
 TOKEN(WHEN);
 	YY_BREAK
 /*
@@ -1224,7 +1227,7 @@ TOKEN(WHEN);
    */
 case 58:
 YY_RULE_SETUP
-#line 148 "src/st.l"
+#line 152 "src/st.l"
 {
   yylval.int_const = atoi(yytext);
   TOKEN_INTEGER();
@@ -1232,7 +1235,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 152 "src/st.l"
+#line 156 "src/st.l"
 {
   yylval.real_const = atof(yytext);
   TOKEN_REAL();
@@ -1243,7 +1246,7 @@ YY_RULE_SETUP
    */
 case 60:
 YY_RULE_SETUP
-#line 160 "src/st.l"
+#line 164 "src/st.l"
 {
   yylval.symbol = symtab_insert(symtab, yytext);
   TOKEN_IDENTIFIER();
@@ -1254,7 +1257,7 @@ YY_RULE_SETUP
    */
 case 61:
 YY_RULE_SETUP
-#line 168 "src/st.l"
+#line 172 "src/st.l"
 {
   BEGIN(STRING);
   RECORD_LINE;
@@ -1262,7 +1265,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 172 "src/st.l"
+#line 176 "src/st.l"
 {
   RECORD_LINE;
   strcat(string, "\"");
@@ -1270,7 +1273,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 176 "src/st.l"
+#line 180 "src/st.l"
 {
   strncpy(yylval.str_const, string, MAX_LINE_LENG - strlen(string) - 1);
   string[0] = '\0';
@@ -1281,17 +1284,17 @@ YY_RULE_SETUP
 case 64:
 /* rule 64 can match eol */
 YY_RULE_SETUP
-#line 182 "src/st.l"
+#line 186 "src/st.l"
 {
   RECORD_LINE;
-  printf("%d: %s", linenum, line);
+  printf("%d: %s", YYLINENO, line);
   puts("EOL in string");
   exit(-1);
 }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 188 "src/st.l"
+#line 192 "src/st.l"
 {
   RECORD_LINE;
   strcat(string, yytext);
@@ -1302,7 +1305,7 @@ YY_RULE_SETUP
    */
 case 66:
 YY_RULE_SETUP
-#line 196 "src/st.l"
+#line 200 "src/st.l"
 {
   BEGIN(COMMENT);
   RECORD_LINE;
@@ -1311,17 +1314,17 @@ YY_RULE_SETUP
 case 67:
 /* rule 67 can match eol */
 YY_RULE_SETUP
-#line 200 "src/st.l"
+#line 204 "src/st.l"
 {
   RECORD_LINE;
-  VERBOSE_PRINTF("%d: %s", linenum++, line);
+  VERBOSE_PRINTF("%d: %s", YYLINENO, line);
   CLEAR_LINE;
   BEGIN(INITIAL);
 }
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 206 "src/st.l"
+#line 210 "src/st.l"
 RECORD_LINE;
 	YY_BREAK
 /*
@@ -1329,7 +1332,7 @@ RECORD_LINE;
    */
 case 69:
 YY_RULE_SETUP
-#line 211 "src/st.l"
+#line 215 "src/st.l"
 {
   BEGIN(BLOCK_COMMENT);
   RECORD_LINE;
@@ -1337,7 +1340,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 215 "src/st.l"
+#line 219 "src/st.l"
 {
   RECORD_LINE;
   BEGIN(INITIAL);
@@ -1346,16 +1349,16 @@ YY_RULE_SETUP
 case 71:
 /* rule 71 can match eol */
 YY_RULE_SETUP
-#line 219 "src/st.l"
+#line 223 "src/st.l"
 {
   RECORD_LINE;
-  VERBOSE_PRINTF("%d: %s", linenum++, line);
+  VERBOSE_PRINTF("%d: %s", YYLINENO, line);
   CLEAR_LINE;
 }
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 224 "src/st.l"
+#line 228 "src/st.l"
 RECORD_LINE;
 	YY_BREAK
 /*
@@ -1364,20 +1367,20 @@ RECORD_LINE;
 /* a all-match pattern with the lowest priority, which catches all the errors */
 case 73:
 YY_RULE_SETUP
-#line 230 "src/st.l"
+#line 234 "src/st.l"
 {
   RECORD_LINE;
-  printf("%d:%s\n", linenum + 1, line);
+  printf("%d:%s\n", yylineno, line);
   printf("bad character:'%s'\n", yytext);
   exit(-1);
 }
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 237 "src/st.l"
+#line 241 "src/st.l"
 ECHO;
 	YY_BREAK
-#line 1381 "src/st-lex.c"
+#line 1384 "src/st-lex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(STRING):
 case YY_STATE_EOF(COMMENT):
@@ -2356,6 +2359,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 237 "src/st.l"
+#line 241 "src/st.l"
 
 
