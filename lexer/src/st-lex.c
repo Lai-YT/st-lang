@@ -629,7 +629,7 @@ char string[MAX_LINE_LENG];
 #line 630 "src/st-lex.c"
 
 #define INITIAL 0
-#define STRING 1
+#define STRING_ 1
 #define COMMENT 2
 #define BLOCK_COMMENT 3
 
@@ -1259,7 +1259,7 @@ case 61:
 YY_RULE_SETUP
 #line 172 "src/st.l"
 {
-  BEGIN(STRING);
+  BEGIN(STRING_);
   RECORD_LINE;
 }
 	YY_BREAK
@@ -1382,7 +1382,7 @@ ECHO;
 	YY_BREAK
 #line 1384 "src/st-lex.c"
 case YY_STATE_EOF(INITIAL):
-case YY_STATE_EOF(STRING):
+case YY_STATE_EOF(STRING_):
 case YY_STATE_EOF(COMMENT):
 case YY_STATE_EOF(BLOCK_COMMENT):
 	yyterminate();
