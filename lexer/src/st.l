@@ -157,7 +157,7 @@ when        TOKEN(WHEN);
    * Identifiers
    */
 {ID} {
-  yylval.symbol = symtab_insert(symtab, yytext, NO_TYPE);
+  yylval.symbol = symtab_insert(symtab, yytext);
   TOKEN_IDENTIFIER();
 }
 
