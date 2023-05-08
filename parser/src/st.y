@@ -7,10 +7,12 @@
 
   #define TRACE(...)  fprintf(stderr, __VA_ARGS__)
 
-  void yyerror(char *s);        /*  defined below; called for each parse error */
+  void yyerror(const char *s);  /*  defined below; called for each parse error */
   extern int yylex();           /*  the entry point to the lexer  */
+  extern int yylineno;
+  extern char yytext[];
 %}
-
+%define parse.error detailed
 %union {
   Symbol symbol;
   char str_const[256];
@@ -128,6 +130,6 @@ expr:
 
 %%
 
-void yyerror(char *msg) {
-  fprintf(stderr, "%s\n", msg);
+void yyerror(const char *msg) {
+  fprintf(stderr, "line %d on symbol '%s': %s\n", yylineno, yytext, msg);
 }
