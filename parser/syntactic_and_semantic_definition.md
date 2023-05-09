@@ -10,10 +10,10 @@ Terminals are given in **boldface**. Non-terminals are given in _italics_.
 ## Table of Contents
 
 - [Programs](#programs)
+  - [Subprogram Declarations](#subprogram-declarations)
 - [Declarations](#declarations)
   - [Constant Declarations](#constant-declarations)
   - [Variable Declarations](#variable-declarations)
-  - [Subprogram Declarations](#subprogram-declarations)
 - [Types](#types)
   - [Scalar Types](#scalar-types)
   - [Array Types](#array-types)
@@ -41,68 +41,11 @@ Terminals are given in **boldface**. Non-terminals are given in _italics_.
 
 A _program_ consists of a sequence of declarations and statements.
 
-- { [ _[declaration](#declarations)_ ] [ _[statement](#statements)_ ] }
+- { [ _[declaration](#declarations)_ ] [ _[statement](#statements)_ ] [ *[subprogram_decl](#subprogram-declarations)* ] }
 
 > **Note**
-> An empty program is a valid program.
-
-## Declarations
-
-A _declaration_ is one of the following:
-
-- *[constant_declaration](#constant-declarations)*
-- *[variable_declaration](#variable-declarations)*
-- *[subprogram_declaration](#subprogram-declarations)*
-
-Each of these declarations creates a new identifier; each new identifier must be distinct from other visible identifiers. That is, re-declaration of visible identifiers is not allowed.
-The effect of the declaration (its scope) lasts to the end of the construct in which the declaration occurs.
-This will be the end of the _program_, the end of a _[subprogram](#subprogram-declarations)_, the end of a _[block](#blocks)_, the end of a *[loop_statement](#loop-statements)* or *[for_statement](#for-statements)*, or the end of a **then**, **else** clause of an *[if_statement](#if-statements)*.
-
-### Constant Declarations
-
-A *constant_declaration* is:
-
-- **const** **id** [ **:** *[scalar_type](#scalar-types)* ] **:=** _[expr](#expressions)_
-
-Examples:
-
-```turing
-const c := 3           % The type of c is int
-const s := "Hello"     % The type of s is string
-const x := sin(y) * 2  % The type of x is real
-```
-
-A *constant_declaration* introduces a name whose value is constant throughout the scope of the declaration. \
-If the *[scalar_type](#scalar-types)* is omitted, the type of the constant is taken to be the type of the expression, which must not be a dynamic array.
-An initializing _[expr](#expressions)_ may be a compile-time or run-time expression (but not a dynamic array), and must be equivalent to the constant's type.
-Named non-scalar values are always considered to be run-time values.
-
-### Variable Declarations
-
-A **variable_declaration** is one of:
-
-1. **var** **id** **:=** _[expr](#expressions)_
-2. **var** **id** **:** *[array_type](#array-types)*
-3. **var** **id** **:** *[scalar_type](#scalar-types)* [ **:=** _expr_ ]
-
-Examples:
-
-```turing
-var i: int := 1          % i is assigned with initial value 1
-var s := "sample output" % The type of s is string
-```
-
-A **variable_declaration** creates a new variable. \
-In form (1), the variable's type is taken to be the type of the _expr_; this type must not be a dynamic array.
-Form (2) allows the declaration of dynamic arrays, whose upper bounds are run-time expressions. However, the lower bounds are constrained to be compile-time expressions.
-Given that `n` is a variable, here is an example of the declaration of a dynamic array:
-
-```turing
-var w: array 1..n, 1..n of real
-```
-
-Run-time bounds are only allowed as illustrated in this example, i.e., as the upper bounds of an array declared using form (2).
-Each upper bound must be at least as large as its corresponding lower bound. A array cannot be initialized in its declaration.
+> 1. An empty program is a valid program.
+> 2. Subprograms can only be declared on the program level. This is why it's not one of the _declaration_.
 
 ### Subprogram Declarations
 
@@ -159,9 +102,67 @@ procedure increaseGlobalCount
 
 A *subprogram_body* is:
 
-- { [ *constant_declaration* ] [ *variable_declaration* ] [ _[statement](#statements)_ ] }
+- { [ _[declaration](#declarations)_ ] [ _[statement](#statements)_ ] }
 
 A procedure may return explicitly by executing a **return** statement or implicitly by reaching the end of the procedure body. Execution of a function must conclude by executing a **result** statement and not by reaching the end of the function.
+
+## Declarations
+
+A _declaration_ is one of the following:
+
+- *[constant_declaration](#constant-declarations)*
+- *[variable_declaration](#variable-declarations)*
+
+Each of these declarations, including *[subprogram_declaration](#subprogram-declarations)*, creates a new identifier; each new identifier must be distinct from other visible identifiers. That is, re-declaration of visible identifiers is not allowed.
+
+The effect of the declaration (its scope) lasts to the end of the construct in which the declaration occurs.
+This will be the end of the _program_, the end of a _[subprogram](#subprogram-declarations)_, the end of a _[block](#blocks)_, the end of a *[loop_statement](#loop-statements)* or *[for_statement](#for-statements)*, or the end of a **then**, **else** clause of an *[if_statement](#if-statements)*.
+
+### Constant Declarations
+
+A *constant_declaration* is:
+
+- **const** **id** [ **:** *[scalar_type](#scalar-types)* ] **:=** _[expr](#expressions)_
+
+Examples:
+
+```turing
+const c := 3           % The type of c is int
+const s := "Hello"     % The type of s is string
+const x := sin(y) * 2  % The type of x is real
+```
+
+A *constant_declaration* introduces a name whose value is constant throughout the scope of the declaration. \
+If the *[scalar_type](#scalar-types)* is omitted, the type of the constant is taken to be the type of the expression, which must not be a dynamic array.
+An initializing _[expr](#expressions)_ may be a compile-time or run-time expression (but not a dynamic array), and must be equivalent to the constant's type.
+Named non-scalar values are always considered to be run-time values.
+
+### Variable Declarations
+
+A **variable_declaration** is one of:
+
+1. **var** **id** **:=** _[expr](#expressions)_
+2. **var** **id** **:** *[array_type](#array-types)*
+3. **var** **id** **:** *[scalar_type](#scalar-types)* [ **:=** _expr_ ]
+
+Examples:
+
+```turing
+var i: int := 1          % i is assigned with initial value 1
+var s := "sample output" % The type of s is string
+```
+
+A **variable_declaration** creates a new variable. \
+In form (1), the variable's type is taken to be the type of the _expr_; this type must not be a dynamic array.
+Form (2) allows the declaration of dynamic arrays, whose upper bounds are run-time expressions. However, the lower bounds are constrained to be compile-time expressions.
+Given that `n` is a variable, here is an example of the declaration of a dynamic array:
+
+```turing
+var w: array 1..n, 1..n of real
+```
+
+Run-time bounds are only allowed as illustrated in this example, i.e., as the upper bounds of an array declared using form (2).
+Each upper bound must be at least as large as its corresponding lower bound. A array cannot be initialized in its declaration.
 
 ## Types
 
@@ -251,8 +252,8 @@ Each _expr_ must have type equivalent to the corresponding formal parameter of t
 An *if_statement* is:
 
 - **if** *[bool_expr](#boolean-expressions)* **then** \
-{ [ *[constant_declaration](#constant-declarations)* ] [ *[variable_declaration](#variable-declarations)* ] [ _statement_ ] } \
-[ **else** { [ *constant_declaration* ] [ *variable_declaration* ] [ _statement_ ] } ] \
+{ [ _[declaration](#declarations)_ ] [ _statement_ ] } \
+[ **else** { [ _declaration_ ] [ _statement_ ] } ] \
 **end** **if**
 
 > **Note**
@@ -263,7 +264,7 @@ An *if_statement* is:
 A *loop_statement* is:
 
 - **loop** \
-{ [ *[constant_declaration](#constant-declarations)* ] [ *[variable_declaration](#variable-declarations)* ] [ _statement_ ] } \
+{ [ _[declaration](#declarations)_ ] [ _statement_ ] } \
 **end** **loop**
 
 The statements within the loop are repeated until terminated by one of its **exit** statements or an enclosed **return** or **result** statement.
@@ -273,7 +274,7 @@ The statements within the loop are repeated until terminated by one of its **exi
 A *for_statement* is:
 
 - **for** [ **decreasing** ] **:** _expr_ **..** _expr_ \
-{ [ *[constant_declaration](#constant-declarations)* ] [ *[variable_declaration](#variable-declarations)* ] [ _statement_ ] } \
+{ [ _[declaration](#declarations)_ ] [ _statement_ ] } \
 **end** **for**
 
 The statements enclosed in the *for_statement* are repeated for the specified range, or until the for loop is terminated by one of its **exit** statements or an enclosed **return** or **result** statement.
@@ -300,7 +301,7 @@ end for
 A _block_ is:
 
 - **begin** \
-{ [ *[constant_declaration](#constant-declarations)* ] [ *[variable_declaration](#variable-declarations)* ] [ _statement_ ] } \
+{ [ _[declaration](#declarations)_ ] [ _statement_ ] } \
 **end**
 
 It can be used to limit the scope of declarations.
