@@ -34,7 +34,7 @@
 %type program decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
 %type array_type scalar_type type const_decl explicit_const bool_const
 %type subscript_list subscript subprog_decl subprog_header subprog_body
-%type formal_decl_list formal_decl formal_type
+%type formal_decl_list formal_decl formal_type subprog_call actual_list
 
 %%
 program:
@@ -71,6 +71,8 @@ decl:
 stmt:
   var_ref ASSIGN expr
   { TRACE("var_ref := expr\n"); }
+| subprog_call
+  { TRACE("subprogram call\n"); }
 | RETURN
   { TRACE("return\n"); }
 | RESULT expr
@@ -147,6 +149,20 @@ formal_type:
   { TRACE("array of string(*)\n"); }
 ;
 
+subprog_call:
+  ID
+  { TRACE("%s\n", $1->name); }
+| ID '(' actual_list ')'
+  { TRACE("%s()\n", $1->name); }
+;
+
+actual_list:
+  actual_list ',' expr
+  { ; }
+| expr
+  { ; }
+;
+
 scalar_type:
   INT
   { TRACE("int\n"); }
@@ -197,6 +213,16 @@ expr:
   { TRACE("expression\n"); }
 | explicit_const
   { TRACE("explicit constant\n"); }
+  /*
+   * Here a hack on the ambiguous grammar:
+   *  Since an variable reference and a subprogram call may both be a single ID,
+   *  directly placing a subprog_call non-terminal here causes a reduce/reduce conflict.
+   *  The workaround is the put the rules of subprog_call except ID here.
+   *  This implies that a subprog_call with ID is treated as an var_ref and
+   *  should be resolved further semantically.
+   */
+| ID '(' actual_list ')'
+  { TRACE("subprogram call\n"); }
 ;
 
 explicit_const:
