@@ -31,31 +31,36 @@
 %token <real_const> REAL_CONST 291
 %token AND 292 OR 293 MOD 294 LE 295 GE 296 NOT 297 ASSIGN 298 NE 299
 
-%type program decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
+%type program decl_or_stmt_in_main_program_list decl_or_stmt_in_main_program
+%type decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
 %type array_type scalar_type type const_decl explicit_const bool_const
 %type subscript_list subscript subprog_decl subprog_header subprog_body
 %type formal_decl_list formal_decl formal_type subprog_call actual_list
 
 %%
 program:
-  decl_or_stmt_list
+  decl_or_stmt_in_main_program_list
   { TRACE("[program]\n"); }
 | /* empty */
   { TRACE("empty program\n"); }
 ;
 
-decl_or_stmt_list:
-  decl_or_stmt_list decl_or_stmt
+decl_or_stmt_in_main_program_list:
+  decl_or_stmt_in_main_program_list decl_or_stmt_in_main_program
   { ; }
-| decl_or_stmt
+| decl_or_stmt_in_main_program
   { ; }
 ;
 
-decl_or_stmt:
-  decl
-  { TRACE("declaration\n\n"); }
-| stmt
-  { TRACE("statement\n\n"); }
+  /*
+   * subprog_decl can only appear in the main program level.
+   * Separate it from normal decl_or_stmt.
+   */
+decl_or_stmt_in_main_program:
+  decl_or_stmt
+  { ; }
+| subprog_decl
+  { TRACE("subprogram declaration\n\n"); }
 ;
 
 decl:
@@ -63,8 +68,6 @@ decl:
   { TRACE("variable declaration\n"); }
 | const_decl
   { TRACE("constant declaration\n"); }
-| subprog_decl
-  { TRACE("subprogram declaration\n"); }
 ;
 
   /* TODO */
@@ -114,14 +117,24 @@ subprog_header:
 ;
 
 subprog_body:
-  subprog_body const_decl
-  { ; }
-| subprog_body var_decl
-  { ; }
-| subprog_body stmt
+  decl_or_stmt_list
   { ; }
 | /* empty */
   { ; }
+;
+
+decl_or_stmt_list:
+  decl_or_stmt_list decl_or_stmt
+  {}
+| decl_or_stmt
+  {}
+;
+
+decl_or_stmt:
+  decl
+  { TRACE("declaration\n\n"); }
+| stmt
+  { TRACE("declaration\n\n"); }
 ;
 
 formal_decl_list:
