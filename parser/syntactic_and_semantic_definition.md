@@ -401,13 +401,13 @@ All *binary_op*s are left associative, and all *unary_op*s are right associative
 
 A *bool_expr* is an _expr_ whose value is `true` or `false`.
 
-1. **id**
+1. *[var_ref](#variable-references)*
 2. **bool_const**
 3. *bool_expr* *binary_op* *bool_expr*
 4. **not** *bool_expr*
 5. **(** *bool_expr* **)**
 
-In form (1), the **id** must be a name reference of `bool` type.
+In form (1), such reference must be `bool` type.
 In form (3) *binary_op* can only be one of the [comparison operators](#comparison-operators) or [boolean operators](#boolean-operators).
 
 ### Explicit Constants
