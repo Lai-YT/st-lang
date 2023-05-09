@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "handle_flags.h"
 #include "symtab.h"
 
 // the symbol table used in the lexer
@@ -9,13 +10,10 @@ extern FILE* yyin;
 extern int yyparse();
 
 int main(int argc, char* argv[]) {
-  if (argc != 2) {
-    fprintf(stderr, "usage: %s FILE\n", argv[0]);
-    return 1;
-  }
+  handle_flags(argc, argv);
 
   /* open the source program file */
-  yyin = fopen(argv[1], "r"); /* open input file */
+  yyin = fopen(input_filename, "r"); /* open input file */
   if (!yyin) {
     fprintf(stderr, "error: could not open input file %s\n", argv[1]);
     return 1;
