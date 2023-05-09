@@ -140,10 +140,11 @@ A *parameter_type* is one of:
 
 1. _[type](#types)_
 2. **string** **(** __*__ **)**
-3. **array** _[expr](#expressions)_ **..** __*__ **of** *parameter_type*
+3. **array** _[expr](#expressions)_ **..** __*__ **of** _type_
+4. **array** _expr_ **..** __*__ **of** **string** **(** __*__ **)**
 
 In form (2), the maximum length of a dynamic string is declared as `*`, it inherits the size of its actual parameter.
-In form (3), the _expr_ at the lower bound must be a [compile-time expression](#compile-time-expressions); the upper bound of a dynamic array are declared as `*`, in which case any array whose lower bound are equivalent to the parameter's can be passed to the parameter.
+In form (3) and (4), the _expr_ at the lower bound must be a [compile-time expression](#compile-time-expressions); the upper bound of a dynamic array are declared as `*`, in which case any array whose lower bound are equivalent to the parameter's can be passed to the parameter.
 
 > **Note**
 > For a multi-dimensional array, only the upper bound of the first dimension may be declared as `*`.
@@ -184,11 +185,11 @@ The optional _expr_ in a `string` type must be a [compile-time expression](#comp
 
 An *array_type* is:
 
-- **array** _expr_ **..** _expr_ **of** _type_
+- **array** _[expr](#expressions)_ **..** _expr_ **of** _[type](#types)_
 
 Variables and parameters can be declared to be dynamic arrays, with runtime upper bounds.
 
-The two *[expr](#expressions)*s give the lower and upper bounds of the range of values of the type. The two *expr*s must be both `int`s.
+The two *expr*s give the lower and upper bounds of the range of values of the type. The two *expr*s must be both `int`s.
 The lower bound must be less than or equal to the upper bound. The first _expr_ must be a [compile-time expression](#compile-time-expressions). The second _expr_ must be a compile-time expression as also except when it gives the upper bound of a dynamic array being defined in a *[variable_declaration](#variable-declarations)*.
 
 To have a multi-dimensional array, declare an array with *array_type*, but only the upper bound of the first dimension may be a run-time expression. \
