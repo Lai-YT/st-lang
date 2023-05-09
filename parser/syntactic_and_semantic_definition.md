@@ -159,7 +159,7 @@ procedure increaseGlobalCount
 
 A *subprogram_body* is:
 
-- { [ *constant_declaration* ] [ *variable_declaration* ] } _statement_ { _statement_ }
+- { [ *constant_declaration* ] [ *variable_declaration* ] [ _[statement](#statements)_ ] }
 
 A procedure may return explicitly by executing a **return** statement or implicitly by reaching the end of the procedure body. Execution of a function must conclude by executing a **result** statement and not by reaching the end of the function.
 
