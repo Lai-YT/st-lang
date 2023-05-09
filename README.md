@@ -56,6 +56,7 @@ You will then be taken into the container. Here you have all the tools you need,
 |:-------|:----:|:--------:|
 | block comment | `{% ... %}` | `/* ... */`
 | escaped quote | `""` | `\"` |
+| boolean datatype | `bool` | `boolean` |
 
 ## Resources
 
