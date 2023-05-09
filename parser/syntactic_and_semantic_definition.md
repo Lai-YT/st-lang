@@ -352,13 +352,15 @@ An _expr_ is one of the following:
 
 1. *[variable_reference](#variable-references)*
 2. *[explicit_const](#explicit-constants)*
-3. _[substring](#substrings)_
-4. _expr_ *binary_op* _expr_
-5. *unary_op* _expr_
-6. **(** _expr_ **)**
+3. *[subprogram_call](#subprogram-calls)*
+4. _[substring](#substrings)_
+5. _expr_ *binary_op* _expr_
+6. *unary_op* _expr_
+7. **(** _expr_ **)**
 
-Form (2) includes explicit `bool`, `int`, `real` and `string` constants.
-In form (4), a *binary_op* is one of:
+Form (2) includes explicit `bool`, `int`, `real` and `string` constants; form (3) only allows function calls, which have result values.
+
+In form (5), a *binary_op* is one of:
 
 1. **+** (`int` and `real` addition; `string` concatenation)
 2. **-** (`int` and `real` subtraction)
