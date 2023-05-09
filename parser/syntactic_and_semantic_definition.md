@@ -377,7 +377,7 @@ In form (5), a *binary_op* is one of:
 12. **and** (`bool` conjunction)
 13. **or** (`bool` inclusive or)
 
-(1) ~ (5) are [numeric operators](#numeric-operators); (1) can also be a [string operator](#string-operators); (6) ~ (10) are [comparison operators](#comparison-operators); (11) ~ (13) are [boolean operators](#boolean-operators).
+(1) ~ (5) are [numeric operators](#numeric-operators); (1) can also be a [string operator](#string-operators); (6) ~ (11) are [comparison operators](#comparison-operators); (12) ~ (13) are [boolean operators](#boolean-operators).
 
 In form (5), an *unary_op* is one of:
 
