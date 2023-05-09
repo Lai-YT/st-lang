@@ -33,6 +33,7 @@
 
 %type program decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
 %type array_type scalar_type type const_decl explicit_const bool_const
+%type subscript_list subscript
 
 
 %%
@@ -67,8 +68,8 @@ decl:
 
   /* TODO */
 stmt:
-  var_ref
-  { TRACE("variable reference\n"); }
+  var_ref ASSIGN expr
+  { TRACE("var_ref := expr\n"); }
 ;
 
 var_decl:
@@ -114,10 +115,23 @@ type:
   { TRACE("array_type\n"); }
 ;
 
-  /* TODO */
 var_ref:
   ID
   { TRACE("%s\n", $1->name); }
+| ID subscript_list
+  { TRACE("%s", $1->name); }
+;
+
+subscript_list:
+  subscript_list subscript
+  { ; }
+| subscript
+  { ; }
+;
+
+subscript:
+  '[' expr ']'
+  { TRACE("[]\n"); }
 ;
 
   /* TODO */
