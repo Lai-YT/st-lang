@@ -35,7 +35,8 @@
 %type decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
 %type array_type scalar_type type const_decl explicit_const bool_const
 %type subscript_list subscript subprog_decl subprog_header subprog_body
-%type formal_decl_list formal_decl formal_type subprog_call actual_list
+%type formal_decl_list formal_decl formal_type subprog_call actual_list if_stmt
+%type bool_expr
 
 %%
 program:
@@ -80,6 +81,8 @@ stmt:
   { TRACE("return\n"); }
 | RESULT expr
   { TRACE("result expr\n"); }
+| if_stmt
+  { TRACE("if statement\n"); }
 ;
 
 var_decl:
@@ -134,7 +137,7 @@ decl_or_stmt:
   decl
   { TRACE("declaration\n\n"); }
 | stmt
-  { TRACE("declaration\n\n"); }
+  { TRACE("statement\n\n"); }
 ;
 
 formal_decl_list:
@@ -174,6 +177,19 @@ actual_list:
   { ; }
 | expr
   { ; }
+;
+
+if_stmt:
+  IF bool_expr THEN decl_or_stmt_list END IF
+  { TRACE("if-then\n"); }
+| IF bool_expr THEN decl_or_stmt_list ELSE decl_or_stmt_list END IF
+  { TRACE("if-then-else\n"); }
+;
+
+  /* TODO */
+bool_expr:
+  bool_const
+  { TRACE("bool\n"); }
 ;
 
 scalar_type:
