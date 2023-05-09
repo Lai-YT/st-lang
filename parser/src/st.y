@@ -33,8 +33,8 @@
 
 %type program decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
 %type array_type scalar_type type const_decl explicit_const bool_const
-%type subscript_list subscript
-
+%type subscript_list subscript subprog_decl subprog_header subprog_body
+%type formal_decl_list formal_decl formal_type
 
 %%
 program:
@@ -58,18 +58,23 @@ decl_or_stmt:
   { TRACE("statement\n\n"); }
 ;
 
-  /* TODO */
 decl:
   var_decl
   { TRACE("variable declaration\n"); }
 | const_decl
   { TRACE("constant declaration\n"); }
+| subprog_decl
+  { TRACE("subprogram declaration\n"); }
 ;
 
   /* TODO */
 stmt:
   var_ref ASSIGN expr
   { TRACE("var_ref := expr\n"); }
+| RETURN
+  { TRACE("return\n"); }
+| RESULT expr
+  { TRACE("result expr\n"); }
 ;
 
 var_decl:
@@ -88,6 +93,58 @@ const_decl:
   { TRACE("const %s = expr\n", $2->name); }
 | CONST ID ':' scalar_type ASSIGN expr
   { TRACE("const %s: scalar_type := expr\n", $2->name); }
+;
+
+subprog_decl:
+  subprog_header subprog_body END ID
+  { ; }
+;
+
+subprog_header:
+  PROCEDURE ID
+  { TRACE("procedure %s with no param\n", $2->name); }
+| PROCEDURE ID '(' formal_decl_list ')'
+  { TRACE("procedure %s with params\n", $2->name); }
+| FUNCTION ID ':' type
+  { TRACE("procedure %s: type with no param\n", $2->name); }
+| FUNCTION ID '(' formal_decl_list ')' ':' type
+  { TRACE("procedure %s: type with params\n", $2->name); }
+;
+
+subprog_body:
+  subprog_body const_decl
+  { ; }
+| subprog_body var_decl
+  { ; }
+| subprog_body stmt
+  { ; }
+| /* empty */
+  { ; }
+;
+
+formal_decl_list:
+  formal_decl_list ',' formal_decl
+  { ; }
+| formal_decl
+  { ; }
+;
+
+formal_decl:
+  ID ':' formal_type
+  { TRACE("%s: formal_type\n", $1->name); }
+| VAR ID ':' formal_type
+  { TRACE("var %s: formal_type\n", $2->name); }
+;
+
+formal_type:
+  type
+  { TRACE("type\n"); }
+| STRING '(' '*' ')'
+  { TRACE("string(*)\n"); }
+| ARRAY expr '.' '.' '*' OF type
+  { TRACE("array of type\n"); }
+| ARRAY expr '.' '.' '*' OF STRING '(' '*' ')'
+  { TRACE("array of string(*)\n"); }
 ;
 
 scalar_type:
