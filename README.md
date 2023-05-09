@@ -56,6 +56,7 @@ You will then be taken into the container. Here you have all the tools you need,
 |:-------|:----:|:--------:|
 | block comment | `{% ... %}` | `/* ... */`
 | escaped quote | `""` | `\"` |
+| boolean datatype | `bool` | `boolean` |
 | array subscript | `arr[1]` | `arr(1)` |
 | substring | `str[1 .. 2]` | `str(1 .. 2)` |
 | function | may have side effects | may NOT have side effects |
