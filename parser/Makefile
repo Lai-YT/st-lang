@@ -4,7 +4,7 @@ CC := gcc
 YSRC := src/st.y
 CGEN := src/st-parse.c
 YACC := bison
-YFLAGS := -v -t -o $(CGEN) # -y # for better error message, no POSIX Yacc compatibility
+YFLAGS := -v -t -rcex -o $(CGEN) # -y # for better error message, no POSIX Yacc compatibility
 BUILD_DIR := build
 BUILD_TYPE := Release
 
