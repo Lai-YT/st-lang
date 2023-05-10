@@ -36,16 +36,20 @@
 %type array_type scalar_type type const_decl explicit_const bool_const
 %type subscript_list subscript subprog_decl subprog_header subprog_body
 %type formal_decl_list formal_decl formal_type subprog_call actual_list if_stmt
-%type bool_expr operation
+%type bool_expr operation numeric_operation comparison_operation boolean_operation
+%type sign_operation
 
   /* lowest to highest */
 %left OR
 %left AND
 %right NOT
+%left BOOLEAN_OP
 %left '<' '>' '=' LE GE NE
+%left COMPARISON_OP
 %left '+' '-'
 %left '*' '/' MOD
-%right SIGN
+%left NUMERIC_OP
+%right SIGN_OP
 
 
 %%
@@ -201,8 +205,10 @@ bool_expr:
   { TRACE("variable reference\n"); }
 | bool_const
   { TRACE("bool\n"); }
-| operation
-  { TRACE("operation\n"); }
+| comparison_operation %prec COMPARISON_OP
+  { TRACE("comparison operation\n"); }
+| boolean_operation %prec BOOLEAN_OP
+  { TRACE("boolean operation\n"); }
 | '(' bool_expr ')'
   { TRACE("(bool_expr)\n"); }
 ;
@@ -289,24 +295,48 @@ bool_const:
   { TRACE("false\n"); }
 ;
 
-  /* TODO: split into several sub-non-terminals */
 operation:
+  numeric_operation %prec NUMERIC_OP
+  { TRACE("numeric operation\n"); }
+| comparison_operation %prec COMPARISON_OP
+  { TRACE("comparison operation\n"); }
+| boolean_operation %prec BOOLEAN_OP
+  { TRACE("boolean operation\n"); }
+| sign_operation %prec SIGN_OP
+  { TRACE("sign operation\n"); }
+;
+
+numeric_operation:
   expr '+' expr {}
 | expr '-' expr {}
 | expr '*' expr {}
 | expr '/' expr {}
 | expr MOD expr {}
-| expr '<' expr {}
+;
+
+comparison_operation:
+  expr '<' expr {}
 | expr '>' expr {}
 | expr '=' expr {}
 | expr LE expr {}
 | expr GE expr {}
 | expr NE expr {}
-| expr AND expr {}
+;
+
+  /*
+   * NOTE: enforcing semantic here with bool_expr instead of expr causes
+   * reduce/reduce error, since bool_expr is a subset of expr, and
+   * boolean_operation belongs to both of them.
+   */
+boolean_operation:
+  expr AND expr {}
 | expr OR expr {}
-| '+' expr %prec SIGN {}
-| '-' expr %prec SIGN {}
 | NOT expr {}
+;
+
+sign_operation:
+  '+' expr {}
+| '-' expr {}
 ;
 
 %%
