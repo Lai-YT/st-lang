@@ -17,7 +17,8 @@ target_compile_definitions(Lexer PRIVATE
     # Particularly resolving the implicit declaration warning on "fileno" used in
     # Flex generated scanner.
     # See also https://github.com/westes/flex/issues/263.
-    _POSIX_C_SOURCE
+    # And the use of getline requires >= 200809L.
+    _POSIX_C_SOURCE=200809L
 )
 target_link_libraries(Lexer
     PRIVATE  # The Lexer has nothing for others to include, so PRIVATE suffices.
@@ -28,7 +29,7 @@ add_library(LexerLib SHARED ${C_SRC_FILES})
 
 target_compile_definitions(LexerLib
     PRIVATE
-    _POSIX_C_SOURCE
+    _POSIX_C_SOURCE=200809L
 )
 target_link_libraries(LexerLib
     # Shared libraries "close" their dependencies.

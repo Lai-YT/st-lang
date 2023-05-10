@@ -16,12 +16,49 @@
 
 #define MAX_LINE_LENG 256
 
+// The content of the line which the lexer is scanning on.
+char* cur_line;
+// The current token locates at [begin, end). Starts from 0.
+typedef struct TokenLocation {
+  int begin;
+  int end;
+} TokenLocation;
+TokenLocation cur_token_loc;
+
 extern SymbolTable* symtab;
 extern bool verbose;
 
 // use this instead of yylineno in action of patterns that matches newline
 // since yylineno is already advanced when referenced
 #define YYLINENO (yylineno - 1)
+
+#define YY_INPUT(buf, result, max_size) \
+  { \
+    cur_line = (buf); \
+    size_t len = 0; \
+    (result) = getline(&cur_line, &len, yyin); \
+    if (len > (size_t)max_size) { \
+      free(cur_line); \
+      YY_FATAL_ERROR("length of line exceed buffer size"); \
+    } \
+    if ((result) == -1) { \
+      free(cur_line); \
+      if (feof(yyin)) { \
+        (result) = YY_NULL; \
+      } else { \
+        YY_FATAL_ERROR("input in flex scanner failed"); \
+      } \
+    } \
+    strncpy((buf), cur_line, len); \
+    cur_token_loc.begin = 0; \
+    cur_token_loc.end = 0; \
+  }
+
+#define YY_USER_ACTION \
+  { \
+    cur_token_loc.begin = cur_token_loc.end; \
+    cur_token_loc.end += yyleng; \
+  }
 
 // records the line content along with the recognition
 char line[MAX_LINE_LENG];
