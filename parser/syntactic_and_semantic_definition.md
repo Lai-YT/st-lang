@@ -218,6 +218,7 @@ A _statement_ is one of:
 9. *[block](#blocks)*
 10. *[get_statement](#get-statements)*
 11. *[put_statement](#put-statements)*
+12. **skip**
 
 Form (3) is a **return** statement, which causes immediate return from a procedure.
 
@@ -226,6 +227,8 @@ Form (4) is a **result** statement, which can only appear in a function and caus
 Form (6) is a loop exit. When executed, it causes an immediate exit from the nearest enclosing *loop_statement* or *for_statement*.
 The optional *bool_expr* makes the **exit** conditional. If the expression evaluates to `true` then the exit is executed, otherwise execution of the loop continues.
 An **exit** statement can appear only inside *loop_statement* and *for_statement*.
+
+Form (12) is a **skip** statement, which immediately outputs a newline to the standard output stream. It's equivalent to `put ""`.
 
 ### Variable References
 
@@ -310,40 +313,27 @@ It can be used to limit the scope of declarations.
 
 A *get_statement* is:
 
-- **get** *get_item* { **,** *get_item* }
+- **get** *variable_reference* { **,** *variable_reference* }
 
 The *get_statement* gets tokens from the standard input stream.
 
-A *get_item* is one of:
-
-1. *variable_reference*
-2. **skip**
-
 The *[variable_reference](#variable-references)* cannot have type other than *[scalar_type](#scalar-types)*.
 
-Form (1) first skips whitespace (defined as the characters blank, tab, form feed, new line, and carriage return); then it reads the sequence of non-whitespace characters as a token.
+The *get_statement* first skips whitespace (defined as the characters blank, tab, form feed, new line, and carriage return); then it reads the sequence of non-whitespace characters as a token.
 A token consists of either (a) one or more non-whitespace characters, up to but not including either a whitespace character or end of file, or else (b) if the token's first character is a quote (`"`), then an explicit string constant.
 When the *variable_reference* is a string, the value of the explicit string constant or the characters of the token are assigned to the variable. If it is an integer, the the token is converted to an integer before assigning to the variable. Analogously for reals.
-It is an error to use form (1) if no token remains in the stream.
-
-In form (2), the **skip** option skips whitespace, stopping when encountering any non-whitespace character or end of file. This option is used to detect whether further tokens exist in the
-input; if no more tokens exist in the input, all characters of the file are skipped and the `eof` predefined function becomes `true`.
+It is an error if no token remains in the stream.
 
 ### `put` Statements
 
 A *put_statement* is:
 
-- **put** *put_item* { **,** *put_item* } [ **..** ]
+- **put** *_expr_* { **,** *_expr_* } [ **..** ]
 
 The *put_statement* outputs tokens to the standard output stream.
 
-A *put_item* is one of:
-
-- _expr_
-- **skip**
-
-From left to right in a *put_statement*, either the *[expr](#expressions)*'s value of the *put_item* is appended as text to the output stream, or **skip** starts a new line.
-A new line is also started at the end of the list of *put_item*s, unless the list is followed by **..**, in which case this new line is not started. This allows the next *put_statement* to continue the current output line.
+From left to right in a *put_statement*, the *[expr](#expressions)*'s value is appended as text to the output stream.
+A new line is started at the end of the list of *expr*s, unless the list is followed by **..**, in which case this new line is not started. This allows the next *put_statement* to continue the current output line.
 
 ## Expressions
 
