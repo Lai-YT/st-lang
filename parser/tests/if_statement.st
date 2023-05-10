@@ -12,6 +12,8 @@ else
   const j: int := 0
 end if
 
+const t: bool := (1 > 2)
+
 % if-then with empty body
 if false then
   % empty

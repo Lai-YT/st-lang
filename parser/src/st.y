@@ -289,9 +289,16 @@ bool_expr:
   { TRACE("comparison operation\n"); }
 | boolean_operation %prec BOOLEAN_OP
   { TRACE("boolean operation\n"); }
-  /* FIXME: reduce/reduce conflict with (expr) */
-| '(' bool_expr ')'
-  { TRACE("(bool_expr)\n"); }
+  /*
+   * NOTE: using '(' bool_expr ')' makes the grammar not LALR(1):
+   *  If there's another operator after ')', the expression is an expr,
+   *  otherwise a bool_expr.
+   * However, that requires 2 lookahead.
+   * Non-LALR(1) causes reduce/reduce conflicts.
+   * Make it also a '(' expr ')' to resolve the conflicts.
+   */
+| '(' expr ')'
+  { TRACE("(expr)\n"); }
 ;
 
 scalar_type:
