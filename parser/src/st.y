@@ -209,6 +209,7 @@ bool_expr:
   { TRACE("comparison operation\n"); }
 | boolean_operation %prec BOOLEAN_OP
   { TRACE("boolean operation\n"); }
+  /* FIXME: reduce/reduce conflict with (expr) */
 | '(' bool_expr ')'
   { TRACE("(bool_expr)\n"); }
 ;
@@ -239,8 +240,14 @@ type:
 ;
 
 var_ref:
+  /*
+   * NOTE: a single ID can also be a subprogram call
+   */
   ID
   { TRACE("%s\n", $1->name); }
+  /*
+   * NOTE: a ID subscripting can also be a substring
+   */
 | ID subscript_list
   { TRACE("%s", $1->name); }
 ;
@@ -257,7 +264,6 @@ subscript:
   { TRACE("[]\n"); }
 ;
 
-  /* TODO */
 expr:
   var_ref
   { TRACE("variable reference\n"); }
@@ -273,8 +279,20 @@ expr:
    */
 | ID '(' actual_list ')'
   { TRACE("subprogram call\n"); }
+  /*
+   * Here a hack on the ambiguous grammar:
+   *  Since an array subscripting of variable reference and a substring may both be ID[expr],
+   *  directly placing a substring non-terminal here causes a reduce/reduce conflict.
+   *  The workaround is the put other rules of substring here.
+   *  This implies that a substring in the form ID[expr] is treated as an var_ref and
+   *  should be resolved further semantically.
+   */
+| ID '[' expr '.' '.' expr ']'
+  { TRACE("substring\n"); }
 | operation
   { TRACE("operation\n"); }
+| '(' expr ')'
+  { TRACE("(expr)\n"); }
 ;
 
 explicit_const:

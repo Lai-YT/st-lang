@@ -9,4 +9,5 @@ const str: string(2) := "ok"
 j := 3
 arrOfArrs[1][2] := j
 
-const k: real := 1
+const k: real := (1)
+var substring: string := str[1..2]
