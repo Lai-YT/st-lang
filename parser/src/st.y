@@ -37,7 +37,8 @@
 %type subscript_list subscript subprog_decl subprog_header opt_decl_or_stmt_list
 %type formal_decl_list formal_decl formal_type subprog_call actual_list if_stmt
 %type bool_expr operation numeric_operation comparison_operation boolean_operation
-%type sign_operation
+%type sign_operation exit_stmt loop_stmt for_stmt block get_stmt put_stmt
+%type get_item_list get_item put_item_list put_item
 
   /* lowest to highest */
 %left OR
@@ -85,7 +86,6 @@ decl:
   { TRACE("constant declaration\n"); }
 ;
 
-  /* TODO */
 stmt:
   var_ref ASSIGN expr
   { TRACE("var_ref := expr\n"); }
@@ -97,6 +97,18 @@ stmt:
   { TRACE("result expr\n"); }
 | if_stmt
   { TRACE("if statement\n"); }
+| exit_stmt
+  { ; }
+| loop_stmt
+  { ; }
+| for_stmt
+  { ; }
+| block
+  { ; }
+| get_stmt
+  { ; }
+| put_stmt
+  { ; }
 ;
 
 var_decl:
@@ -198,6 +210,74 @@ if_stmt:
   { TRACE("if-then\n"); }
 | IF bool_expr THEN opt_decl_or_stmt_list ELSE opt_decl_or_stmt_list END IF
   { TRACE("if-then-else\n"); }
+;
+
+exit_stmt:
+  EXIT
+  { ; }
+| EXIT WHEN bool_expr
+  { ; }
+;
+
+loop_stmt:
+  LOOP opt_decl_or_stmt_list END LOOP
+  { ; }
+;
+
+for_stmt:
+  FOR ':' expr '.' '.' expr opt_decl_or_stmt_list END FOR
+  { ; }
+| FOR ID ':' expr '.' '.' expr opt_decl_or_stmt_list END FOR
+  { ; }
+| FOR DECREASING ':' expr '.' '.' expr opt_decl_or_stmt_list END FOR
+  { ; }
+| FOR DECREASING ID ':' expr '.' '.' expr opt_decl_or_stmt_list END FOR
+  { ; }
+;
+
+block:
+  BEGIN_ opt_decl_or_stmt_list END
+  { ; }
+;
+
+get_stmt:
+  GET get_item_list
+  { ; }
+;
+
+get_item_list:
+  get_item_list ',' get_item
+  { ; }
+| get_item
+  { ; }
+;
+
+get_item:
+  var_ref
+  { ; }
+| SKIP
+  { ; }
+;
+
+put_stmt:
+  PUT put_item_list
+  { ; }
+| PUT put_item_list '.' '.'
+  { ; }
+;
+
+put_item_list:
+  put_item_list ',' put_item
+  { ; }
+| put_item
+  { ; }
+;
+
+put_item:
+  expr
+  { ; }
+| SKIP
+  { ; }
 ;
 
 bool_expr:
