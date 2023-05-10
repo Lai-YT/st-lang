@@ -35,7 +35,6 @@ Terminals are given in **boldface**. Non-terminals are given in _italics_.
   - [String Operators](#string-operators)
   - [Substrings](#substrings)
   - [Compile-Time Expressions](#compile-time-expressions)
-- [Predefined Functions](#predefined-functions)
 
 ## Programs
 
@@ -471,11 +470,3 @@ A compile-time expression is an _expr_ whose value can, in principle, be compute
 
 > **Note** A compile-time expression can be invalid, for example, `1/0`, and is still considered to be a compile-time expression.
 > Expressions that do not satisfy this definition are called run-time expressions.
-
-## Predefined Functions
-
-- `eof: bool` \
-Returns `true` if and only if there are no more characters in the standard input stream.
-
-- `length(s: string): int` \
-Returns the number of characters in the `string`. The `string` must be initialized.
