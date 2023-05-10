@@ -36,7 +36,17 @@
 %type array_type scalar_type type const_decl explicit_const bool_const
 %type subscript_list subscript subprog_decl subprog_header subprog_body
 %type formal_decl_list formal_decl formal_type subprog_call actual_list if_stmt
-%type bool_expr
+%type bool_expr operation
+
+  /* lowest to highest */
+%left OR
+%left AND
+%right NOT
+%left '<' '>' '=' LE GE NE
+%left '+' '-'
+%left '*' '/' MOD
+%right SIGN
+
 
 %%
 program:
@@ -186,10 +196,15 @@ if_stmt:
   { TRACE("if-then-else\n"); }
 ;
 
-  /* TODO */
 bool_expr:
-  bool_const
+  var_ref
+  { TRACE("variable reference\n"); }
+| bool_const
   { TRACE("bool\n"); }
+| operation
+  { TRACE("operation\n"); }
+| '(' bool_expr ')'
+  { TRACE("(bool_expr)\n"); }
 ;
 
 scalar_type:
@@ -239,7 +254,7 @@ subscript:
   /* TODO */
 expr:
   var_ref
-  { TRACE("expression\n"); }
+  { TRACE("variable reference\n"); }
 | explicit_const
   { TRACE("explicit constant\n"); }
   /*
@@ -252,6 +267,8 @@ expr:
    */
 | ID '(' actual_list ')'
   { TRACE("subprogram call\n"); }
+| operation
+  { TRACE("operation\n"); }
 ;
 
 explicit_const:
@@ -270,6 +287,26 @@ bool_const:
   { TRACE("true\n"); }
 | FALSE
   { TRACE("false\n"); }
+;
+
+  /* TODO: split into several sub-non-terminals */
+operation:
+  expr '+' expr {}
+| expr '-' expr {}
+| expr '*' expr {}
+| expr '/' expr {}
+| expr MOD expr {}
+| expr '<' expr {}
+| expr '>' expr {}
+| expr '=' expr {}
+| expr LE expr {}
+| expr GE expr {}
+| expr NE expr {}
+| expr AND expr {}
+| expr OR expr {}
+| '+' expr %prec SIGN {}
+| '-' expr %prec SIGN {}
+| NOT expr {}
 ;
 
 %%

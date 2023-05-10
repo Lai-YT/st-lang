@@ -1,10 +1,10 @@
 var i := 0
 
-if true then
+if not false then
   i := 1
 end if
 
-if false then
+if 1 > 2 then
   const j: int := i
 else
   const j: int := 0
