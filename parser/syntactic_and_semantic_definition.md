@@ -403,7 +403,7 @@ A *bool_expr* is an _expr_ whose value is `true` or `false`.
 
 1. *[var_ref](#variable-references)*
 2. **bool_const**
-3. *bool_expr* *binary_op* *bool_expr*
+3. *expr* *binary_op* *expr*
 4. **not** *bool_expr*
 5. **(** *bool_expr* **)**
 
