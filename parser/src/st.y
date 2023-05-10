@@ -34,7 +34,7 @@
 %type program decl_or_stmt_in_main_program_list decl_or_stmt_in_main_program
 %type decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
 %type array_type scalar_type type const_decl explicit_const bool_const
-%type subscript_list subscript subprog_decl subprog_header subprog_body
+%type subscript_list subscript subprog_decl subprog_header opt_decl_or_stmt_list
 %type formal_decl_list formal_decl formal_type subprog_call actual_list if_stmt
 %type bool_expr operation numeric_operation comparison_operation boolean_operation
 %type sign_operation
@@ -118,7 +118,7 @@ const_decl:
 ;
 
 subprog_decl:
-  subprog_header subprog_body END ID
+  subprog_header opt_decl_or_stmt_list END ID
   { ; }
 ;
 
@@ -133,7 +133,7 @@ subprog_header:
   { TRACE("procedure %s: type with params\n", $2->name); }
 ;
 
-subprog_body:
+opt_decl_or_stmt_list:
   decl_or_stmt_list
   { ; }
 | /* empty */
@@ -194,9 +194,9 @@ actual_list:
 ;
 
 if_stmt:
-  IF bool_expr THEN decl_or_stmt_list END IF
+  IF bool_expr THEN opt_decl_or_stmt_list END IF
   { TRACE("if-then\n"); }
-| IF bool_expr THEN decl_or_stmt_list ELSE decl_or_stmt_list END IF
+| IF bool_expr THEN opt_decl_or_stmt_list ELSE opt_decl_or_stmt_list END IF
   { TRACE("if-then-else\n"); }
 ;
 
