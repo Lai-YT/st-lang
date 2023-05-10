@@ -35,10 +35,10 @@
 %type decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
 %type array_type scalar_type type const_decl explicit_const bool_const
 %type subscript_list subscript subprog_decl subprog_header opt_decl_or_stmt_list
-%type formal_decl_list formal_decl formal_type subprog_call actual_list if_stmt
+%type formal_decl_list formal_decl formal_type subprog_call if_stmt
 %type bool_expr operation numeric_operation comparison_operation boolean_operation
 %type sign_operation exit_stmt loop_stmt for_stmt block get_stmt put_stmt
-%type get_item_list get_item put_item_list put_item
+%type var_ref_comma_list expr_comma_list
 
   /* lowest to highest */
 %left OR
@@ -108,6 +108,8 @@ stmt:
 | get_stmt
   { ; }
 | put_stmt
+  { ; }
+| SKIP
   { ; }
 ;
 
@@ -194,14 +196,7 @@ formal_type:
 subprog_call:
   ID
   { ; }
-| ID '(' actual_list ')'
-  { ; }
-;
-
-actual_list:
-  actual_list ',' expr
-  { ; }
-| expr
+| ID '(' expr_comma_list ')'
   { ; }
 ;
 
@@ -241,42 +236,28 @@ block:
 ;
 
 get_stmt:
-  GET get_item_list
+  GET var_ref_comma_list
   { ; }
 ;
 
-get_item_list:
-  get_item_list ',' get_item
+var_ref_comma_list:
+  var_ref_comma_list ',' var_ref
   { ; }
-| get_item
-  { ; }
-;
-
-get_item:
-  var_ref
-  { ; }
-| SKIP
+| var_ref
   { ; }
 ;
 
 put_stmt:
-  PUT put_item_list
+  PUT expr_comma_list
   { ; }
-| PUT put_item_list '.' '.'
-  { ; }
-;
-
-put_item_list:
-  put_item_list ',' put_item
-  { ; }
-| put_item
+| PUT expr_comma_list '.' '.'
   { ; }
 ;
 
-put_item:
-  expr
+expr_comma_list:
+  expr_comma_list ',' expr
   { ; }
-| SKIP
+| expr
   { ; }
 ;
 
@@ -364,7 +345,7 @@ expr:
    *  This implies that a subprog_call with ID is treated as an var_ref and
    *  should be resolved further semantically.
    */
-| ID '(' actual_list ')'
+| ID '(' expr_comma_list ')'
   { ; }
   /*
    * Here a hack on the ambiguous grammar:
