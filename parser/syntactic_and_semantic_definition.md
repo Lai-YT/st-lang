@@ -273,7 +273,7 @@ The statements within the loop are repeated until terminated by one of its **exi
 
 A *for_statement* is:
 
-- **for** [ **decreasing** ] **:** _expr_ **..** _expr_ \
+- **for** [ **decreasing** ] [ **id** ] **:** _expr_ **..** _expr_ \
 { [ _[declaration](#declarations)_ ] [ _statement_ ] } \
 **end** **for**
 
