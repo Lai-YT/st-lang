@@ -56,9 +56,9 @@
 %%
 program:
   decl_or_stmt_in_main_program_list
-  { TRACE("[program]\n"); }
+  { ; }
 | /* empty */
-  { TRACE("empty program\n"); }
+  { ; }
 ;
 
 decl_or_stmt_in_main_program_list:
@@ -76,27 +76,27 @@ decl_or_stmt_in_main_program:
   decl_or_stmt
   { ; }
 | subprog_decl
-  { TRACE("subprogram declaration\n\n"); }
+  { ; }
 ;
 
 decl:
   var_decl
-  { TRACE("variable declaration\n"); }
+  { ; }
 | const_decl
-  { TRACE("constant declaration\n"); }
+  { ; }
 ;
 
 stmt:
   var_ref ASSIGN expr
-  { TRACE("var_ref := expr\n"); }
+  { ; }
 | subprog_call
-  { TRACE("subprogram call\n"); }
+  { ; }
 | RETURN
-  { TRACE("return\n"); }
+  { ; }
 | RESULT expr
-  { TRACE("result expr\n"); }
+  { ; }
 | if_stmt
-  { TRACE("if statement\n"); }
+  { ; }
 | exit_stmt
   { ; }
 | loop_stmt
@@ -113,20 +113,20 @@ stmt:
 
 var_decl:
   VAR ID ASSIGN expr
-  { TRACE("var %s := expr\n", $2->name); }
+  { ; }
 | VAR ID ':' array_type
-  { TRACE("var %s: array_type\n", $2->name); }
+  { ; }
 | VAR ID ':' scalar_type
-  { TRACE("var %s: scalar_type\n", $2->name); }
+  { ; }
 | VAR ID ':' scalar_type ASSIGN expr
-  { TRACE("var %s: scalar_type := expr\n", $2->name); }
+  { ; }
 ;
 
 const_decl:
   CONST ID ASSIGN expr
-  { TRACE("const %s = expr\n", $2->name); }
+  { ; }
 | CONST ID ':' scalar_type ASSIGN expr
-  { TRACE("const %s: scalar_type := expr\n", $2->name); }
+  { ; }
 ;
 
 subprog_decl:
@@ -136,13 +136,13 @@ subprog_decl:
 
 subprog_header:
   PROCEDURE ID
-  { TRACE("procedure %s with no param\n", $2->name); }
+  { ; }
 | PROCEDURE ID '(' formal_decl_list ')'
-  { TRACE("procedure %s with params\n", $2->name); }
+  { ; }
 | FUNCTION ID ':' type
-  { TRACE("procedure %s: type with no param\n", $2->name); }
+  { ; }
 | FUNCTION ID '(' formal_decl_list ')' ':' type
-  { TRACE("procedure %s: type with params\n", $2->name); }
+  { ; }
 ;
 
 opt_decl_or_stmt_list:
@@ -154,16 +154,16 @@ opt_decl_or_stmt_list:
 
 decl_or_stmt_list:
   decl_or_stmt_list decl_or_stmt
-  {}
+  { ; }
 | decl_or_stmt
-  {}
+  { ; }
 ;
 
 decl_or_stmt:
   decl
-  { TRACE("declaration\n\n"); }
+  { ; }
 | stmt
-  { TRACE("statement\n\n"); }
+  { ; }
 ;
 
 formal_decl_list:
@@ -175,27 +175,27 @@ formal_decl_list:
 
 formal_decl:
   ID ':' formal_type
-  { TRACE("%s: formal_type\n", $1->name); }
+  { ; }
 | VAR ID ':' formal_type
-  { TRACE("var %s: formal_type\n", $2->name); }
+  { ; }
 ;
 
 formal_type:
   type
-  { TRACE("type\n"); }
+  { ; }
 | STRING '(' '*' ')'
-  { TRACE("string(*)\n"); }
+  { ; }
 | ARRAY expr '.' '.' '*' OF type
-  { TRACE("array of type\n"); }
+  { ; }
 | ARRAY expr '.' '.' '*' OF STRING '(' '*' ')'
-  { TRACE("array of string(*)\n"); }
+  { ; }
 ;
 
 subprog_call:
   ID
-  { TRACE("%s\n", $1->name); }
+  { ; }
 | ID '(' actual_list ')'
-  { TRACE("%s()\n", $1->name); }
+  { ; }
 ;
 
 actual_list:
@@ -207,9 +207,9 @@ actual_list:
 
 if_stmt:
   IF bool_expr THEN opt_decl_or_stmt_list END IF
-  { TRACE("if-then\n"); }
+  { ; }
 | IF bool_expr THEN opt_decl_or_stmt_list ELSE opt_decl_or_stmt_list END IF
-  { TRACE("if-then-else\n"); }
+  { ; }
 ;
 
 exit_stmt:
@@ -282,13 +282,13 @@ put_item:
 
 bool_expr:
   var_ref
-  { TRACE("variable reference\n"); }
+  { ; }
 | bool_const
-  { TRACE("bool\n"); }
+  { ; }
 | comparison_operation %prec COMPARISON_OP
-  { TRACE("comparison operation\n"); }
+  { ; }
 | boolean_operation %prec BOOLEAN_OP
-  { TRACE("boolean operation\n"); }
+  { ; }
   /*
    * NOTE: using '(' bool_expr ')' makes the grammar not LALR(1):
    *  If there's another operator after ')', the expression is an expr,
@@ -298,32 +298,32 @@ bool_expr:
    * Make it also a '(' expr ')' to resolve the conflicts.
    */
 | '(' expr ')'
-  { TRACE("(expr)\n"); }
+  { ; }
 ;
 
 scalar_type:
   INT
-  { TRACE("int\n"); }
+  { ; }
 | REAL
-  { TRACE("real\n"); }
+  { ; }
 | BOOL
-  { TRACE("bool\n"); }
+  { ; }
 | STRING
-  { TRACE("string\n"); }
+  { ; }
 | STRING '(' expr ')'
-  { TRACE("string(expr)\n"); }
+  { ; }
 ;
 
 array_type:
   ARRAY expr '.' '.' expr OF type
-  { TRACE("array expr..expr of type\n"); }
+  { ; }
 ;
 
 type:
   scalar_type
-  { TRACE("scalar_type\n"); }
+  { ; }
 | array_type
-  { TRACE("array_type\n"); }
+  { ; }
 ;
 
 var_ref:
@@ -331,12 +331,12 @@ var_ref:
    * NOTE: a single ID can also be a subprogram call
    */
   ID
-  { TRACE("%s\n", $1->name); }
+  { ; }
   /*
    * NOTE: a ID subscripting can also be a substring
    */
 | ID subscript_list
-  { TRACE("%s", $1->name); }
+  { ; }
 ;
 
 subscript_list:
@@ -348,14 +348,14 @@ subscript_list:
 
 subscript:
   '[' expr ']'
-  { TRACE("[]\n"); }
+  { ; }
 ;
 
 expr:
   var_ref
-  { TRACE("variable reference\n"); }
+  { ; }
 | explicit_const
-  { TRACE("explicit constant\n"); }
+  { ; }
   /*
    * Here a hack on the ambiguous grammar:
    *  Since an variable reference and a subprogram call may both be a single ID,
@@ -365,7 +365,7 @@ expr:
    *  should be resolved further semantically.
    */
 | ID '(' actual_list ')'
-  { TRACE("subprogram call\n"); }
+  { ; }
   /*
    * Here a hack on the ambiguous grammar:
    *  Since an array subscripting of variable reference and a substring may both be ID[expr],
@@ -375,40 +375,40 @@ expr:
    *  should be resolved further semantically.
    */
 | ID '[' expr '.' '.' expr ']'
-  { TRACE("substring\n"); }
+  { ; }
 | operation
-  { TRACE("operation\n"); }
+  { ; }
 | '(' expr ')'
-  { TRACE("(expr)\n"); }
+  { ; }
 ;
 
 explicit_const:
   INT_CONST
-  { TRACE("int_const: %d\n", $1); }
+  { ; }
 | REAL_CONST
-  { TRACE("real_const: %f\n", $1); }
+  { ; }
 | STR_CONST
-  { TRACE("str_const: %s\n", $1); }
+  { ; }
 | bool_const
-  { TRACE("bool_const: "); }
+  { ; }
 ;
 
 bool_const:
   TRUE
-  { TRACE("true\n"); }
+  { ; }
 | FALSE
-  { TRACE("false\n"); }
+  { ; }
 ;
 
 operation:
   numeric_operation %prec NUMERIC_OP
-  { TRACE("numeric operation\n"); }
+  { ; }
 | comparison_operation %prec COMPARISON_OP
-  { TRACE("comparison operation\n"); }
+  { ; }
 | boolean_operation %prec BOOLEAN_OP
-  { TRACE("boolean operation\n"); }
+  { ; }
 | sign_operation %prec SIGN_OP
-  { TRACE("sign operation\n"); }
+  { ; }
 ;
 
 numeric_operation:

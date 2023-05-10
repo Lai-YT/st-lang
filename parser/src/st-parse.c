@@ -1757,13 +1757,13 @@ yyreduce:
     {
   case 2: /* program: decl_or_stmt_in_main_program_list  */
 #line 59 "src/st.y"
-  { TRACE("[program]\n"); }
+  { ; }
 #line 1762 "src/st-parse.c"
     break;
 
   case 3: /* program: %empty  */
 #line 61 "src/st.y"
-  { TRACE("empty program\n"); }
+  { ; }
 #line 1768 "src/st-parse.c"
     break;
 
@@ -1787,49 +1787,49 @@ yyreduce:
 
   case 7: /* decl_or_stmt_in_main_program: subprog_decl  */
 #line 79 "src/st.y"
-  { TRACE("subprogram declaration\n\n"); }
+  { ; }
 #line 1792 "src/st-parse.c"
     break;
 
   case 8: /* decl: var_decl  */
 #line 84 "src/st.y"
-  { TRACE("variable declaration\n"); }
+  { ; }
 #line 1798 "src/st-parse.c"
     break;
 
   case 9: /* decl: const_decl  */
 #line 86 "src/st.y"
-  { TRACE("constant declaration\n"); }
+  { ; }
 #line 1804 "src/st-parse.c"
     break;
 
   case 10: /* stmt: var_ref ASSIGN expr  */
 #line 91 "src/st.y"
-  { TRACE("var_ref := expr\n"); }
+  { ; }
 #line 1810 "src/st-parse.c"
     break;
 
   case 11: /* stmt: subprog_call  */
 #line 93 "src/st.y"
-  { TRACE("subprogram call\n"); }
+  { ; }
 #line 1816 "src/st-parse.c"
     break;
 
   case 12: /* stmt: RETURN  */
 #line 95 "src/st.y"
-  { TRACE("return\n"); }
+  { ; }
 #line 1822 "src/st-parse.c"
     break;
 
   case 13: /* stmt: RESULT expr  */
 #line 97 "src/st.y"
-  { TRACE("result expr\n"); }
+  { ; }
 #line 1828 "src/st-parse.c"
     break;
 
   case 14: /* stmt: if_stmt  */
 #line 99 "src/st.y"
-  { TRACE("if statement\n"); }
+  { ; }
 #line 1834 "src/st-parse.c"
     break;
 
@@ -1871,37 +1871,37 @@ yyreduce:
 
   case 21: /* var_decl: VAR ID ASSIGN expr  */
 #line 116 "src/st.y"
-  { TRACE("var %s := expr\n", (yyvsp[-2].symbol)->name); }
+  { ; }
 #line 1876 "src/st-parse.c"
     break;
 
   case 22: /* var_decl: VAR ID ':' array_type  */
 #line 118 "src/st.y"
-  { TRACE("var %s: array_type\n", (yyvsp[-2].symbol)->name); }
+  { ; }
 #line 1882 "src/st-parse.c"
     break;
 
   case 23: /* var_decl: VAR ID ':' scalar_type  */
 #line 120 "src/st.y"
-  { TRACE("var %s: scalar_type\n", (yyvsp[-2].symbol)->name); }
+  { ; }
 #line 1888 "src/st-parse.c"
     break;
 
   case 24: /* var_decl: VAR ID ':' scalar_type ASSIGN expr  */
 #line 122 "src/st.y"
-  { TRACE("var %s: scalar_type := expr\n", (yyvsp[-4].symbol)->name); }
+  { ; }
 #line 1894 "src/st-parse.c"
     break;
 
   case 25: /* const_decl: CONST ID ASSIGN expr  */
 #line 127 "src/st.y"
-  { TRACE("const %s = expr\n", (yyvsp[-2].symbol)->name); }
+  { ; }
 #line 1900 "src/st-parse.c"
     break;
 
   case 26: /* const_decl: CONST ID ':' scalar_type ASSIGN expr  */
 #line 129 "src/st.y"
-  { TRACE("const %s: scalar_type := expr\n", (yyvsp[-4].symbol)->name); }
+  { ; }
 #line 1906 "src/st-parse.c"
     break;
 
@@ -1913,25 +1913,25 @@ yyreduce:
 
   case 28: /* subprog_header: PROCEDURE ID  */
 #line 139 "src/st.y"
-  { TRACE("procedure %s with no param\n", (yyvsp[0].symbol)->name); }
+  { ; }
 #line 1918 "src/st-parse.c"
     break;
 
   case 29: /* subprog_header: PROCEDURE ID '(' formal_decl_list ')'  */
 #line 141 "src/st.y"
-  { TRACE("procedure %s with params\n", (yyvsp[-3].symbol)->name); }
+  { ; }
 #line 1924 "src/st-parse.c"
     break;
 
   case 30: /* subprog_header: FUNCTION ID ':' type  */
 #line 143 "src/st.y"
-  { TRACE("procedure %s: type with no param\n", (yyvsp[-2].symbol)->name); }
+  { ; }
 #line 1930 "src/st-parse.c"
     break;
 
   case 31: /* subprog_header: FUNCTION ID '(' formal_decl_list ')' ':' type  */
 #line 145 "src/st.y"
-  { TRACE("procedure %s: type with params\n", (yyvsp[-5].symbol)->name); }
+  { ; }
 #line 1936 "src/st-parse.c"
     break;
 
@@ -1949,25 +1949,25 @@ yyreduce:
 
   case 34: /* decl_or_stmt_list: decl_or_stmt_list decl_or_stmt  */
 #line 157 "src/st.y"
-  {}
+  { ; }
 #line 1954 "src/st-parse.c"
     break;
 
   case 35: /* decl_or_stmt_list: decl_or_stmt  */
 #line 159 "src/st.y"
-  {}
+  { ; }
 #line 1960 "src/st-parse.c"
     break;
 
   case 36: /* decl_or_stmt: decl  */
 #line 164 "src/st.y"
-  { TRACE("declaration\n\n"); }
+  { ; }
 #line 1966 "src/st-parse.c"
     break;
 
   case 37: /* decl_or_stmt: stmt  */
 #line 166 "src/st.y"
-  { TRACE("statement\n\n"); }
+  { ; }
 #line 1972 "src/st-parse.c"
     break;
 
@@ -1985,49 +1985,49 @@ yyreduce:
 
   case 40: /* formal_decl: ID ':' formal_type  */
 #line 178 "src/st.y"
-  { TRACE("%s: formal_type\n", (yyvsp[-2].symbol)->name); }
+  { ; }
 #line 1990 "src/st-parse.c"
     break;
 
   case 41: /* formal_decl: VAR ID ':' formal_type  */
 #line 180 "src/st.y"
-  { TRACE("var %s: formal_type\n", (yyvsp[-2].symbol)->name); }
+  { ; }
 #line 1996 "src/st-parse.c"
     break;
 
   case 42: /* formal_type: type  */
 #line 185 "src/st.y"
-  { TRACE("type\n"); }
+  { ; }
 #line 2002 "src/st-parse.c"
     break;
 
   case 43: /* formal_type: STRING '(' '*' ')'  */
 #line 187 "src/st.y"
-  { TRACE("string(*)\n"); }
+  { ; }
 #line 2008 "src/st-parse.c"
     break;
 
   case 44: /* formal_type: ARRAY expr '.' '.' '*' OF type  */
 #line 189 "src/st.y"
-  { TRACE("array of type\n"); }
+  { ; }
 #line 2014 "src/st-parse.c"
     break;
 
   case 45: /* formal_type: ARRAY expr '.' '.' '*' OF STRING '(' '*' ')'  */
 #line 191 "src/st.y"
-  { TRACE("array of string(*)\n"); }
+  { ; }
 #line 2020 "src/st-parse.c"
     break;
 
   case 46: /* subprog_call: ID  */
 #line 196 "src/st.y"
-  { TRACE("%s\n", (yyvsp[0].symbol)->name); }
+  { ; }
 #line 2026 "src/st-parse.c"
     break;
 
   case 47: /* subprog_call: ID '(' actual_list ')'  */
 #line 198 "src/st.y"
-  { TRACE("%s()\n", (yyvsp[-3].symbol)->name); }
+  { ; }
 #line 2032 "src/st-parse.c"
     break;
 
@@ -2045,13 +2045,13 @@ yyreduce:
 
   case 50: /* if_stmt: IF bool_expr THEN opt_decl_or_stmt_list END IF  */
 #line 210 "src/st.y"
-  { TRACE("if-then\n"); }
+  { ; }
 #line 2050 "src/st-parse.c"
     break;
 
   case 51: /* if_stmt: IF bool_expr THEN opt_decl_or_stmt_list ELSE opt_decl_or_stmt_list END IF  */
 #line 212 "src/st.y"
-  { TRACE("if-then-else\n"); }
+  { ; }
 #line 2056 "src/st-parse.c"
     break;
 
@@ -2171,91 +2171,91 @@ yyreduce:
 
   case 71: /* bool_expr: var_ref  */
 #line 285 "src/st.y"
-  { TRACE("variable reference\n"); }
+  { ; }
 #line 2176 "src/st-parse.c"
     break;
 
   case 72: /* bool_expr: bool_const  */
 #line 287 "src/st.y"
-  { TRACE("bool\n"); }
+  { ; }
 #line 2182 "src/st-parse.c"
     break;
 
   case 73: /* bool_expr: comparison_operation  */
 #line 289 "src/st.y"
-  { TRACE("comparison operation\n"); }
+  { ; }
 #line 2188 "src/st-parse.c"
     break;
 
   case 74: /* bool_expr: boolean_operation  */
 #line 291 "src/st.y"
-  { TRACE("boolean operation\n"); }
+  { ; }
 #line 2194 "src/st-parse.c"
     break;
 
   case 75: /* bool_expr: '(' expr ')'  */
 #line 301 "src/st.y"
-  { TRACE("(expr)\n"); }
+  { ; }
 #line 2200 "src/st-parse.c"
     break;
 
   case 76: /* scalar_type: INT  */
 #line 306 "src/st.y"
-  { TRACE("int\n"); }
+  { ; }
 #line 2206 "src/st-parse.c"
     break;
 
   case 77: /* scalar_type: REAL  */
 #line 308 "src/st.y"
-  { TRACE("real\n"); }
+  { ; }
 #line 2212 "src/st-parse.c"
     break;
 
   case 78: /* scalar_type: BOOL  */
 #line 310 "src/st.y"
-  { TRACE("bool\n"); }
+  { ; }
 #line 2218 "src/st-parse.c"
     break;
 
   case 79: /* scalar_type: STRING  */
 #line 312 "src/st.y"
-  { TRACE("string\n"); }
+  { ; }
 #line 2224 "src/st-parse.c"
     break;
 
   case 80: /* scalar_type: STRING '(' expr ')'  */
 #line 314 "src/st.y"
-  { TRACE("string(expr)\n"); }
+  { ; }
 #line 2230 "src/st-parse.c"
     break;
 
   case 81: /* array_type: ARRAY expr '.' '.' expr OF type  */
 #line 319 "src/st.y"
-  { TRACE("array expr..expr of type\n"); }
+  { ; }
 #line 2236 "src/st-parse.c"
     break;
 
   case 82: /* type: scalar_type  */
 #line 324 "src/st.y"
-  { TRACE("scalar_type\n"); }
+  { ; }
 #line 2242 "src/st-parse.c"
     break;
 
   case 83: /* type: array_type  */
 #line 326 "src/st.y"
-  { TRACE("array_type\n"); }
+  { ; }
 #line 2248 "src/st-parse.c"
     break;
 
   case 84: /* var_ref: ID  */
 #line 334 "src/st.y"
-  { TRACE("%s\n", (yyvsp[0].symbol)->name); }
+  { ; }
 #line 2254 "src/st-parse.c"
     break;
 
   case 85: /* var_ref: ID subscript_list  */
 #line 339 "src/st.y"
-  { TRACE("%s", (yyvsp[-1].symbol)->name); }
+  { ; }
 #line 2260 "src/st-parse.c"
     break;
 
@@ -2273,103 +2273,103 @@ yyreduce:
 
   case 88: /* subscript: '[' expr ']'  */
 #line 351 "src/st.y"
-  { TRACE("[]\n"); }
+  { ; }
 #line 2278 "src/st-parse.c"
     break;
 
   case 89: /* expr: var_ref  */
 #line 356 "src/st.y"
-  { TRACE("variable reference\n"); }
+  { ; }
 #line 2284 "src/st-parse.c"
     break;
 
   case 90: /* expr: explicit_const  */
 #line 358 "src/st.y"
-  { TRACE("explicit constant\n"); }
+  { ; }
 #line 2290 "src/st-parse.c"
     break;
 
   case 91: /* expr: ID '(' actual_list ')'  */
 #line 368 "src/st.y"
-  { TRACE("subprogram call\n"); }
+  { ; }
 #line 2296 "src/st-parse.c"
     break;
 
   case 92: /* expr: ID '[' expr '.' '.' expr ']'  */
 #line 378 "src/st.y"
-  { TRACE("substring\n"); }
+  { ; }
 #line 2302 "src/st-parse.c"
     break;
 
   case 93: /* expr: operation  */
 #line 380 "src/st.y"
-  { TRACE("operation\n"); }
+  { ; }
 #line 2308 "src/st-parse.c"
     break;
 
   case 94: /* expr: '(' expr ')'  */
 #line 382 "src/st.y"
-  { TRACE("(expr)\n"); }
+  { ; }
 #line 2314 "src/st-parse.c"
     break;
 
   case 95: /* explicit_const: INT_CONST  */
 #line 387 "src/st.y"
-  { TRACE("int_const: %d\n", (yyvsp[0].int_const)); }
+  { ; }
 #line 2320 "src/st-parse.c"
     break;
 
   case 96: /* explicit_const: REAL_CONST  */
 #line 389 "src/st.y"
-  { TRACE("real_const: %f\n", (yyvsp[0].real_const)); }
+  { ; }
 #line 2326 "src/st-parse.c"
     break;
 
   case 97: /* explicit_const: STR_CONST  */
 #line 391 "src/st.y"
-  { TRACE("str_const: %s\n", (yyvsp[0].str_const)); }
+  { ; }
 #line 2332 "src/st-parse.c"
     break;
 
   case 98: /* explicit_const: bool_const  */
 #line 393 "src/st.y"
-  { TRACE("bool_const: "); }
+  { ; }
 #line 2338 "src/st-parse.c"
     break;
 
   case 99: /* bool_const: TRUE  */
 #line 398 "src/st.y"
-  { TRACE("true\n"); }
+  { ; }
 #line 2344 "src/st-parse.c"
     break;
 
   case 100: /* bool_const: FALSE  */
 #line 400 "src/st.y"
-  { TRACE("false\n"); }
+  { ; }
 #line 2350 "src/st-parse.c"
     break;
 
   case 101: /* operation: numeric_operation  */
 #line 405 "src/st.y"
-  { TRACE("numeric operation\n"); }
+  { ; }
 #line 2356 "src/st-parse.c"
     break;
 
   case 102: /* operation: comparison_operation  */
 #line 407 "src/st.y"
-  { TRACE("comparison operation\n"); }
+  { ; }
 #line 2362 "src/st-parse.c"
     break;
 
   case 103: /* operation: boolean_operation  */
 #line 409 "src/st.y"
-  { TRACE("boolean operation\n"); }
+  { ; }
 #line 2368 "src/st-parse.c"
     break;
 
   case 104: /* operation: sign_operation  */
 #line 411 "src/st.y"
-  { TRACE("sign operation\n"); }
+  { ; }
 #line 2374 "src/st-parse.c"
     break;
 
