@@ -26,7 +26,7 @@ target_link_libraries(Lexer
 )
 
 add_library(LexerLib SHARED ${C_SRC_FILES})
-
+target_include_directories(LexerLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(LexerLib
     PRIVATE
     _POSIX_C_SOURCE=200809L

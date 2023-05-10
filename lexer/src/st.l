@@ -18,11 +18,16 @@
 
 // The content of the line which the lexer is scanning on.
 char* cur_line;
+
+#ifndef ST_TOKEN_LOCATION
+#define ST_TOKEN_LOCATION
 // The current token locates at [begin, end). Starts from 0.
 typedef struct TokenLocation {
   int begin;
   int end;
 } TokenLocation;
+#endif
+
 TokenLocation cur_token_loc;
 
 extern SymbolTable* symtab;

@@ -3,8 +3,9 @@
 CC := gcc
 LSRC := src/st.l
 CGEN := src/st-lex.c
+HGEN := $(CGEN:.c=.h)
 LEX := flex
-LFLAGS := -l -o $(CGEN)
+LFLAGS := -l --header-file=$(HGEN) -o $(CGEN)
 BUILD_DIR := build
 BUILD_TYPE := Release
 
@@ -31,16 +32,16 @@ $(CGEN): $(LSRC)
 tests: lexer
 	@./test.sh
 
-CFILES := $(wildcard src/*.c src/*.h)
+CFILES := $(filter-out $(CGEN) $(HGEN),$(wildcard src/*.c src/*.h))
 
 fmt:
 	clang-format -style=file $(FMTFLAGS) \
-		$(filter-out $(CGEN), $(CFILES))
+		$(CFILES)
 
 tidy: lexer
 	clang-tidy $(TIDYFLAGS) \
-		$(filter-out $(CGEN), $(CFILES)) \
+		$(CFILES) \
 		-p $(BUILD_DIR)
 
 clean:
-	rm -rf $(BUILD_DIR) $(CGEN)
+	rm -rf $(BUILD_DIR) $(CGEN) $(HGEN)
