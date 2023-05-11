@@ -5,10 +5,10 @@
 
 #define MAX_NAME_LENGTH 255
 
-typedef struct Entry {
+typedef struct Symbol {
   char name[MAX_NAME_LENGTH + 1];  // terminate character
   void* attribute;
-} Entry;
+} Symbol;
 
 /// @brief A symbol table that supports insert and lookup.
 typedef struct SymbolTable SymbolTable;
@@ -18,18 +18,18 @@ SymbolTable* symtab_create();
 
 /// @param name The name of the symbol to lookup.
 /// @return The symbol with the specified name. NULL if not exist.
-Entry* symtab_lookup(SymbolTable*, const char* name);
+Symbol* symtab_lookup(SymbolTable*, const char* name);
 
-/// @brief Inserts a new symbol with the attribute if the name isn't already exist.
+/// @brief Inserts a new symbol with the attribute if the name isn't already
+/// exist.
 /// @note Behaves like the symtab_lookup function when a symbol with name
 /// already exist.
 /// @return The inserted symbol.
-Entry* symtab_insert(SymbolTable*, const char* name, void* attribute);
+Symbol* symtab_insert(SymbolTable*, const char* name, void* attribute);
 
-/// @return All the entries which represent the symbols in the table. The order
-/// is unspecified.
+/// @return All the symbols in the table. The order is unspecified.
 /// @note The ownership of the dumped list is taken by the caller, but the
-/// entries are not. Call list_delete after inspection.
+/// symbols are not. Call list_delete after inspection.
 List* symtab_dump(SymbolTable*);
 
 /// @brief Deletes the symbol table and all the symbols in it.

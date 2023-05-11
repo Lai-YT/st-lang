@@ -7,53 +7,53 @@
 #include "list.h"
 
 struct SymbolTable {
-  HashTable* entries;
+  HashTable* symbols;
 };
 
-static Entry* entry_create(const char* name, void* attribute) {
-  Entry* entry = malloc(sizeof(Entry));
-  strncpy(entry->name, name, MAX_NAME_LENGTH);
-  entry->attribute = attribute;
-  return entry;
+static Symbol* symbol_create(const char* name, void* attribute) {
+  Symbol* symbol = malloc(sizeof(Symbol));
+  strncpy(symbol->name, name, MAX_NAME_LENGTH);
+  symbol->attribute = attribute;
+  return symbol;
 }
 
-static inline void entry_delete(Entry* entry) {
-  free(entry);
+static inline void symbol_delete(Symbol* symbol) {
+  free(symbol);
 }
 
 SymbolTable* symtab_create() {
   SymbolTable* table = malloc(sizeof(SymbolTable));
-  table->entries = hashtab_create();
+  table->symbols = hashtab_create();
   return table;
 }
 
-Entry* symtab_lookup(SymbolTable* table, const char* name) {
-  return hashtab_search(table->entries, name);
+Symbol* symtab_lookup(SymbolTable* table, const char* name) {
+  return hashtab_search(table->symbols, name);
 }
 
-Entry* symtab_insert(SymbolTable* table, const char* name, void* attribute) {
-  Entry* entry;
-  if ((entry = symtab_lookup(table, name))) {
-    return entry;
+Symbol* symtab_insert(SymbolTable* table, const char* name, void* attribute) {
+  Symbol* symbol;
+  if ((symbol = symtab_lookup(table, name))) {
+    return symbol;
   }
-  entry = entry_create(name, attribute);
-  hashtab_insert(table->entries, name, entry);
-  return entry;
+  symbol = symbol_create(name, attribute);
+  hashtab_insert(table->symbols, name, symbol);
+  return symbol;
 }
 
 List* symtab_dump(SymbolTable* table) {
   // shallow copying the list
   List* dump = NULL;
-  HASHTAB_ITR_FOR_EACH(table->entries, itr,
+  HASHTAB_ITR_FOR_EACH(table->symbols, itr,
                        { dump = list_create(hashtab_itr_value(itr), dump); });
   return dump;
 }
 
 void symtab_delete(SymbolTable* table) {
-  HASHTAB_ITR_FOR_EACH(table->entries, itr, {
-    Entry* entry = hashtab_itr_value(itr);
-    entry_delete(entry);
+  HASHTAB_ITR_FOR_EACH(table->symbols, itr, {
+    Symbol* symbol = hashtab_itr_value(itr);
+    symbol_delete(symbol);
   });
-  hashtab_delete(table->entries);
+  hashtab_delete(table->symbols);
   free(table);
 }
