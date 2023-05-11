@@ -7,6 +7,7 @@ This folder contains the library codes used across the phases of the _sT_ compil
 - [linked list](include/list.h)
 - [hash table](include/hashtab.h)
 - [symbol table](include/symtab.h)
+- [scoped environment](include/scope.h)
 
 ## Running the tests
 
