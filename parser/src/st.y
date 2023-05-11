@@ -1,20 +1,17 @@
 %{
   #include <stdio.h>
   #include <string.h>
-  #include "symtab.h"
 
-  typedef Entry* Symbol;
+  #include "st-lex.h"
+  #include "symtab.h"
 
   #define TRACE(...)  fprintf(stderr, __VA_ARGS__)
 
   void yyerror(const char *s);  /*  defined below; called for each parse error */
-  extern int yylex();           /*  the entry point to the lexer  */
-  extern int yylineno;
-  extern char yytext[];
 %}
 %define parse.error detailed
 %union {
-  Symbol symbol;
+  Symbol* symbol;
   char str_const[256];
   int int_const;
   double real_const;
