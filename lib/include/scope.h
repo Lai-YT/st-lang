@@ -23,17 +23,16 @@ void exit_scope(Environment**);
 /// @brief Looks for the symbol with name. Starting at the current scope and
 /// proceeding through the entire environment until either the symbol is
 /// found, or the end of the root scope is reached.
-/// @return The entry of the symbol if name exists in the environment, or NULL
-/// if not.
-Entry* lookup_environment(Environment*, const char* name);
+/// @return The symbol if such name exists in the environment, or NULL if not.
+Symbol* lookup_environment(Environment*, const char* name);
 
 /// @brief Looks for the symbol with name from the current scope.
-/// @return The entry of the symbol if name exists, or NULL if not.
-Entry* probe_environment(Environment*, const char* name);
+/// @return The symbol if such name exists, or NULL if not.
+Symbol* probe_environment(Environment*, const char* name);
 
 /// @brief Adds an symbol with name to the current scope of the environment.
-/// @return The entry of the inserted symbol.
+/// @return The inserted symbol.
 /// @note Shadows the symbol with the same name in parent scopes.
-Entry* insert_scope(Environment*, const char* name);
+Symbol* insert_scope(Environment*, const char* name);
 
 #endif /* end of include guard: LIB_SCOPE_H */

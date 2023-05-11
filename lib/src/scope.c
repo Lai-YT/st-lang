@@ -59,13 +59,13 @@ void exit_scope(Environment** env) {
   delete_scope(tmp);
 }
 
-Entry* lookup_environment(Environment* env, const char* name) {
+Symbol* lookup_environment(Environment* env, const char* name) {
   if (!in_scope(env)) {
     fputs("enter a scope before looking up\n", stderr);
     exit(EXIT_FAILURE);
   }
   while (in_scope(env)) {
-    Entry* e = probe_environment(env, name);
+    Symbol* e = probe_environment(env, name);
     if (e) {
       return e;
     }
@@ -74,7 +74,7 @@ Entry* lookup_environment(Environment* env, const char* name) {
   return NULL;
 }
 
-Entry* probe_environment(Environment* env, const char* name) {
+Symbol* probe_environment(Environment* env, const char* name) {
   if (!in_scope(env)) {
     fputs("enter a scope before probing\n", stderr);
     exit(EXIT_FAILURE);
@@ -82,10 +82,10 @@ Entry* probe_environment(Environment* env, const char* name) {
   return symtab_lookup(env->scope, name) ?: NULL;
 }
 
-Entry* insert_scope(Environment* env, const char* name) {
+Symbol* insert_scope(Environment* env, const char* name) {
   if (!in_scope(env)) {
     fputs("enter a scope to insert symbol\n", stderr);
     exit(EXIT_FAILURE);
   }
-  return symtab_insert(env->scope, name);
+  return symtab_insert(env->scope, name, NULL);
 }
