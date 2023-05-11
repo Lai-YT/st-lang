@@ -17,18 +17,18 @@
 #define MAX_LINE_LENG 256
 
 // The content of the line which the lexer is scanning on.
-char* cur_line;
+char* st_cur_line;
 
-#ifndef ST_TOKEN_LOCATION
-#define ST_TOKEN_LOCATION
-// The current token locates at [begin, end). Starts from 0.
-typedef struct TokenLocation {
+#ifndef ST_TOKEN_COLUMN
+#define ST_TOKEN_COLUMN
+typedef struct StTokenColumn {
   int begin;
   int end;
-} TokenLocation;
+} StTokenColumn;
 #endif
 
-TokenLocation cur_token_loc;
+// The current token locates at [begin, end]. Both 0 when no token is held.
+StTokenColumn st_cur_token_col;
 
 extern SymbolTable* symtab;
 extern bool verbose;
@@ -37,32 +37,34 @@ extern bool verbose;
 // since yylineno is already advanced when referenced
 #define YYLINENO (yylineno - 1)
 
+// Get an entire line at a time.
 #define YY_INPUT(buf, result, max_size) \
   { \
-    cur_line = (buf); \
+    st_cur_line = (buf); \
     size_t len = 0; \
-    (result) = getline(&cur_line, &len, yyin); \
+    (result) = getline(&st_cur_line, &len, yyin); \
     if (len > (size_t)max_size) { \
-      free(cur_line); \
+      free(st_cur_line); \
       YY_FATAL_ERROR("length of line exceed buffer size"); \
     } \
     if ((result) == -1) { \
-      free(cur_line); \
+      free(st_cur_line); \
       if (feof(yyin)) { \
         (result) = YY_NULL; \
       } else { \
         YY_FATAL_ERROR("input in flex scanner failed"); \
       } \
     } \
-    strncpy((buf), cur_line, len); \
-    cur_token_loc.begin = 0; \
-    cur_token_loc.end = 0; \
+    strncpy((buf), st_cur_line, len); \
+    st_cur_token_col.begin = 0; \
+    st_cur_token_col.end = 0; \
   }
 
+// Advance the column number of the token.
 #define YY_USER_ACTION \
   { \
-    cur_token_loc.begin = cur_token_loc.end; \
-    cur_token_loc.end += yyleng; \
+    st_cur_token_col.begin = st_cur_token_col.end; \
+    st_cur_token_col.end += yyleng; \
   }
 
 // records the line content along with the recognition
