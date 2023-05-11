@@ -40,7 +40,7 @@ usage: ./build/Lexer [-vd] FILE
 
 Options:
   -v, --verbose   Prints the tokens and their corresponding lines
-  -d, --dump      Dumps the identifiers and their attributes
+  -d, --dump      Dumps the name of the identifiers
 ```
 
 ### Example
@@ -98,8 +98,8 @@ $ ./build/Lexer -vd triangle.t
 ...
 
 Symbol Table:
-s: NO_TYPE
-length: NO_TYPE
+s
+length
 ```
 
 ## Development

@@ -55,8 +55,8 @@ void dump_symbols(SymbolTable* table) {
   List* dump = symtab_dump(table);
   List* curr = dump;
   while (curr) {
-    Entry* entry = curr->val;
-    printf("%s: %s\n", entry->name, type_to_str(entry->type));
+    Symbol* symbol = curr->val;
+    printf("%s\n", symbol->name);
     curr = curr->rest;
   }
   list_delete(dump);

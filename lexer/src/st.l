@@ -8,6 +8,7 @@
 
 %{
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -205,7 +206,7 @@ when        TOKEN(WHEN);
    * Identifiers
    */
 {ID} {
-  yylval.symbol = symtab_insert(symtab, yytext);
+  yylval.symbol = symtab_insert(symtab, yytext, NULL);
   TOKEN_IDENTIFIER();
 }
 

@@ -33,8 +33,6 @@
 
 #include "symtab.h"
 
-typedef Entry* Symbol;
-
 // NOLINTBEGIN(readability-identifier-naming)
 // Not to report warnings on auto-generated enum.
 
@@ -97,7 +95,7 @@ typedef enum yytokentype yytoken_kind_t;
 /* Value type.  */
 #if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
 union YYSTYPE {
-  Symbol symbol;
+  Symbol* symbol;
   char str_const[256];
   int int_const;
   double real_const;
