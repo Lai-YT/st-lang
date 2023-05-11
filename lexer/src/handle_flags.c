@@ -46,6 +46,6 @@ void usage(const char* prog) {
           "\n"
           "Options:\n"
           "  -v, --verbose   Prints the tokens and their corresponding lines\n"
-          "  -d, --dump      Dumps the identifiers and their attributes\n",
+          "  -d, --dump      Dumps the name of the identifiers\n",
           prog);
 }
