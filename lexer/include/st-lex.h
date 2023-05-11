@@ -6,15 +6,16 @@
 #include "../src/st-lex.h"
 
 /// @brief The content of the line which the lexer is scanning on.
-extern char* cur_line;
+extern char* st_cur_line;
 
-#ifndef ST_TOKEN_LOCATION
-#define ST_TOKEN_LOCATION
-typedef struct TokenLocation {
+#ifndef ST_TOKEN_COLUMN
+#define ST_TOKEN_COLUMN
+typedef struct StTokenColumn {
   int begin;
   int end;
-} TokenLocation;
+} StTokenColumn;
 #endif
 
-/// @brief The current token locates at [begin, end). Starts from 0.
-extern TokenLocation cur_token_loc;
+/// @brief The current token locates at [begin, end]. Both 0 when no token is
+/// held.
+StTokenColumn st_cur_token_col;
