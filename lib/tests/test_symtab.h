@@ -1,5 +1,5 @@
-#ifndef TEST_TEST_SYMTAB_H
-#define TEST_TEST_SYMTAB_H
+#ifndef TESTS_TEST_SYMTAB_H
+#define TESTS_TEST_SYMTAB_H
 
 #include <assert.h>
 #include <stdbool.h>
@@ -11,9 +11,14 @@
 void test_symtab_lookup_inserted_symbols() {
   SymbolTable* table = symtab_create();
 
-  symtab_insert(table, "a");
-  symtab_insert(table, "b");
-  symtab_insert(table, "c");
+  struct {
+    char* name;
+    int val;
+  } symbols[] = {{"a", 1}, {"b", 2}, {"c", 3}};
+
+  symtab_insert(table, symbols[0].name, &symbols[0].val);
+  symtab_insert(table, symbols[1].name, &symbols[1].val);
+  symtab_insert(table, symbols[2].name, &symbols[2].val);
 
   Entry* a = symtab_lookup(table, "a");
   Entry* b = symtab_lookup(table, "b");
@@ -39,30 +44,38 @@ void test_symtab_lookup_without_insert() {
 void test_symtab_dump_should_return_all_inserted_entries() {
   SymbolTable* table = symtab_create();
 
-  symtab_insert(table, "a");
-  symtab_insert(table, "b");
-  symtab_insert(table, "c");
+  struct {
+    char* name;
+    int val;
+  } symbols[] = {{"a", 1}, {"b", 2}, {"c", 3}};
+
+  symtab_insert(table, symbols[0].name, &symbols[0].val);
+  symtab_insert(table, symbols[1].name, &symbols[1].val);
+  symtab_insert(table, symbols[2].name, &symbols[2].val);
 
   List* entry_dump = symtab_dump(table);
 
-  // index 0, 1, and 2 corresponds to a, b, and c, respectively
+  // index 0, 1, and 2 corresponds to symbol[0], symbol[1], and symbol[2],
+  // respectively
   bool found[3] = {0};
   List* curr = entry_dump;
   for (int i = 0; i < 3; i++) {
     assert(entry_dump);
     Entry* entry = curr->val;
-    if (strcmp(entry->name, "a") == 0) {
+    if (strcmp(entry->name, symbols[0].name) == 0) {
       assert(!found[0]);
       found[0] = true;
-    } else if (strcmp(entry->name, "b") == 0) {
+      assert(*((int*)entry->attribute) == symbols[0].val);
+    } else if (strcmp(entry->name, symbols[1].name) == 0) {
       assert(!found[1]);
       found[1] = true;
-    } else if (strcmp(entry->name, "c") == 0) {
+      assert(*((int*)entry->attribute) == symbols[1].val);
+    } else if (strcmp(entry->name, symbols[2].name) == 0) {
       assert(!found[2]);
       found[2] = true;
+      assert(*((int*)entry->attribute) == symbols[2].val);
     } else {
-      // unknown symbol
-      assert(false);
+      assert(false && "unknown symbol");
     }
     curr = curr->rest;
   }
@@ -72,4 +85,4 @@ void test_symtab_dump_should_return_all_inserted_entries() {
   symtab_delete(table);
 }
 
-#endif /* end of include guard: TEST_TEST_SYMTAB_H */
+#endif /* end of include guard: TESTS_TEST_SYMTAB_H */
