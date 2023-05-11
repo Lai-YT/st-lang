@@ -10,10 +10,10 @@ struct SymbolTable {
   HashTable* entries;
 };
 
-static Entry* entry_create(const char* name, Type type) {
+static Entry* entry_create(const char* name, void* attribute) {
   Entry* entry = malloc(sizeof(Entry));
   strncpy(entry->name, name, MAX_NAME_LENGTH);
-  entry->type = type;
+  entry->attribute = attribute;
   return entry;
 }
 
@@ -31,12 +31,12 @@ Entry* symtab_lookup(SymbolTable* table, const char* name) {
   return hashtab_search(table->entries, name);
 }
 
-Entry* symtab_insert(SymbolTable* table, const char* name) {
+Entry* symtab_insert(SymbolTable* table, const char* name, void* attribute) {
   Entry* entry;
   if ((entry = symtab_lookup(table, name))) {
     return entry;
   }
-  entry = entry_create(name, NO_TYPE);
+  entry = entry_create(name, attribute);
   hashtab_insert(table->entries, name, entry);
   return entry;
 }
@@ -56,19 +56,4 @@ void symtab_delete(SymbolTable* table) {
   });
   hashtab_delete(table->entries);
   free(table);
-}
-
-const char* type_to_str(Type type) {
-  switch (type) {
-    case NO_TYPE:
-      return "NO_TYPE";
-    case INT_TYPE:
-      return "INT_TYPE";
-    case STRING_TYPE:
-      return "STRING_TYPE";
-    case BOOLEAN_TYPE:
-      return "BOOLEAN_TYPE";
-    default:
-      return "";
-  }
 }
