@@ -38,13 +38,12 @@ extern bool verbose;
 // since yylineno is already advanced when referenced
 #define YYLINENO (yylineno - 1)
 
+static size_t st_buf_len = 0;
 // Get an entire line at a time.
 #define YY_INPUT(buf, result, max_size) \
   { \
-    st_cur_line = (buf); \
-    size_t len = 0; \
-    (result) = getline(&st_cur_line, &len, yyin); \
-    if (len > (size_t)max_size) { \
+    (result) = getline(&st_cur_line, &st_buf_len, yyin); \
+    if (st_buf_len > (size_t)max_size) { \
       free(st_cur_line); \
       YY_FATAL_ERROR("length of line exceed buffer size"); \
     } \
@@ -56,7 +55,7 @@ extern bool verbose;
         YY_FATAL_ERROR("input in flex scanner failed"); \
       } \
     } \
-    strncpy((buf), st_cur_line, len); \
+    strncpy((buf), st_cur_line, st_buf_len); \
     st_cur_token_col.begin = 0; \
     st_cur_token_col.end = 0; \
   }
