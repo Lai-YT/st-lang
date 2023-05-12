@@ -61,6 +61,7 @@ You will then be taken into the container. Here you have all the tools you need,
 | substring | `str[1 .. 2]` | `str(1 .. 2)` |
 | function | may have side effects | may NOT have side effects |
 | `skip` | use solely to print a newline | use with `get` & `put` to detect eof & print newlines |
+| subprogram declaration & call | always parenthesis | no parenthesis when on parameter |
 
 ## Resources
 
