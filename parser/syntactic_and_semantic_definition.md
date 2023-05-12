@@ -58,13 +58,12 @@ A *subprogram_declaration* is:
 
 A *subprogram_header* is one of:
 
-- **procedure** **id** [ **(** *parameter_declaration* { **,** *parameter_declaration* } **)** ]
-- **function** **id** [ **(** *parameter_declaration* { **,** *parameter_declaration* } **)** ] **:** _type_
+- **procedure** **id** **(** [ *parameter_declaration* { **,** *parameter_declaration* } ] **)**
+- **function** **id** **(** [ *parameter_declaration* { **,** *parameter_declaration* } ] **)** **:** _type_
 
 The **id**s appear in the *subprogram_header* and after **end** must be identical, which are the name of the subprogram.
 
 A procedure is invoked by a *[procedure_call](#subprogram-calls)* statement, with actual parameters if required. A function is invoked by using its name, with actual parameters if required, in an expression.
-If a subprogram `p` has no parameters, a call to it does not have any parentheses, i.e., the call is of the form `p` and not `p()`.
 
 Subprograms may optionally take parameters, the types of which are defined in the header.
 The names of the parameters, as well as the name of the subprogram, are visible inside the subprogram.
@@ -96,7 +95,7 @@ For example, the followings are valid function or procedure *subprogram_header*s
 ```turing
 function power(var base: real, exp: int): real
 function sum(arr: array 0 .. * of int): int
-procedure increaseGlobalCount
+procedure increaseGlobalCount()
 ```
 
 A *subprogram_body* is:
@@ -244,7 +243,7 @@ For example, `arr[1][4]` is a variable reference of the array `arr` with type `a
 
 A *subprogram_call* is:
 
-- **id** [ **(** _expr_ { **,** _expr_ } **)** ]
+- **id** **(** [ _expr_ { **,** _expr_ } ] **)**
 
 The number of expressions must be the same as the number of declared parameters of the [subprogram](#subprogram-declarations).
 Each _expr_ must have type equivalent to the corresponding formal parameter of the subprogram.
