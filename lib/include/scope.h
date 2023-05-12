@@ -1,6 +1,7 @@
 #ifndef LIB_SCOPE_H
 #define LIB_SCOPE_H
 
+#include "list.h"
 #include "symtab.h"
 
 /// @brief An environment holds stack of scopes. Providing operations for
@@ -34,5 +35,10 @@ Symbol* probe_environment(Environment*, const char* name);
 /// @return The inserted symbol.
 /// @note Shadows the symbol with the same name in parent scopes.
 Symbol* insert_scope(Environment*, const char* name);
+
+/// @return All the symbols in the current scope. The order is unspecified.
+/// @note The ownership of the dumped list is taken by the caller, but the
+/// symbols are not. Call list_delete after inspection.
+List* dump_scope(Environment*);
 
 #endif /* end of include guard: LIB_SCOPE_H */

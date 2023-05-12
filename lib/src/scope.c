@@ -89,3 +89,11 @@ Symbol* insert_scope(Environment* env, const char* name) {
   }
   return symtab_insert(env->scope, name, NULL);
 }
+
+List* dump_scope(Environment* env) {
+  if (!in_scope(env)) {
+    fputs("no scope to dump\n", stderr);
+    exit(EXIT_FAILURE);
+  }
+  return symtab_dump(env->scope);
+}
