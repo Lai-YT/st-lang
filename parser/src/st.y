@@ -32,7 +32,7 @@
 %type decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
 %type array_type scalar_type type const_decl explicit_const bool_const
 %type subscript_list subscript subprog_decl subprog_header opt_decl_or_stmt_list
-%type formal_decl_list formal_decl formal_type subprog_call if_stmt
+%type opt_formal_decl_list formal_decl_list formal_decl formal_type subprog_call if_stmt
 %type bool_expr operation numeric_operation comparison_operation boolean_operation
 %type sign_operation exit_stmt loop_stmt for_stmt block get_stmt put_stmt
 %type var_ref_comma_list expr_comma_list
@@ -134,13 +134,9 @@ subprog_decl:
 ;
 
 subprog_header:
-  PROCEDURE ID
+  PROCEDURE ID '(' opt_formal_decl_list ')'
   { ; }
-| PROCEDURE ID '(' formal_decl_list ')'
-  { ; }
-| FUNCTION ID ':' type
-  { ; }
-| FUNCTION ID '(' formal_decl_list ')' ':' type
+| FUNCTION ID '(' opt_formal_decl_list ')' ':' type
   { ; }
 ;
 
@@ -162,6 +158,13 @@ decl_or_stmt:
   decl
   { ; }
 | stmt
+  { ; }
+;
+
+opt_formal_decl_list:
+  formal_decl_list
+  { ; }
+| /* empty */
   { ; }
 ;
 
@@ -191,7 +194,7 @@ formal_type:
 ;
 
 subprog_call:
-  ID
+  ID '(' ')'
   { ; }
 | ID '(' expr_comma_list ')'
   { ; }
@@ -305,9 +308,6 @@ type:
 ;
 
 var_ref:
-  /*
-   * NOTE: a single ID can also be a subprogram call
-   */
   ID
   { ; }
   /*
@@ -334,15 +334,7 @@ expr:
   { ; }
 | explicit_const
   { ; }
-  /*
-   * Here a hack on the ambiguous grammar:
-   *  Since an variable reference and a subprogram call may both be a single ID,
-   *  directly placing a subprog_call non-terminal here causes a reduce/reduce conflict.
-   *  The workaround is the put the rules of subprog_call except ID here.
-   *  This implies that a subprog_call with ID is treated as an var_ref and
-   *  should be resolved further semantically.
-   */
-| ID '(' expr_comma_list ')'
+| subprog_call
   { ; }
   /*
    * Here a hack on the ambiguous grammar:
