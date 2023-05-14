@@ -23,6 +23,7 @@
   ConstIdentifier* const_id;
   VarIdentifier* var_id;
   Reference* ref;
+  StDataTypeInfo* type_info;
 }
 
 /* tokens */
@@ -50,6 +51,7 @@
 %type <var_id> var_decl
 %type <const_id> const_decl
 %type <ref> var_ref
+%type <type_info> scalar_type
 
   /* lowest to highest */
 %left OR
@@ -229,7 +231,16 @@ var_decl:
 | VAR ID ':' array_type
   { /* no check */ }
 | VAR ID ':' scalar_type
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(VarIdentifier));
+    $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
+    strcpy($$->name, $2->name);
+    ST_COPY_TYPE($$, $4);
+    // determine the type of the string as variable string
+    if ($4->data_type == ST_STRING_TYPE) {
+      $$->string->var_string = malloc(sizeof(VarString));
+    }
+  }
 | VAR ID ':' scalar_type ASSIGN expr
   {
     /*
@@ -561,18 +572,36 @@ bool_expr:
   }
 ;
 
+  /*
+   * Returns an StDataTypeInfo.
+   */
 scalar_type:
   INT
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(StDataTypeInfo));
+    $$->data_type = ST_INT_TYPE;
+  }
 | REAL
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(StDataTypeInfo));
+    $$->data_type = ST_REAL_TYPE;
+  }
 | BOOL
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(StDataTypeInfo));
+    $$->data_type = ST_BOOL_TYPE;
+  }
 | STRING
   {
     /*
      * (1) the max length of the string is 255
      */
+    $$ = malloc(sizeof(StDataTypeInfo));
+    $$->data_type = ST_STRING_TYPE;
+    $$->string = malloc(sizeof(String));
+    // (1)
+    $$->string->max_length = 255;
+    // the type of string is determined later
   }
 | STRING '(' expr ')'
   {
@@ -582,6 +611,32 @@ scalar_type:
      * (3) the expression must be positive
      * (4) the expression can't be greater than 255
      */
+    if ($3->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      // (1)
+      if ($3->compile_time_expr->data_type != ST_INT_TYPE) {
+        ST_FATAL_ERROR("error: max length of a string must have type 'int'\n");
+      }
+      // (3), (4)
+      if ($3->compile_time_expr->int_val < 1
+          || $3->compile_time_expr->int_val > 255) {
+        ST_FATAL_ERROR("error: max length of a string must be in range 1 ~ 255\n");
+      }
+    } else if ($3->expr_type == ST_RUN_TIME_EXPRESSION) {
+      // (1): giving check of data type higher priority than expr type
+      if ($3->compile_time_expr->data_type != ST_INT_TYPE) {
+        ST_FATAL_ERROR("error: max length of a string must have type 'int'\n");
+      }
+      // (2)
+      ST_FATAL_ERROR("error: max length of a string must be determined at compile-time\n");
+    } else {
+      ST_UNREACHABLE();
+    }
+    // checks are done, it's now safe to construct the type
+    $$ = malloc(sizeof(StDataTypeInfo));
+    $$->data_type = ST_STRING_TYPE;
+    $$->string = malloc(sizeof(String));
+    $$->string->max_length = $3->compile_time_expr->int_val;
+    // the type of string is determined later
   }
 ;
 

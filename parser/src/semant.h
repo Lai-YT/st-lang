@@ -92,6 +92,20 @@ struct Array {
   };
 };
 
+/// @brief Wraps the data type and its additional information together.
+/// @note This structure is capable to hold all information of types, especially
+/// useful for complex types, such as string and array. But if only int, real
+/// and bool are needed, simple use a StDataType instead.
+typedef struct StDataTypeInfo {
+  StDataType data_type;
+  union {
+    /// @brief Only available when the data type is ST_ARRAY_TYPE.
+    Array* array;
+    /// @brief Only available when the data type is ST_STRING_TYPE.
+    String* string;
+  };
+} StDataTypeInfo;
+
 typedef enum StIdentifierType {
   ST_CONST_IDENTIFIER,
   ST_VAR_IDENTIFIER,
