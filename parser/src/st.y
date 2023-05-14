@@ -21,6 +21,7 @@
   Expression* expr;
   CompileTimeExpression* compile_time_expr;
   ConstIdentifier* const_id;
+  VarIdentifier* var_id;
   Reference* ref;
 }
 
@@ -46,6 +47,7 @@
 
 %type <expr> expr
 %type <compile_time_expr> bool_const explicit_const
+%type <var_id> var_decl
 %type <const_id> const_decl
 %type <ref> var_ref
 
@@ -100,6 +102,16 @@ decl:
      * (2) the identifier should be recorded under the scope
      * (3) the identifier should be marked as mutable
      */
+    // (1)
+    if (symtab_lookup(scope, $1->name)) {
+      ST_FATAL_ERROR("error: re-declaration of identifier '%s'\n", $1->name);
+    }
+    Identifier* id = malloc(sizeof(Identifier));
+    // (3)
+    id->id_type = ST_VAR_IDENTIFIER;
+    id->var_id = $1;
+    // (2)
+    symtab_insert(scope, $1->name, id);
   }
 | const_decl
   {
@@ -195,9 +207,25 @@ stmt:
   { /* no check */ }
 ;
 
+  /*
+   * Returns a VarIdentifier.
+   */
 var_decl:
   VAR ID ASSIGN expr
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(VarIdentifier));
+    $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
+    strcpy($$->name, $2->name);
+    // although the value of the expression is irrelevant for the variable,
+    // we have to access the correct expression to get the data type
+    if ($4->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      $$->data_type = $4->compile_time_expr->data_type;
+    } else if ($4->expr_type == ST_RUN_TIME_EXPRESSION) {
+      ST_COPY_TYPE($$, $4->run_time_expr);
+    } else {
+      ST_UNREACHABLE();
+    }
+  }
 | VAR ID ':' array_type
   { /* no check */ }
 | VAR ID ':' scalar_type
