@@ -12,6 +12,7 @@
 /// @brief Prints the format message to stderr and exits as failure.
 #define ST_FATAL_ERROR(...) \
   { \
+    fprintf(stderr, "error: "); \
     fprintf(stderr, __VA_ARGS__); \
     exit(EXIT_FAILURE); \
   }
