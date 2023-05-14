@@ -1,11 +1,14 @@
 %{
   #include <stdio.h>
+  #include <stdlib.h>
   #include <string.h>
 
+  #include "semant.h"
+  #include "semant_macros.h"
   #include "st-lex.h"
   #include "symtab.h"
 
-  #define TRACE(...)  fprintf(stderr, __VA_ARGS__)
+  extern SymbolTable* scope;
 
   void yyerror(const char *s);  /*  defined below; called for each parse error */
 %}
@@ -15,6 +18,10 @@
   char str_const[256];
   int int_const;
   double real_const;
+  Expression* expr;
+  CompileTimeExpression* compile_time_expr;
+  ConstIdentifier* const_id;
+  Reference* ref;
 }
 
 /* tokens */
@@ -36,6 +43,11 @@
 %type bool_expr operation numeric_operation comparison_operation boolean_operation
 %type sign_operation exit_stmt loop_stmt for_stmt block get_stmt put_stmt
 %type var_ref_comma_list expr_comma_list
+
+%type <expr> expr
+%type <compile_time_expr> bool_const explicit_const
+%type <const_id> const_decl
+%type <ref> var_ref
 
   /* lowest to highest */
 %left OR
@@ -84,15 +96,28 @@ decl:
   var_decl
   {
     /*
-     * (1) the identifier should be recorded under the scope marked as mutable
+     * (1) re-declaration error if name exists in the current scope
+     * (2) the identifier should be recorded under the scope
+     * (3) the identifier should be marked as mutable
      */
   }
 | const_decl
   {
     /*
-     * (1) the identifier should be recorded under the scope marked as constant
-     * (2) may be a compile-time expression, and the value has to be recorded if it is
+     * (1) re-declaration error if name exists in the current scope
+     * (2) the identifier should be recorded under the scope
+     * (3) the identifier should be marked as constant
      */
+    // (1)
+    if (symtab_lookup(scope, $1->name)) {
+      ST_FATAL_ERROR("error: re-declaration of identifier '%s'\n", $1->name);
+    }
+    Identifier* id = malloc(sizeof(Identifier));
+    // (3)
+    id->id_type = ST_CONST_IDENTIFIER;
+    id->const_id = $1;
+    // (2)
+    symtab_insert(scope, $1->name, id);
   }
 ;
 
@@ -103,6 +128,22 @@ stmt:
      * (1) the type of the variable reference has to be the same as the expression
      * (2) the reference should be of a mutable variable
      */
+    if ($1->ref_type == ST_IDENTIFIER_REFERENCE) {
+      // (2)
+      if ($1->id_ref->id_type == ST_CONST_IDENTIFIER) {
+        ST_FATAL_ERROR("error: assign to const '%s'\n", $1->id_ref->const_id->name);
+      }
+      // TODO: type compare
+    } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
+      // (2)
+      if ($1->array_subscript_ref->is_const) {
+        // we don't know the name of the array
+        ST_FATAL_ERROR("error: assign to const\n");
+      }
+      // TODO: type compare
+    } else {
+      ST_UNREACHABLE();
+    }
   }
 | subprog_call
   { /* no check */ }
@@ -169,13 +210,65 @@ var_decl:
   }
 ;
 
+  /*
+   * Returns a ConstIdentifier.
+   */
 const_decl:
   CONST ID ASSIGN expr
   {
     /*
      * (1) the expression is not a variable reference in type of a dynamic array
      * (2) if the expression is a compile-time expression, the id can represent a compile-time expression
+     * (3) if the expression is a compile-time expression, the value has to be recorded
      */
+    // (2)
+    $$ = malloc(sizeof(ConstIdentifier));
+    $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
+    strcpy($$->name, $2->name);
+    if ($4->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      $$->const_id_type = ST_COMPILE_TIME_CONST_IDENTIFIER;
+      $$->compile_time_const_id = malloc(sizeof(CompileTimeConstIdentifier));
+      $$->compile_time_const_id->data_type = $4->compile_time_expr->data_type;
+      // (3)
+      switch ($4->compile_time_expr->data_type) {
+        case ST_INT_TYPE:
+          $$->compile_time_const_id->int_val = $4->compile_time_expr->int_val;
+          break;
+        case ST_REAL_TYPE:
+          $$->compile_time_const_id->real_val = $4->compile_time_expr->real_val;
+          break;
+        case ST_BOOL_TYPE:
+          $$->compile_time_const_id->bool_val = $4->compile_time_expr->bool_val;
+          break;
+        case ST_STRING_TYPE:
+          $$->compile_time_const_id->string = $4->compile_time_expr->string;
+          break;
+        default:
+          ST_UNREACHABLE();
+      }
+    } else if ($4->expr_type == ST_RUN_TIME_EXPRESSION) {
+      $$->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
+      $$->run_time_const_id = malloc(sizeof(RunTimeConstIdentifier));
+      $$->run_time_const_id->data_type = $4->run_time_expr->data_type;
+      switch ($4->run_time_expr->data_type) {
+        case ST_STRING_TYPE:
+          $$->run_time_const_id->string = $4->run_time_expr->string;
+          break;
+        case ST_ARRAY_TYPE:
+          // (1)
+          if ($4->run_time_expr->array->array_type == ST_DYNAMIC_ARRAY) {
+            ST_FATAL_ERROR("error: a constant identifier cannot be a dynamic array\n");
+          }
+          $$->run_time_const_id->array = $4->run_time_expr->array;
+          break;
+        default:
+          /* other types don't have additional information to record */
+          break;
+      }
+      /* no data to copy since its run-time determined */
+    } else {
+      ST_UNREACHABLE();
+    }
   }
 | CONST ID ':' scalar_type ASSIGN expr
   {
@@ -231,11 +324,7 @@ decl_or_stmt_list:
 
 decl_or_stmt:
   decl
-  {
-    /*
-     * (1) re-declaration error if name exists in the current scope
-     */
-  }
+  { /* no check */ }
 | stmt
   { /* no check */ }
 ;
@@ -487,12 +576,29 @@ type:
   { /* no check */ }
 ;
 
+  /*
+   * Returns a Reference.
+   */
 var_ref:
   ID
   {
     /*
-     * (1) id can't be a subprogram
+     * (1) the id has to be declared
+     * (2) the id can't be a subprogram
      */
+    Symbol* symbol = symtab_lookup(scope, $1->name);
+    // (1)
+    if (!symbol) {
+      ST_FATAL_ERROR("error: identifier '%s' is not declared\n", $1->name);
+    }
+    Identifier* id = symbol->attribute;
+    // (2)
+    if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
+      ST_FATAL_ERROR("error: identifier '%s' is a subprogram\n", $1->name);
+    }
+    $$ = malloc(sizeof(Reference));
+    $$->ref_type = ST_IDENTIFIER_REFERENCE;
+    $$->id_ref = id;
   }
   /*
    * NOTE: a ID subscripting can also be a substring
@@ -525,14 +631,59 @@ subscript:
   }
 ;
 
+  /*
+   * Returns an Expression.
+   */
 expr:
+  /*
+   * The reference is used as a rhs.
+   */
   var_ref
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(Expression));
+    if ($1->ref_type == ST_IDENTIFIER_REFERENCE) {
+      // compile-time of not?
+      switch ($1->id_ref->id_type) {
+        case ST_CONST_IDENTIFIER:
+          if ($1->id_ref->const_id->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
+            $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
+            $$->compile_time_expr = malloc(sizeof(CompileTimeExpression));
+            ST_COPY_SCALAR_VALUE($$->compile_time_expr, $1->id_ref->const_id->compile_time_const_id);
+          } else if ($1->id_ref->const_id->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
+            $$->expr_type = ST_RUN_TIME_EXPRESSION;
+            $$->run_time_expr = malloc(sizeof(RunTimeExpression));
+            ST_COPY_TYPE($$->run_time_expr, $1->id_ref->const_id->run_time_const_id);
+          } else {
+            ST_UNREACHABLE();
+          }
+          break;
+        case ST_VAR_IDENTIFIER:
+          // can't be compile-time expression, so just copy the type
+          $$->expr_type = ST_RUN_TIME_EXPRESSION;
+          $$->run_time_expr = malloc(sizeof(RunTimeExpression));
+          ST_COPY_TYPE($$->run_time_expr, $1->id_ref->var_id);
+          break;
+        default:
+          ST_UNREACHABLE();
+      }
+    } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
+      // can't be compile-time expression, so just copy the type
+      $$->expr_type = ST_RUN_TIME_EXPRESSION;
+      $$->run_time_expr = malloc(sizeof(RunTimeExpression));
+      ST_COPY_TYPE($$->run_time_expr, $1->array_subscript_ref);
+    } else {
+      ST_UNREACHABLE();
+    }
+  }
 | explicit_const
   {
     /*
      * (1) always compile-time expression
      */
+    $$ = malloc(sizeof(Expression));
+    // (1)
+    $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
+    $$->compile_time_expr = $1;
   }
 | subprog_call
   {
@@ -563,11 +714,22 @@ expr:
   { /* no check */ }
 ;
 
+  /*
+   * Returns a CompileTimeExpression.
+   */
 explicit_const:
   INT_CONST
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(CompileTimeExpression));
+    $$->data_type = ST_INT_TYPE;
+    $$->int_val = $1;
+  }
 | REAL_CONST
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(CompileTimeExpression));
+    $$->data_type = ST_REAL_TYPE;
+    $$->real_val = $1;
+  }
 | STR_CONST
   {
     /*
@@ -575,14 +737,25 @@ explicit_const:
      */
   }
 | bool_const
-  { /* no check */ }
+  { $$ = $1; }
 ;
 
+  /*
+   * Returns a CompileTimeExpression.
+   */
 bool_const:
   TRUE
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(CompileTimeExpression));
+    $$->data_type = ST_BOOL_TYPE;
+    $$->bool_val = true;
+  }
 | FALSE
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(CompileTimeExpression));
+    $$->data_type = ST_BOOL_TYPE;
+    $$->bool_val = false;
+  }
 ;
 
 operation:

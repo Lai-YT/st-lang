@@ -6,6 +6,10 @@
 // the symbol table used in the lexer
 SymbolTable* symtab;
 
+/// @brief The scope environment used in the parser.
+/// @note Start with a single scope.
+SymbolTable* scope;
+
 extern FILE* yyin;
 extern int yyparse();
 
@@ -20,6 +24,7 @@ int main(int argc, char* argv[]) {
   }
 
   symtab = symtab_create();
+  scope = symtab_create();
 
   /* perform parsing */
   if (yyparse() != 0) {                 /* parsing */
