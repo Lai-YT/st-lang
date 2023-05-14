@@ -150,9 +150,9 @@ var i: int := 1          % i is assigned with initial value 1
 var s := "sample output" % The type of s is string
 ```
 
-A **variable_declaration** creates a new variable. \
+A *variable_declaration* creates a new variable. \
 In form (1), the variable's type is taken to be the type of the _expr_; this type must not be a dynamic array.
-Form (2) allows the declaration of dynamic arrays, whose upper bounds are run-time expressions. However, the lower bounds are constrained to be compile-time expressions.
+Form (2) allows the declaration of dynamic arrays, whose upper bounds are run-time expressions. However, the lower bounds are constrained to be [compile-time expressions](#compile-time-expressions).
 Given that `n` is a variable, here is an example of the declaration of a dynamic array:
 
 ```turing
