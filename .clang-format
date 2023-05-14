@@ -3,3 +3,4 @@ AllowShortFunctionsOnASingleLine: Empty
 BreakBeforeBinaryOperators: All
 DerivePointerAlignment: false
 PointerAlignment: Left
+AlignEscapedNewlines: DontAlign
