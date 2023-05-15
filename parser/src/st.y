@@ -222,7 +222,7 @@ var_decl:
     // although the value of the expression is irrelevant for the variable,
     // we have to access the correct expression to get the data type
     if ($4->expr_type == ST_COMPILE_TIME_EXPRESSION) {
-      $$->data_type = $4->compile_time_expr->data_type;
+      ST_COPY_SCALAR_TYPE($$, $4->compile_time_expr);
     } else if ($4->expr_type == ST_RUN_TIME_EXPRESSION) {
       ST_COPY_TYPE($$, $4->run_time_expr);
     } else {

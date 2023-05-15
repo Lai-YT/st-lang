@@ -56,7 +56,7 @@ extern char* input_filename;
 /// @brief Copies the data type and the correspond additional information of b
 /// to a.
 /// @note (1) a and b should be pointers (2) they should both have a union of
-/// additional information.
+/// string and array.
 #define ST_COPY_TYPE(a, b) \
   { \
     (a)->data_type = (b)->data_type; \
@@ -66,6 +66,25 @@ extern char* input_filename;
         break; \
       case ST_ARRAY_TYPE: \
         (a)->array = (b)->array; \
+        break; \
+      default: \
+        /* has no additional information to copy */ \
+        break; \
+    } \
+  }
+#endif
+
+#ifndef ST_COPY_SCALAR_TYPE
+/// @brief Copies the data type and the correspond additional information of b
+/// to a.
+/// @note (1) a and b should be pointers (2) they should both have a datum of
+/// string.
+#define ST_COPY_SCALAR_TYPE(a, b) \
+  { \
+    (a)->data_type = (b)->data_type; \
+    switch ((b)->data_type) { \
+      case ST_STRING_TYPE: \
+        (a)->string = (b)->string; \
         break; \
       default: \
         /* has no additional information to copy */ \
