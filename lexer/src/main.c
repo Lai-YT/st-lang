@@ -6,19 +6,21 @@
 
 #include "handle_flags.h"
 #include "list.h"
+#include "st-lex.h"
 #include "st-parse.h"
 #include "symtab.h"
 
 // the symbol table used in the lexer
 SymbolTable* symtab;
-// the semantic value of the token
-// defined here since it not compiled with the bison parser
-YYSTYPE yylval;
 
-// the flex scanning routine
-extern int yylex();
-// whenever `yylex` is called, it scans tokens from the global input file yyin
-extern FILE* yyin;
+/*
+ * defined the followings variables here since the lexer is now not compiled
+ * with the bison parser
+ */
+// the semantic value of the token
+YYSTYPE yylval;
+// the location data of the token, initialize to the beginning of the file
+YYLTYPE yylloc = {1, 1, 1, 1};
 
 void dump_symbols(SymbolTable*);
 

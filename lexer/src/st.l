@@ -20,23 +20,20 @@
 // The content of the line which the lexer is scanning on.
 char* st_cur_line;
 
-#ifndef ST_TOKEN_COLUMN
-#define ST_TOKEN_COLUMN
-typedef struct StTokenColumn {
-  int begin;
-  int end;
-} StTokenColumn;
-#endif
-
-// The current token locates at [begin, end]. Both 0 when no token is held.
-StTokenColumn st_cur_token_col;
-
 extern SymbolTable* symtab;
 extern bool verbose;
 
 // use this instead of yylineno in action of patterns that matches newline
 // since yylineno is already advanced when referenced
 #define YYLINENO (yylineno - 1)
+
+/* handle locations */
+static int yycolumn = 1;
+#define YY_USER_ACTION \
+  yylloc.first_line = yylloc.last_line = yylineno; \
+  yylloc.first_column = yycolumn; \
+  yylloc.last_column = yycolumn + yyleng - 1; \
+  yycolumn += yyleng;
 
 static size_t st_buf_len = 0;
 // Get an entire line at a time.
@@ -56,15 +53,8 @@ static size_t st_buf_len = 0;
       } \
     } \
     strncpy((buf), st_cur_line, st_buf_len); \
-    st_cur_token_col.begin = 0; \
-    st_cur_token_col.end = 0; \
-  }
-
-// Advance the column number of the token.
-#define YY_USER_ACTION \
-  { \
-    st_cur_token_col.begin = st_cur_token_col.end; \
-    st_cur_token_col.end += yyleng; \
+    /* newline, reset column */ \
+    yycolumn = 1; \
   }
 
 // records the line content along with the recognition
