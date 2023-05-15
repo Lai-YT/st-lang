@@ -4,15 +4,19 @@
 
 #include "semant.h"
 
+/// @brief The file being semantically checked.
+extern char* input_filename;
+
 #ifndef ST_TRACE
 #define ST_TRACE(...) fprintf(stderr, __VA_ARGS__)
 #endif
 
 #ifndef ST_FATAL_ERROR
 /// @brief Prints the format message to stderr and exits as failure.
-#define ST_FATAL_ERROR(...) \
+#define ST_FATAL_ERROR(yylloc, ...) \
   { \
-    fprintf(stderr, "error: "); \
+    fprintf(stderr, "%s:%d:%d: error: ", input_filename, (yylloc).first_line, \
+            (yylloc).first_column); \
     fprintf(stderr, __VA_ARGS__); \
     exit(EXIT_FAILURE); \
   }

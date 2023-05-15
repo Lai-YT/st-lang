@@ -12,6 +12,7 @@
 
   void yyerror(const char *s);  /*  defined below; called for each parse error */
 %}
+%locations
 %define parse.error detailed
 %union {
   Symbol* symbol;
@@ -106,7 +107,7 @@ decl:
      */
     // (1)
     if (symtab_lookup(scope, $1->name)) {
-      ST_FATAL_ERROR("re-declaration of identifier '%s'\n", $1->name);
+      ST_FATAL_ERROR(@1, "re-declaration of identifier '%s'\n", $1->name);
     }
     Identifier* id = malloc(sizeof(Identifier));
     // (3)
@@ -124,7 +125,7 @@ decl:
      */
     // (1)
     if (symtab_lookup(scope, $1->name)) {
-      ST_FATAL_ERROR("re-declaration of identifier '%s'\n", $1->name);
+      ST_FATAL_ERROR(@1, "re-declaration of identifier '%s'\n", $1->name);
     }
     Identifier* id = malloc(sizeof(Identifier));
     // (3)
@@ -145,14 +146,14 @@ stmt:
     if ($1->ref_type == ST_IDENTIFIER_REFERENCE) {
       // (2)
       if ($1->id_ref->id_type == ST_CONST_IDENTIFIER) {
-        ST_FATAL_ERROR("assign to const '%s'\n", $1->id_ref->const_id->name);
+        ST_FATAL_ERROR(@1, "assign to const '%s'\n", $1->id_ref->const_id->name);
       }
       // TODO: type compare
     } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
       // (2)
       if ($1->array_subscript_ref->is_const) {
         // we don't know the name of the array
-        ST_FATAL_ERROR("assign to const\n");
+        ST_FATAL_ERROR(@1, "assign to const\n");
       }
       // TODO: type compare
     } else {
@@ -280,7 +281,7 @@ const_decl:
         case ST_ARRAY_TYPE:
           // (1)
           if ($4->run_time_expr->array->array_type == ST_DYNAMIC_ARRAY) {
-            ST_FATAL_ERROR("a constant identifier cannot be a dynamic array\n");
+            ST_FATAL_ERROR(@4, "a constant identifier cannot be a dynamic array\n");
           }
           $$->run_time_const_id->array = $4->run_time_expr->array;
           break;
@@ -598,20 +599,20 @@ scalar_type:
     if ($3->expr_type == ST_COMPILE_TIME_EXPRESSION) {
       // (1)
       if ($3->compile_time_expr->data_type != ST_INT_TYPE) {
-        ST_FATAL_ERROR("max length of a string must have type 'int'\n");
+        ST_FATAL_ERROR(@3, "max length of a string must have type 'int'\n");
       }
       // (3), (4)
       if ($3->compile_time_expr->int_val < 1
           || $3->compile_time_expr->int_val > 255) {
-        ST_FATAL_ERROR("max length of a string must be in range 1 ~ 255\n");
+        ST_FATAL_ERROR(@3, "max length of a string must be in range 1 ~ 255\n");
       }
     } else if ($3->expr_type == ST_RUN_TIME_EXPRESSION) {
       // (1): giving check of data type higher priority than expr type
       if ($3->compile_time_expr->data_type != ST_INT_TYPE) {
-        ST_FATAL_ERROR("max length of a string must have type 'int'\n");
+        ST_FATAL_ERROR(@3, "max length of a string must have type 'int'\n");
       }
       // (2)
-      ST_FATAL_ERROR("max length of a string must be determined at compile-time\n");
+      ST_FATAL_ERROR(@3, "max length of a string must be determined at compile-time\n");
     } else {
       ST_UNREACHABLE();
     }
@@ -656,12 +657,12 @@ var_ref:
     Symbol* symbol = symtab_lookup(scope, $1->name);
     // (1)
     if (!symbol) {
-      ST_FATAL_ERROR("identifier '%s' is not declared\n", $1->name);
+      ST_FATAL_ERROR(@1, "identifier '%s' is not declared\n", $1->name);
     }
     Identifier* id = symbol->attribute;
     // (2)
     if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
-      ST_FATAL_ERROR("identifier '%s' is a subprogram\n", $1->name);
+      ST_FATAL_ERROR(@1, "identifier '%s' is a subprogram\n", $1->name);
     }
     $$ = malloc(sizeof(Reference));
     $$->ref_type = ST_IDENTIFIER_REFERENCE;
@@ -933,7 +934,9 @@ sign_operation:
 ;
 
 %%
+extern char* input_filename;
 
 void yyerror(const char *msg) {
-  fprintf(stderr, "line %d on symbol '%s': %s\n", yylineno, yytext, msg);
+  fprintf(stderr, "%s:%d:%d: %s\n",
+      input_filename, yylloc.first_line, yylloc.first_column, msg);
 }
