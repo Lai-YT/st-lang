@@ -267,24 +267,8 @@ const_decl:
     if ($4->expr_type == ST_COMPILE_TIME_EXPRESSION) {
       $$->const_id_type = ST_COMPILE_TIME_CONST_IDENTIFIER;
       $$->compile_time_const_id = malloc(sizeof(CompileTimeConstIdentifier));
-      $$->compile_time_const_id->data_type = $4->compile_time_expr->data_type;
       // (3)
-      switch ($4->compile_time_expr->data_type) {
-        case ST_INT_TYPE:
-          $$->compile_time_const_id->int_val = $4->compile_time_expr->int_val;
-          break;
-        case ST_REAL_TYPE:
-          $$->compile_time_const_id->real_val = $4->compile_time_expr->real_val;
-          break;
-        case ST_BOOL_TYPE:
-          $$->compile_time_const_id->bool_val = $4->compile_time_expr->bool_val;
-          break;
-        case ST_STRING_TYPE:
-          $$->compile_time_const_id->string = $4->compile_time_expr->string;
-          break;
-        default:
-          ST_UNREACHABLE();
-      }
+      ST_COPY_SCALAR_VALUE($$->compile_time_const_id, $4->compile_time_expr);
     } else if ($4->expr_type == ST_RUN_TIME_EXPRESSION) {
       $$->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
       $$->run_time_const_id = malloc(sizeof(RunTimeConstIdentifier));
