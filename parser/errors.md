@@ -16,3 +16,11 @@
 | code | description | example |
 |:----:|:------------|:--------|
 | CONST01 | a constant identifier cannot be a 'dynamic array' | [const01.st](tests/bad/const01.st) |
+
+## Strings
+
+| code | description | example |
+|:----:|:------------|:--------|
+| STR01 | max length of a 'string' must have type 'int' | [str01.st](tests/bad/str01.st) |
+| STR02 | max length of a 'string' must be a compile-time expression | [str02.st](tests/bad/str02.st) |
+| STR03 | max length of a 'string' must be in range 1 ~ 255 | [str03-1.st](tests/bad/str03-1.st), [str03-2.st](tests/bad/str03-2.st) |

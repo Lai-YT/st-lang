@@ -594,16 +594,16 @@ scalar_type:
      */
     // (1)
     if (st_data_type_of_expr($3) != ST_INT_TYPE) {
-      ST_FATAL_ERROR(@3, "max length of a 'string' must have type 'int'\n");
+      ST_FATAL_ERROR(@3, "max length of a 'string' must have type 'int' (STR01)\n");
     }
     // (2)
     if ($3->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-      ST_FATAL_ERROR(@3, "max length of a 'string' must be a compile-time expression\n");
+      ST_FATAL_ERROR(@3, "max length of a 'string' must be a compile-time expression (STR02)\n");
     }
     // (3), (4)
     if ($3->compile_time_expr->int_val < 1
         || $3->compile_time_expr->int_val > 255) {
-      ST_FATAL_ERROR(@3, "max length of a 'string' must be in range 1 ~ 255\n");
+      ST_FATAL_ERROR(@3, "max length of a 'string' must be in range 1 ~ 255 (STR03)\n");
     }
     // checks are done, it's now safe to construct the type
     $$ = malloc(sizeof(StDataTypeInfo));
