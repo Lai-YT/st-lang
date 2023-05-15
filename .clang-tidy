@@ -11,7 +11,6 @@ Checks: >
   readability-misleading-indentation,
   readability-non-const-parameter,
   readability-redundant-control-flow,
-  readability-redundant-declaration,
   readability-redundant-preprocessor,
   readability-simplify-boolean-expr,
 
