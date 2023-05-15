@@ -52,7 +52,7 @@
 %type <var_id> var_decl
 %type <const_id> const_decl
 %type <ref> var_ref
-%type <type_info> scalar_type
+%type <type_info> type scalar_type array_type
 
   /* lowest to highest */
 %left OR
@@ -230,7 +230,12 @@ var_decl:
     }
   }
 | VAR ID ':' array_type
-  { /* no check */ }
+  {
+    $$ = malloc(sizeof(VarIdentifier));
+    $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
+    strcpy($$->name, $2->name);
+    ST_COPY_TYPE($$, $4);
+  }
 | VAR ID ':' scalar_type
   {
     $$ = malloc(sizeof(VarIdentifier));
@@ -626,23 +631,75 @@ scalar_type:
   }
 ;
 
+  /*
+   * Returns an StDataTypeInfo.
+   */
 array_type:
   ARRAY expr '.' '.' expr OF type
   {
     /*
-     * (1) the expression must be a compile-time expression
-     * (2) type may also be an array, but the upper bound of a nested array has
+     * (1) the expression of the lower bound must be a compile-time expression
+     * (2) the expressions must both have type int
+     * (3) type may also be an array, but the upper bound of a nested array has
      *     to be a compile-time expression as also, which means we have to record
      *     the bounds of an array type. This is also for type equality checks
+     * (4) lower bound must have positive value
+     * (5) upper bound of a static array must have positive value
+     * (6) the upper bound of a static array must be greater than the lower bound
      */
+    // (1)
+    if ($2->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression\n");
+    }
+    // (2)
+    if (st_data_type_of_expr($2) != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@2, "lower bound of an 'array' must have type 'int'\n");
+    }
+    if (st_data_type_of_expr($5) != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@5, "upper bound of an 'array' must have type 'int'\n");
+    }
+    // (3)
+    if ($7->data_type == ST_ARRAY_TYPE
+        && $7->array->array_type != ST_STATIC_ARRAY) {
+      ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array'\n");
+    }
+    // (4)
+    if ($2->compile_time_expr->int_val < 1) {
+      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive\n");
+    }
+    $$ = malloc(sizeof(StDataTypeInfo));
+    $$->data_type = ST_ARRAY_TYPE;
+    $$->array = malloc(sizeof(Array));
+    if ($5->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      // (5)
+      if ($5->compile_time_expr->int_val < 1) {
+        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be positive\n");
+      }
+      // (6)
+      if ($5->compile_time_expr->int_val <= $2->compile_time_expr->int_val) {
+        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be greater than its lower bound\n");
+      }
+      $$->array->array_type = ST_STATIC_ARRAY;
+      $$->array->static_array = malloc(sizeof(StaticArray));
+      ST_COPY_TYPE($$->array->static_array, $7);
+      $$->array->static_array->lower_bound = $2->compile_time_expr->int_val;
+      $$->array->static_array->upper_bound = $5->compile_time_expr->int_val;
+    } else if ($5->expr_type == ST_RUN_TIME_EXPRESSION) {
+      $$->array->array_type = ST_DYNAMIC_ARRAY;
+      $$->array->dynamic_array = malloc(sizeof(DynamicArray));
+      ST_COPY_TYPE($$->array->dynamic_array, $7);
+      $$->array->static_array->lower_bound = $2->compile_time_expr->int_val;
+    } else {
+      ST_UNREACHABLE();
+    }
   }
 ;
 
 type:
   scalar_type
-  { /* no check */ }
+  { $$ = $1; }
 | array_type
-  { /* no check */ }
+  { $$ = $1; }
 ;
 
   /*

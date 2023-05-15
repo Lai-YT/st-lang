@@ -1,8 +1,11 @@
 #ifndef PARSER_SEMANT_H
 #define PARSER_SEMANT_H
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+#include "semant_macros.h"
 
 typedef enum StDataType {
   /*
@@ -253,5 +256,18 @@ typedef struct Reference {
     ArraySubscript* array_subscript_ref;
   };
 } Reference;
+
+/// @brief Gets the data type of the expression, no matter it's a compile-time
+/// or run-time expression.
+StDataType st_data_type_of_expr(Expression* expr) {
+  if (expr->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+    return expr->compile_time_expr->data_type;
+  } else if (expr->expr_type == ST_RUN_TIME_EXPRESSION) {
+    return expr->run_time_expr->data_type;
+  } else {
+    ST_UNREACHABLE();
+    return (StDataType)-1;  // to suppress -Wreturn-type
+  }
+}
 
 #endif /* end of include guard: PARSER_SEMANT_H */
