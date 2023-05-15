@@ -592,25 +592,18 @@ scalar_type:
      * (3) the expression must be positive
      * (4) the expression can't be greater than 255
      */
-    if ($3->expr_type == ST_COMPILE_TIME_EXPRESSION) {
-      // (1)
-      if ($3->compile_time_expr->data_type != ST_INT_TYPE) {
-        ST_FATAL_ERROR(@3, "max length of a string must have type 'int'\n");
-      }
-      // (3), (4)
-      if ($3->compile_time_expr->int_val < 1
-          || $3->compile_time_expr->int_val > 255) {
-        ST_FATAL_ERROR(@3, "max length of a string must be in range 1 ~ 255\n");
-      }
-    } else if ($3->expr_type == ST_RUN_TIME_EXPRESSION) {
-      // (1): giving check of data type higher priority than expr type
-      if ($3->compile_time_expr->data_type != ST_INT_TYPE) {
-        ST_FATAL_ERROR(@3, "max length of a string must have type 'int'\n");
-      }
-      // (2)
-      ST_FATAL_ERROR(@3, "max length of a string must be determined at compile-time\n");
-    } else {
-      ST_UNREACHABLE();
+    // (1)
+    if (st_data_type_of_expr($3) != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@3, "max length of a 'string' must have type 'int'\n");
+    }
+    // (2)
+    if ($3->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+      ST_FATAL_ERROR(@3, "max length of a 'string' must be a compile-time expression\n");
+    }
+    // (3), (4)
+    if ($3->compile_time_expr->int_val < 1
+        || $3->compile_time_expr->int_val > 255) {
+      ST_FATAL_ERROR(@3, "max length of a 'string' must be in range 1 ~ 255\n");
     }
     // checks are done, it's now safe to construct the type
     $$ = malloc(sizeof(StDataTypeInfo));
