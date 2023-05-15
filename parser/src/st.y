@@ -649,23 +649,23 @@ array_type:
      */
     // (1)
     if ($2->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression\n");
+      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression (ARR01)\n");
     }
     // (2)
     if (st_data_type_of_expr($2) != ST_INT_TYPE) {
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must have type 'int'\n");
+      ST_FATAL_ERROR(@2, "lower bound of an 'array' must have type 'int' (ARR02)\n");
     }
     if (st_data_type_of_expr($5) != ST_INT_TYPE) {
-      ST_FATAL_ERROR(@5, "upper bound of an 'array' must have type 'int'\n");
+      ST_FATAL_ERROR(@5, "upper bound of an 'array' must have type 'int' (ARR02)\n");
     }
     // (3)
     if ($7->data_type == ST_ARRAY_TYPE
         && $7->array->array_type != ST_STATIC_ARRAY) {
-      ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array'\n");
+      ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array' (ARR03)\n");
     }
     // (4)
     if ($2->compile_time_expr->int_val < 1) {
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive\n");
+      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive (ARR04)\n");
     }
     $$ = malloc(sizeof(StDataTypeInfo));
     $$->data_type = ST_ARRAY_TYPE;
@@ -673,11 +673,11 @@ array_type:
     if ($5->expr_type == ST_COMPILE_TIME_EXPRESSION) {
       // (5)
       if ($5->compile_time_expr->int_val < 1) {
-        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be positive\n");
+        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be positive (ARR05)\n");
       }
       // (6)
       if ($5->compile_time_expr->int_val <= $2->compile_time_expr->int_val) {
-        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be greater than its lower bound\n");
+        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be greater than its lower bound (ARR06)\n");
       }
       $$->array->array_type = ST_STATIC_ARRAY;
       $$->array->static_array = malloc(sizeof(StaticArray));
