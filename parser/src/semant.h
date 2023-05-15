@@ -56,8 +56,6 @@ typedef struct Array Array;
 /// @brief The upper bound of a dynamic array is determined at run-time, so is
 /// not recorded.
 typedef struct DynamicArray {
-  int lower_bound;
-
   StDataType data_type;
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE. The type of
@@ -67,12 +65,10 @@ typedef struct DynamicArray {
     /// @brief Only available when the data type is ST_STRING_TYPE.
     String* string;
   };
+  int lower_bound;
 } DynamicArray;
 
 typedef struct StaticArray {
-  int lower_bound;
-  int upper_bound;
-
   StDataType data_type;
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE. The type of
@@ -82,6 +78,8 @@ typedef struct StaticArray {
     /// @brief Only available when the data type is ST_STRING_TYPE.
     String* string;
   };
+  int lower_bound;
+  int upper_bound;
 } StaticArray;
 
 struct Array {
@@ -236,7 +234,6 @@ typedef enum StReferenceType {
 } StReferenceType;
 
 typedef struct ArraySubscript {
-  bool is_const;
   /// @brief May also be an array.
   StDataType data_type;
   union {
@@ -245,6 +242,7 @@ typedef struct ArraySubscript {
     /// @brief Only available when the data type is ST_STRING_TYPE.
     String* string;
   };
+  bool is_const;
 } ArraySubscript;
 
 typedef struct Reference {
