@@ -107,7 +107,7 @@ decl:
      */
     // (1)
     if (symtab_lookup(scope, $1->name)) {
-      ST_FATAL_ERROR(@1, "re-declaration of identifier '%s'\n", $1->name);
+      ST_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
     }
     Identifier* id = malloc(sizeof(Identifier));
     // (3)
@@ -125,7 +125,7 @@ decl:
      */
     // (1)
     if (symtab_lookup(scope, $1->name)) {
-      ST_FATAL_ERROR(@1, "re-declaration of identifier '%s'\n", $1->name);
+      ST_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
     }
     Identifier* id = malloc(sizeof(Identifier));
     // (3)

@@ -17,6 +17,12 @@
 |:----:|:------------|:--------|
 | CONST01 | a constant identifier cannot be a 'dynamic array' | [const01.st](tests/bad/const01.st) |
 
+## Declarations
+
+| code | description | example |
+|:----:|:------------|:--------|
+| DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st) |
+
 ## Strings
 
 | code | description | example |
