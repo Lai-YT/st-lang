@@ -239,6 +239,7 @@ var_decl:
     ST_COPY_TYPE($$, $4);
     // determine the type of the string as variable string
     if ($4->data_type == ST_STRING_TYPE) {
+      $$->string->string_type = ST_VAR_STRING;
       $$->string->var_string = malloc(sizeof(VarString));
     }
   }
