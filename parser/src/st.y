@@ -267,6 +267,12 @@ const_decl:
      * (2) if the expression is a compile-time expression, the id can represent a compile-time expression
      * (3) if the expression is a compile-time expression, the value has to be recorded
      */
+    // (1)
+    if ($4->expr_type == ST_RUN_TIME_EXPRESSION
+        && $4->run_time_expr->data_type == ST_ARRAY_TYPE
+        && $4->run_time_expr->array->array_type == ST_DYNAMIC_ARRAY) {
+      ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
+    }
     // (2)
     $$ = malloc(sizeof(ConstIdentifier));
     $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
@@ -279,23 +285,7 @@ const_decl:
     } else if ($4->expr_type == ST_RUN_TIME_EXPRESSION) {
       $$->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
       $$->run_time_const_id = malloc(sizeof(RunTimeConstIdentifier));
-      $$->run_time_const_id->data_type = $4->run_time_expr->data_type;
-      switch ($4->run_time_expr->data_type) {
-        case ST_STRING_TYPE:
-          $$->run_time_const_id->string = $4->run_time_expr->string;
-          break;
-        case ST_ARRAY_TYPE:
-          // (1)
-          if ($4->run_time_expr->array->array_type == ST_DYNAMIC_ARRAY) {
-            ST_FATAL_ERROR(@4, "a constant identifier cannot be a dynamic array\n");
-          }
-          $$->run_time_const_id->array = $4->run_time_expr->array;
-          break;
-        default:
-          /* other types don't have additional information to record */
-          break;
-      }
-      /* no data to copy since its run-time determined */
+      ST_COPY_TYPE($$->run_time_const_id, $4->run_time_expr);
     } else {
       ST_UNREACHABLE();
     }
