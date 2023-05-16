@@ -16,3 +16,12 @@ void list_delete(List* list) {
     list = rest;
   }
 }
+
+int list_length(List* list) {
+  int length = 0;
+  while (list) {
+    ++length;
+    list = list->rest;
+  }
+  return length;
+}
