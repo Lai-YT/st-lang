@@ -24,6 +24,18 @@
 | code | description | example |
 |:----:|:------------|:--------|
 | DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st) |
+| DECL02 | identifier 'x' is not declared | [decl02.st](tests/bad/decl02.st) |
+
+## References
+
+| code | description | example |
+|:----:|:------------|:--------|
+| REF01 | identifier 'x' is not declared | [ref01.st](tests/bad/ref01.st) |
+| REF02 | identifier 'x' is a 'subprogram', cannot be used as reference |
+| REF03 | 'character' is unsubscriptable, for substrings, use 'x[n .. m]' instead | [ref03-1.st](tests/bad/ref03-1.st), [ref03-2.st](tests/bad/ref03-2.st) |
+| REF04 | identifier 'x' has unsubscriptable type | [ref04-1.st](tests/bad/ref04-1.st), [ref04-2.st](tests/bad/ref04-2.st), [ref04-3.st](tests/bad/ref04-3.st) |
+| REF05 | 'n'-dimensional 'array' cannot have 'm' subscripts | [ref05-1.st](tests/bad/ref05-1.st), [ref05-1.st](tests/bad/ref05-1.st) |
+| REF06 | subscript must have type 'int' | [ref06.st](tests/bad/ref06.st) |
 
 ## Strings
 

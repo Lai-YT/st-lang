@@ -270,4 +270,21 @@ StDataType st_data_type_of_expr(Expression* expr) {
   }
 }
 
+int st_dimension_of_array(const Array* arr) {
+  if (arr->array_type == ST_STATIC_ARRAY) {
+    if (arr->static_array->data_type == ST_ARRAY_TYPE) {
+      return 1 + st_dimension_of_array(arr->static_array->array);
+    }
+    return 1;
+  } else if (arr->array_type == ST_DYNAMIC_ARRAY) {
+    if (arr->dynamic_array->data_type == ST_ARRAY_TYPE) {
+      return 1 + st_dimension_of_array(arr->dynamic_array->array);
+    }
+    return 1;
+  } else {
+    ST_UNREACHABLE();
+    return -1;  // to suppress -Wreturn-type
+  }
+}
+
 #endif /* end of include guard: PARSER_SEMANT_H */
