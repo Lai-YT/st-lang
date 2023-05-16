@@ -146,14 +146,14 @@ stmt:
     if ($1->ref_type == ST_IDENTIFIER_REFERENCE) {
       // (2)
       if ($1->id_ref->id_type == ST_CONST_IDENTIFIER) {
-        ST_FATAL_ERROR(@1, "assign to const '%s'\n", $1->id_ref->const_id->name);
+        ST_FATAL_ERROR(@1, "re-assignment on constant reference (CONST02)\n");
       }
       // TODO: type compare
     } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
       // (2)
       if ($1->array_subscript_ref->is_const) {
         // we don't know the name of the array
-        ST_FATAL_ERROR(@1, "assign to const\n");
+        ST_FATAL_ERROR(@1, "re-assignment on subscript of constant reference (CONST03)\n");
       }
       // TODO: type compare
     } else {
