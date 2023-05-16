@@ -8,5 +8,6 @@ typedef struct List {
 
 List* list_create(void* val, List* rest);
 void list_delete(List*);
+int list_length(List*);
 
 #endif /* end of include guard: LIB_LIST_H */
