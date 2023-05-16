@@ -70,14 +70,14 @@ void hashtab_itr_to_next(HashTableIterator*);
 /// macro.
 /// @note This macro creates an iterator object internally and deletes it after
 /// the iteration is complete.
-#define HASHTAB_ITR_FOR_EACH(ht, itr_name, statement)      \
-  {                                                        \
+#define HASHTAB_ITR_FOR_EACH(ht, itr_name, statement) \
+  { \
     HashTableIterator*(itr_name) = hashtab_itr_create(ht); \
-    while (!hashtab_itr_is_done(itr_name)) {               \
-      hashtab_itr_to_next(itr_name);                       \
-      statement;                                           \
-    }                                                      \
-    hashtab_itr_delete(itr_name);                          \
+    while (!hashtab_itr_is_done(itr_name)) { \
+      hashtab_itr_to_next(itr_name); \
+      statement; \
+    } \
+    hashtab_itr_delete(itr_name); \
   }
 
 #endif /* end of include guard: LIB_HASHTAB_H */
