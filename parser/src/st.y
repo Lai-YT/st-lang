@@ -715,7 +715,7 @@ var_ref:
      * (1) id can't be a subprogram
      * (2) id can only have type string or array
      * (3) if id has type string, the subscript list must have length 1
-     * (4) if id has type array, the length of the list should be as same as the dimension of the array
+     * (4) if id has type array, the length of the list cannot exceed the dimension of the array
      * NOTE: the expression may be run-time expressions, so range check seems impossible
      */
     Symbol* symbol = symtab_lookup(scope, $1->name);
@@ -728,106 +728,54 @@ var_ref:
     if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
       ST_FATAL_ERROR(@1, "identifier '%s' is a 'subprogram', cannot be used as reference (REF02)\n", $1->name);
     }
-    if (id->id_type == ST_CONST_IDENTIFIER) {
-      if (((ConstIdentifier*)id)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
-        if (id->data_type == ST_STRING_TYPE) {
-          // (3)
-          if (list_length($2) != 1) {
-            ST_FATAL_ERROR(@2, "'character' is unsubscriptable, for substrings, use '%s[n .. m]' instead (REF03)\n", $1->name);
-          }
-          // TODO: return a character
-        } else if (id->data_type == ST_ARRAY_TYPE) {
-          // a compile-time identifier should not have an array type
+
+    if (id->data_type == ST_STRING_TYPE) {
+      // (3)
+      if (list_length($2) != 1) {
+        ST_FATAL_ERROR(@2, "'character' is unsubscriptable, for substrings, use '%s[n .. m]' instead (REF03)\n", $1->name);
+      }
+      // TODO: return a character
+    } else if (id->data_type == ST_ARRAY_TYPE) {
+      if (id->id_type == ST_CONST_IDENTIFIER
+          && ((ConstIdentifier*)id)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
+        // a compile-time identifier should not have an array type
+        ST_UNREACHABLE();
+      }
+      const int num_of_sub = list_length($2);
+      const Array* array = id->id_type == ST_VAR_IDENTIFIER
+          ? ((VarIdentifier*)id)->array
+          : ((RunTimeConstIdentifier*)id)->array;
+      const int dim_of_arr = st_dimension_of_array(array);
+      // (4)
+      if (num_of_sub > dim_of_arr) {
+        ST_FATAL_ERROR(@2, "'%d'-dimensional 'array' cannot have '%d' subscripts (REF05)\n", dim_of_arr, num_of_sub);
+      }
+      $$ = malloc(sizeof(Reference));
+      $$->ref_type = ST_ARRAY_SUBSCRIPT_REFERENCE;
+      $$->array_subscript_ref = malloc(sizeof(ArraySubscript));
+      $$->array_subscript_ref->is_const = id->id_type == ST_CONST_IDENTIFIER;
+      Array* sub_arr = array;
+      // find the correct dimension of the array
+      for (int i = 0; i < num_of_sub - 1; ++i) {
+        if (sub_arr->array_type == ST_STATIC_ARRAY) {
+          sub_arr = sub_arr->static_array->array;
+        } else if (sub_arr->array_type == ST_DYNAMIC_ARRAY) {
+          sub_arr = sub_arr->dynamic_array->array;
+        } else {
           ST_UNREACHABLE();
-        } else {
-          // (2)
-          ST_FATAL_ERROR(@1, "identifier '%s' has unsubscriptable type (REF04)\n", $1->name);
         }
-      } else if (((ConstIdentifier*)id)->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
-        if (id->data_type == ST_STRING_TYPE) {
-          // (3)
-          if (list_length($2) != 1) {
-            ST_FATAL_ERROR(@2, "'character' is unsubscriptable, for substrings, use '%s[n .. m]' instead (REF03)\n", $1->name);
-          }
-          // TODO: return a character
-        } else if (id->data_type == ST_ARRAY_TYPE) {
-          const int num_of_sub = list_length($2);
-          const int dim_of_arr = st_dimension_of_array(((RunTimeConstIdentifier*)id)->array);
-          if (num_of_sub > dim_of_arr) {
-            ST_FATAL_ERROR(@2, "'%d'-dimensional 'array' cannot have '%d' subscripts (REF05)\n", dim_of_arr, num_of_sub);
-          }
-          $$ = malloc(sizeof(Reference));
-          $$->ref_type = ST_ARRAY_SUBSCRIPT_REFERENCE;
-          $$->array_subscript_ref = malloc(sizeof(ArraySubscript));
-          $$->array_subscript_ref->is_const = true;
-          Array* sub_arr = ((RunTimeConstIdentifier*)id)->array;
-          // find the correct dimension of the array
-          for (int i = 0; i < num_of_sub - 1; ++i) {
-            if (sub_arr->array_type == ST_STATIC_ARRAY) {
-              sub_arr = sub_arr->static_array->array;
-            } else if (sub_arr->array_type == ST_DYNAMIC_ARRAY) {
-              sub_arr = sub_arr->dynamic_array->array;
-            } else {
-              ST_UNREACHABLE();
-            }
-          }
-          // copy type
-          if (sub_arr->array_type == ST_STATIC_ARRAY) {
-            ST_COPY_TYPE($$->array_subscript_ref, sub_arr->static_array);
-          } else if (sub_arr->array_type == ST_DYNAMIC_ARRAY) {
-            ST_COPY_TYPE($$->array_subscript_ref, sub_arr->dynamic_array);
-          } else {
-            ST_UNREACHABLE();
-          }
-        } else {
-          // (2)
-          ST_FATAL_ERROR(@1, "identifier '%s' has unsubscriptable type (REF04)\n", $1->name);
-        }
+      }
+      // copy type
+      if (sub_arr->array_type == ST_STATIC_ARRAY) {
+        ST_COPY_TYPE($$->array_subscript_ref, sub_arr->static_array);
+      } else if (sub_arr->array_type == ST_DYNAMIC_ARRAY) {
+        ST_COPY_TYPE($$->array_subscript_ref, sub_arr->dynamic_array);
       } else {
         ST_UNREACHABLE();
       }
-    } else if (id->id_type == ST_VAR_IDENTIFIER) {
-      if (id->data_type == ST_STRING_TYPE) {
-        // (3)
-        if (list_length($2) != 1) {
-          ST_FATAL_ERROR(@2, "'character' is unsubscriptable, for substrings, use '%s[n .. m]' instead (REF03)\n", $1->name);
-        }
-        // TODO: return a character
-      } else if (id->data_type == ST_ARRAY_TYPE) {
-        const int num_of_sub = list_length($2);
-        const int dim_of_arr = st_dimension_of_array(((VarIdentifier*)id)->array);
-        if (num_of_sub > dim_of_arr) {
-          ST_FATAL_ERROR(@2, "'%d'-dimensional 'array' cannot have '%d' subscripts (REF05)\n", dim_of_arr, num_of_sub);
-        }
-        $$ = malloc(sizeof(Reference));
-        $$->ref_type = ST_ARRAY_SUBSCRIPT_REFERENCE;
-        $$->array_subscript_ref = malloc(sizeof(ArraySubscript));
-        $$->array_subscript_ref->is_const = false;
-        Array* sub_arr = ((VarIdentifier*)id)->array;
-        // find the correct dimension of the array
-        for (int i = 0; i < num_of_sub - 1; ++i) {
-          if (sub_arr->array_type == ST_STATIC_ARRAY) {
-            sub_arr = sub_arr->static_array->array;
-          } else if (sub_arr->array_type == ST_DYNAMIC_ARRAY) {
-            sub_arr = sub_arr->dynamic_array->array;
-          } else {
-            ST_UNREACHABLE();
-          }
-        }
-        // copy type
-        if (sub_arr->array_type == ST_STATIC_ARRAY) {
-          ST_COPY_TYPE($$->array_subscript_ref, sub_arr->static_array);
-        } else if (sub_arr->array_type == ST_DYNAMIC_ARRAY) {
-          ST_COPY_TYPE($$->array_subscript_ref, sub_arr->dynamic_array);
-        } else {
-          ST_UNREACHABLE();
-        }
-      } else {
-        // (2)
-        ST_FATAL_ERROR(@1, "identifier '%s' has unsubscriptable type (REF04)\n", $1->name);
-      }
     } else {
-      ST_UNREACHABLE();
+      // (2)
+      ST_FATAL_ERROR(@1, "identifier '%s' has unsubscriptable type (REF04)\n", $1->name);
     }
   }
 ;
