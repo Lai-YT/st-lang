@@ -113,11 +113,23 @@ typedef enum StIdentifierType {
   ST_SUBPROGRAM_IDENTIFIER,
 } StIdentifierType;
 
+#ifndef ST_IDENTIFIER_COMMON_DATA
+#define ST_IDENTIFIER_COMMON_DATA \
+  StIdentifierType id_type; \
+  char* name; \
+  StDataType data_type;
+#endif
+
+#ifndef ST_CONST_IDENTIFIER_COMMON_DATA
+#define ST_CONST_IDENTIFIER_COMMON_DATA \
+  ST_IDENTIFIER_COMMON_DATA \
+  StConstIdentifierType const_id_type;
+#endif
+
 /// @brief Since the value of a variable identifier is determined at run-time,
 /// we don't record its value here.
 typedef struct VarIdentifier {
-  char* name;
-  StDataType data_type;
+  ST_IDENTIFIER_COMMON_DATA
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE.
     Array* array;
@@ -132,9 +144,7 @@ typedef enum StConstIdentifierType {
 } StConstIdentifierType;
 
 typedef struct CompileTimeConstIdentifier {
-  /// @brief Should always be a scalar type to meet the constraint of a
-  /// compile-time expression.
-  StDataType data_type;
+  ST_CONST_IDENTIFIER_COMMON_DATA
   union {
     int int_val;
     double real_val;
@@ -147,7 +157,7 @@ typedef struct CompileTimeConstIdentifier {
 /// @brief The value of a run-tie constant identifier is, as its name, run-time
 /// determined, so we don't record its value.
 typedef struct RunTimeConstIdentifier {
-  StDataType data_type;
+  ST_CONST_IDENTIFIER_COMMON_DATA
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE.
     Array* array;
@@ -162,22 +172,12 @@ typedef struct RunTimeConstIdentifier {
 /// case, the identifier cannot represent a compile-time expression, and its
 /// value isn't recorded.
 typedef struct ConstIdentifier {
-  char* name;
-  StConstIdentifierType const_id_type;
-  union {
-    CompileTimeConstIdentifier* compile_time_const_id;
-    RunTimeConstIdentifier* run_time_const_id;
-  };
+  ST_CONST_IDENTIFIER_COMMON_DATA
 } ConstIdentifier;
 
 /// @brief This is what symbol tables store as their data type.
 typedef struct Identifier {
-  StIdentifierType id_type;
-  union {
-    VarIdentifier* var_id;
-    ConstIdentifier* const_id;
-    // TODO: subprograms
-  };
+  ST_IDENTIFIER_COMMON_DATA
 } Identifier;
 
 typedef enum StExpressionType {
