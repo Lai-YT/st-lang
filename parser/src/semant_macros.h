@@ -6,6 +6,7 @@
 
 /// @brief The file being semantically checked.
 extern char* input_filename;
+extern int allow_semantic_errors;
 
 #ifndef ST_TRACE
 #define ST_TRACE(...) fprintf(stderr, __VA_ARGS__)
@@ -18,7 +19,7 @@ extern char* input_filename;
     fprintf(stderr, "%s:%d:%d: error: ", input_filename, (yylloc).first_line, \
             (yylloc).first_column); \
     fprintf(stderr, __VA_ARGS__); \
-    exit(EXIT_FAILURE); \
+    exit(allow_semantic_errors ? EXIT_SUCCESS : EXIT_FAILURE); \
   }
 #endif
 
