@@ -185,9 +185,15 @@ typedef enum StExpressionType {
   ST_COMPILE_TIME_EXPRESSION,
 } StExpressionType;
 
-typedef struct CompileTimeExpression {
-  /// @brief Should always be a scalar type.
+#ifndef ST_EXPRESSION_COMMON_DATA
+#define ST_EXPRESSION_COMMON_DATA \
+  StExpressionType expr_type; \
   StDataType data_type;
+#endif
+
+/// @brief The value of a compile-time expression is determined at compile-time.
+typedef struct CompileTimeExpression {
+  ST_EXPRESSION_COMMON_DATA
   union {
     int int_val;
     double real_val;
@@ -200,8 +206,7 @@ typedef struct CompileTimeExpression {
 /// @brief The value of a run-time expression is determined at run-time, so we
 /// don't record its value.
 typedef struct RunTimeExpression {
-  /// @brief May be a scalar type or a array type that holds a static array.
-  StDataType data_type;
+  ST_EXPRESSION_COMMON_DATA
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE.
     Array* array;
@@ -213,11 +218,7 @@ typedef struct RunTimeExpression {
 } RunTimeExpression;
 
 typedef struct Expression {
-  StExpressionType expr_type;
-  union {
-    CompileTimeExpression* compile_time_expr;
-    RunTimeExpression* run_time_expr;
-  };
+  ST_EXPRESSION_COMMON_DATA
 } Expression;
 
 /*
@@ -256,19 +257,6 @@ typedef struct Reference {
     ArraySubscript* array_subscript_ref;
   };
 } Reference;
-
-/// @brief Gets the data type of the expression, no matter it's a compile-time
-/// or run-time expression.
-StDataType st_data_type_of_expr(Expression* expr) {
-  if (expr->expr_type == ST_COMPILE_TIME_EXPRESSION) {
-    return expr->compile_time_expr->data_type;
-  } else if (expr->expr_type == ST_RUN_TIME_EXPRESSION) {
-    return expr->run_time_expr->data_type;
-  } else {
-    ST_UNREACHABLE();
-    return (StDataType)-1;  // to suppress -Wreturn-type
-  }
-}
 
 int st_dimension_of_array(const Array* arr) {
   if (arr->array_type == ST_STATIC_ARRAY) {

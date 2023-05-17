@@ -217,9 +217,9 @@ var_decl:
     // although the value of the expression is irrelevant for the variable,
     // we have to access the correct expression to get the data type
     if ($4->expr_type == ST_COMPILE_TIME_EXPRESSION) {
-      ST_COPY_SCALAR_TYPE($$, $4->compile_time_expr);
+      ST_COPY_SCALAR_TYPE($$, (CompileTimeExpression*)$4);
     } else if ($4->expr_type == ST_RUN_TIME_EXPRESSION) {
-      ST_COPY_TYPE($$, $4->run_time_expr);
+      ST_COPY_TYPE($$, (RunTimeExpression*)$4);
     } else {
       ST_UNREACHABLE();
     }
@@ -265,9 +265,9 @@ const_decl:
      * (3) if the expression is a compile-time expression, the value has to be recorded
      */
     // (1)
-    if ($4->expr_type == ST_RUN_TIME_EXPRESSION
-        && $4->run_time_expr->data_type == ST_ARRAY_TYPE
-        && $4->run_time_expr->array->array_type == ST_DYNAMIC_ARRAY) {
+    if($4->data_type == ST_ARRAY_TYPE
+        // CompileTimeExpression won't be an array
+        && ((RunTimeExpression*)$4)->array->array_type == ST_DYNAMIC_ARRAY) {
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
     // (2)
@@ -275,11 +275,11 @@ const_decl:
       $$ = malloc(sizeof(CompileTimeConstIdentifier));
       $$->const_id_type = ST_COMPILE_TIME_CONST_IDENTIFIER;
       // (3)
-      ST_COPY_SCALAR_VALUE((CompileTimeConstIdentifier*)$$, $4->compile_time_expr);
+      ST_COPY_SCALAR_VALUE((CompileTimeConstIdentifier*)$$, (CompileTimeExpression*)$4);
     } else if ($4->expr_type == ST_RUN_TIME_EXPRESSION) {
       $$ = malloc(sizeof(RunTimeConstIdentifier));
       $$->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
-      ST_COPY_TYPE((RunTimeConstIdentifier*)$$, $4->run_time_expr);
+      ST_COPY_TYPE((RunTimeConstIdentifier*)$$, (RunTimeExpression*)$4);
     } else {
       ST_UNREACHABLE();
     }
@@ -590,23 +590,23 @@ scalar_type:
      * (4) the expression can't be greater than 255
      */
     // (1)
-    if (st_data_type_of_expr($3) != ST_INT_TYPE) {
+    if ($3->data_type != ST_INT_TYPE) {
       ST_FATAL_ERROR(@3, "max length of a 'string' must have type 'int' (STR01)\n");
     }
     // (2)
     if ($3->expr_type != ST_COMPILE_TIME_EXPRESSION) {
       ST_FATAL_ERROR(@3, "max length of a 'string' must be a compile-time expression (STR02)\n");
     }
+    CompileTimeExpression* compile_time_expr = $3;
     // (3), (4)
-    if ($3->compile_time_expr->int_val < 1
-        || $3->compile_time_expr->int_val > 255) {
+    if (compile_time_expr->int_val < 1 || compile_time_expr->int_val > 255) {
       ST_FATAL_ERROR(@3, "max length of a 'string' must be in range 1 ~ 255 (STR03)\n");
     }
     // checks are done, it's now safe to construct the type
     $$ = malloc(sizeof(StDataTypeInfo));
     $$->data_type = ST_STRING_TYPE;
     $$->string = malloc(sizeof(String));
-    $$->string->max_length = $3->compile_time_expr->int_val;
+    $$->string->max_length = compile_time_expr->int_val;
     // the type of string is determined later
   }
 ;
@@ -631,11 +631,12 @@ array_type:
     if ($2->expr_type != ST_COMPILE_TIME_EXPRESSION) {
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression (ARR01)\n");
     }
+    CompileTimeExpression* lower_bound = $2;
     // (2)
-    if (st_data_type_of_expr($2) != ST_INT_TYPE) {
+    if (lower_bound->data_type != ST_INT_TYPE) {
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must have type 'int' (ARR02)\n");
     }
-    if (st_data_type_of_expr($5) != ST_INT_TYPE) {
+    if ($5->data_type != ST_INT_TYPE) {
       ST_FATAL_ERROR(@5, "upper bound of an 'array' must have type 'int' (ARR02)\n");
     }
     // (3)
@@ -644,31 +645,32 @@ array_type:
       ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array' (ARR03)\n");
     }
     // (4)
-    if ($2->compile_time_expr->int_val < 1) {
+    if (lower_bound->int_val < 1) {
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive (ARR04)\n");
     }
     $$ = malloc(sizeof(StDataTypeInfo));
     $$->data_type = ST_ARRAY_TYPE;
     $$->array = malloc(sizeof(Array));
     if ($5->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      CompileTimeExpression* upper_bound = $5;
       // (5)
-      if ($5->compile_time_expr->int_val < 1) {
+      if (upper_bound->int_val < 1) {
         ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be positive (ARR05)\n");
       }
       // (6)
-      if ($5->compile_time_expr->int_val <= $2->compile_time_expr->int_val) {
+      if (upper_bound->int_val <= lower_bound->int_val) {
         ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be greater than its lower bound (ARR06)\n");
       }
       $$->array->array_type = ST_STATIC_ARRAY;
       $$->array->static_array = malloc(sizeof(StaticArray));
       ST_COPY_TYPE($$->array->static_array, $7);
-      $$->array->static_array->lower_bound = $2->compile_time_expr->int_val;
-      $$->array->static_array->upper_bound = $5->compile_time_expr->int_val;
+      $$->array->static_array->lower_bound = lower_bound->int_val;
+      $$->array->static_array->upper_bound = upper_bound->int_val;
     } else if ($5->expr_type == ST_RUN_TIME_EXPRESSION) {
       $$->array->array_type = ST_DYNAMIC_ARRAY;
       $$->array->dynamic_array = malloc(sizeof(DynamicArray));
       ST_COPY_TYPE($$->array->dynamic_array, $7);
-      $$->array->static_array->lower_bound = $2->compile_time_expr->int_val;
+      $$->array->static_array->lower_bound = lower_bound->int_val;
     } else {
       ST_UNREACHABLE();
     }
@@ -803,7 +805,7 @@ subscript:
      * (1) the expression should have type int
      */
     // (1)
-    if (st_data_type_of_expr($2) != ST_INT_TYPE) {
+    if ($2->data_type != ST_INT_TYPE) {
       ST_FATAL_ERROR(@2, "subscript must have type 'int' (REF06)\n");
     }
     $$ = list_create($2, NULL);
@@ -819,51 +821,40 @@ expr:
    */
   var_ref
   {
-    $$ = malloc(sizeof(Expression));
     if ($1->ref_type == ST_IDENTIFIER_REFERENCE) {
       // compile-time of not?
       switch ($1->id_ref->id_type) {
         case ST_CONST_IDENTIFIER:
           if (((ConstIdentifier*)$1->id_ref)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
+            $$ = malloc(sizeof(CompileTimeExpression));
             $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
-            $$->compile_time_expr = malloc(sizeof(CompileTimeExpression));
-            ST_COPY_SCALAR_VALUE($$->compile_time_expr, (CompileTimeConstIdentifier*)$1->id_ref);
+            ST_COPY_SCALAR_VALUE((CompileTimeExpression*)$$, (CompileTimeConstIdentifier*)$1->id_ref);
           } else if (((ConstIdentifier*)$1->id_ref)->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
+            $$ = malloc(sizeof(RunTimeExpression));
             $$->expr_type = ST_RUN_TIME_EXPRESSION;
-            $$->run_time_expr = malloc(sizeof(RunTimeExpression));
-            ST_COPY_TYPE($$->run_time_expr, (RunTimeConstIdentifier*)$1->id_ref);
+            ST_COPY_TYPE((RunTimeExpression*)$$, (RunTimeConstIdentifier*)$1->id_ref);
           } else {
             ST_UNREACHABLE();
           }
           break;
         case ST_VAR_IDENTIFIER:
-          // can't be compile-time expression, so just copy the type
+          $$ = malloc(sizeof(RunTimeExpression));
           $$->expr_type = ST_RUN_TIME_EXPRESSION;
-          $$->run_time_expr = malloc(sizeof(RunTimeExpression));
-          ST_COPY_TYPE($$->run_time_expr, (VarIdentifier*)$1->id_ref);
+          ST_COPY_TYPE((RunTimeExpression*)$$, (VarIdentifier*)$1->id_ref);
           break;
         default:
           ST_UNREACHABLE();
       }
     } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
-      // can't be compile-time expression, so just copy the type
+      $$ = malloc(sizeof(RunTimeExpression));
       $$->expr_type = ST_RUN_TIME_EXPRESSION;
-      $$->run_time_expr = malloc(sizeof(RunTimeExpression));
-      ST_COPY_TYPE($$->run_time_expr, $1->array_subscript_ref);
+      ST_COPY_TYPE((RunTimeExpression*)$$, $1->array_subscript_ref);
     } else {
       ST_UNREACHABLE();
     }
   }
 | explicit_const
-  {
-    /*
-     * (1) always compile-time expression
-     */
-    $$ = malloc(sizeof(Expression));
-    // (1)
-    $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
-    $$->compile_time_expr = $1;
-  }
+  { $$ = $1; }
 | subprog_call
   {
     /*
@@ -900,12 +891,14 @@ explicit_const:
   INT_CONST
   {
     $$ = malloc(sizeof(CompileTimeExpression));
+    $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
     $$->data_type = ST_INT_TYPE;
     $$->int_val = $1;
   }
 | REAL_CONST
   {
     $$ = malloc(sizeof(CompileTimeExpression));
+    $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
     $$->data_type = ST_REAL_TYPE;
     $$->real_val = $1;
   }
@@ -915,6 +908,7 @@ explicit_const:
      * (1) record the length of the string
      */
     $$ = malloc(sizeof(CompileTimeExpression));
+    $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
     $$->data_type = ST_STRING_TYPE;
     $$->string = malloc(sizeof(String));
     $$->string->string_type = ST_CONST_STRING;
@@ -934,12 +928,14 @@ bool_const:
   TRUE
   {
     $$ = malloc(sizeof(CompileTimeExpression));
+    $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
     $$->data_type = ST_BOOL_TYPE;
     $$->bool_val = true;
   }
 | FALSE
   {
     $$ = malloc(sizeof(CompileTimeExpression));
+    $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
     $$->data_type = ST_BOOL_TYPE;
     $$->bool_val = false;
   }
