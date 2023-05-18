@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "semant.h"
 
@@ -45,7 +46,9 @@ extern int allow_semantic_errors;
         (a)->bool_val = (b)->bool_val; \
         break; \
       case ST_STRING_TYPE: \
-        (a)->string = (b)->string; \
+        (a)->string_val \
+            = malloc(sizeof(char) * (strlen((b)->string_val) + 1)); \
+        strcpy((a)->string_val, (b)->string_val); \
         break; \
       default: \
         ST_UNREACHABLE(); \
@@ -57,35 +60,16 @@ extern int allow_semantic_errors;
 /// @brief Copies the data type and the correspond additional information of b
 /// to a.
 /// @note (1) a and b should be pointers (2) they should both have a union of
-/// string and array.
+/// string_type_info and array_type_info.
 #define ST_COPY_TYPE(a, b) \
   { \
     (a)->data_type = (b)->data_type; \
     switch ((b)->data_type) { \
       case ST_STRING_TYPE: \
-        (a)->string = (b)->string; \
+        (a)->string_type_info = (b)->string_type_info; \
         break; \
       case ST_ARRAY_TYPE: \
-        (a)->array = (b)->array; \
-        break; \
-      default: \
-        /* has no additional information to copy */ \
-        break; \
-    } \
-  }
-#endif
-
-#ifndef ST_COPY_SCALAR_TYPE
-/// @brief Copies the data type and the correspond additional information of b
-/// to a.
-/// @note (1) a and b should be pointers (2) they should both have a datum of
-/// string.
-#define ST_COPY_SCALAR_TYPE(a, b) \
-  { \
-    (a)->data_type = (b)->data_type; \
-    switch ((b)->data_type) { \
-      case ST_STRING_TYPE: \
-        (a)->string = (b)->string; \
+        (a)->array_type_info = (b)->array_type_info; \
         break; \
       default: \
         /* has no additional information to copy */ \

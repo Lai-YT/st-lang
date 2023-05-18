@@ -24,73 +24,42 @@ typedef enum StDataType {
   ST_ARRAY_TYPE,
 } StDataType;
 
-typedef enum StStringType {
-  ST_VAR_STRING,
-  ST_CONST_STRING,
-} StStringType;
-
-/// @brief The value of an variable string is determined at run-time, so we
-/// don't record it.
-typedef struct VarString {
-  /* empty */
-} VarString;
-
-typedef struct ConstString {
-  char* val;
-} ConstString;
-
 /// @brief The max length of a string is always determined at compile-time.
-typedef struct String {
-  StStringType string_type;
+typedef struct StStringTypeInfo {
   size_t max_length;
-  union {
-    VarString* var_string;
-    ConstString* const_string;
-  };
-} String;
+} StStringTypeInfo;
 
 typedef enum StArrayType {
   ST_DYNAMIC_ARRAY,
   ST_STATIC_ARRAY,
 } StArrayType;
 
-typedef struct Array Array;
+typedef struct StArrayTypeInfo StArrayTypeInfo;
+
+#ifndef ST_ARRAY_TYPE_INFO_COMMON_DATA
+#define ST_ARRAY_TYPE_INFO_COMMON_DATA \
+  StArrayType array_type; \
+  StDataType data_type; \
+  union { \
+    StArrayTypeInfo* array_type_info; \
+    StStringTypeInfo* string_type_info; \
+  }; \
+  int lower_bound;
+#endif
 
 /// @brief The upper bound of a dynamic array is determined at run-time, so is
 /// not recorded.
-typedef struct DynamicArray {
-  StDataType data_type;
-  union {
-    /// @brief Only available when the data type is ST_ARRAY_TYPE. The type of
-    /// the array should be ST_DYNAMIC_ARRAY since nested dynamic arrays are not
-    /// allowed.
-    Array* array;
-    /// @brief Only available when the data type is ST_STRING_TYPE.
-    String* string;
-  };
-  int lower_bound;
-} DynamicArray;
+typedef struct StDynamicArrayTypeInfo {
+  ST_ARRAY_TYPE_INFO_COMMON_DATA
+} StDynamicArrayTypeInfo;
 
-typedef struct StaticArray {
-  StDataType data_type;
-  union {
-    /// @brief Only available when the data type is ST_ARRAY_TYPE. The type of
-    /// the array should be ST_DYNAMIC_ARRAY since nested dynamic arrays are not
-    /// allowed.
-    Array* array;
-    /// @brief Only available when the data type is ST_STRING_TYPE.
-    String* string;
-  };
-  int lower_bound;
+typedef struct StStaticArrayTypeInfo {
+  ST_ARRAY_TYPE_INFO_COMMON_DATA
   int upper_bound;
-} StaticArray;
+} StStaticArrayTypeInfo;
 
-struct Array {
-  StArrayType array_type;
-  union {
-    DynamicArray* dynamic_array;
-    StaticArray* static_array;
-  };
+struct StArrayTypeInfo {
+  ST_ARRAY_TYPE_INFO_COMMON_DATA
 };
 
 /// @brief Wraps the data type and its additional information together.
@@ -101,9 +70,9 @@ typedef struct StDataTypeInfo {
   StDataType data_type;
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    Array* array;
+    StArrayTypeInfo* array_type_info;
     /// @brief Only available when the data type is ST_STRING_TYPE.
-    String* string;
+    StStringTypeInfo* string_type_info;
   };
 } StDataTypeInfo;
 
@@ -132,9 +101,9 @@ typedef struct VarIdentifier {
   ST_IDENTIFIER_COMMON_DATA
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    Array* array;
+    StArrayTypeInfo* array_type_info;
     /// @brief Only available when the data type is ST_STRING_TYPE.
-    String* string;
+    StStringTypeInfo* string_type_info;
   };
 } VarIdentifier;
 
@@ -149,8 +118,7 @@ typedef struct CompileTimeConstIdentifier {
     int int_val;
     double real_val;
     bool bool_val;
-    /// @brief The type of the string should be ST_CONST_STRING.
-    String* string;
+    char* string_val;
   };
 } CompileTimeConstIdentifier;
 
@@ -160,11 +128,9 @@ typedef struct RunTimeConstIdentifier {
   ST_CONST_IDENTIFIER_COMMON_DATA
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    Array* array;
-    /// @brief Only available when the data type is ST_STRING_TYPE. The type of
-    /// the string should be ST_VAR_STRING (otherwise this const identifier is a
-    /// compile-time const identifier).
-    String* string;
+    StArrayTypeInfo* array_type_info;
+    /// @brief Only available when the data type is ST_STRING_TYPE.
+    StStringTypeInfo* string_type_info;
   };
 } RunTimeConstIdentifier;
 
@@ -198,8 +164,7 @@ typedef struct CompileTimeExpression {
     int int_val;
     double real_val;
     bool bool_val;
-    /// @brief The type of the string should be ST_CONST_STRING.
-    String* string;
+    char* string_val;
   };
 } CompileTimeExpression;
 
@@ -209,11 +174,9 @@ typedef struct RunTimeExpression {
   ST_EXPRESSION_COMMON_DATA
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    Array* array;
-    /// @brief Only available when the data type is ST_STRING_TYPE. The type of
-    /// the string should be ST_VAR_STRING (otherwise this expression is a
-    /// compile-time expression).
-    String* string;
+    StArrayTypeInfo* array_type_info;
+    /// @brief Only available when the data type is ST_STRING_TYPE.
+    StStringTypeInfo* string_type_info;
   };
 } RunTimeExpression;
 
@@ -242,9 +205,9 @@ typedef struct ArraySubscript {
   StDataType data_type;
   union {
     /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    Array* array;
+    StArrayTypeInfo* array_type_info;
     /// @brief Only available when the data type is ST_STRING_TYPE.
-    String* string;
+    StStringTypeInfo* string_type_info;
   };
   bool is_const;
 } ArraySubscript;
@@ -258,21 +221,11 @@ typedef struct Reference {
   };
 } Reference;
 
-int st_dimension_of_array(const Array* arr) {
-  if (arr->array_type == ST_STATIC_ARRAY) {
-    if (arr->static_array->data_type == ST_ARRAY_TYPE) {
-      return 1 + st_dimension_of_array(arr->static_array->array);
-    }
-    return 1;
-  } else if (arr->array_type == ST_DYNAMIC_ARRAY) {
-    if (arr->dynamic_array->data_type == ST_ARRAY_TYPE) {
-      return 1 + st_dimension_of_array(arr->dynamic_array->array);
-    }
-    return 1;
-  } else {
-    ST_UNREACHABLE();
-    return -1;  // to suppress -Wreturn-type
+int st_dimension_of_array(const StArrayTypeInfo* arr) {
+  if (arr->data_type == ST_ARRAY_TYPE) {
+    return 1 + st_dimension_of_array(arr->array_type_info);
   }
+  return 1;
 }
 
 #endif /* end of include guard: PARSER_SEMANT_H */
