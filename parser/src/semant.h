@@ -1,18 +1,13 @@
 #ifndef PARSER_SEMANT_H
 #define PARSER_SEMANT_H
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
+
+#include "semant_macros.h"
 
 /// @return An identical malloc'd string.
-char* st_strdup(const char* s) {
-  char* dup_s = malloc(sizeof(char) * (strlen(s) + 1));
-  strcpy(dup_s, s);
-  return dup_s;
-}
+char* st_strdup(const char* s);
 
 typedef enum StDataType {
   /*
@@ -211,11 +206,16 @@ typedef struct Reference {
   ST_REFERENCE_COMMON_DATA
 } Reference;
 
-int st_dimension_of_array(const StArrayTypeInfo* arr) {
-  if (arr->data_type == ST_ARRAY_TYPE) {
-    return 1 + st_dimension_of_array(arr->array_type_info);
-  }
-  return 1;
-}
+int st_dimension_of_array(const StArrayTypeInfo* arr);
+
+StDataTypeInfo make_data_type_info_from_reference(const Reference*);
+StDataTypeInfo make_data_type_info_from_expression(const Expression*);
+
+/// @return Whether type b is assignable to a.
+/// @note (1) int is considered as assignable to real. (2) strings with the
+/// same max length are considered as assignable; strings without
+// explicit max length has max length 255. (3) arrays with same lower and
+// upper-bound and component type are assignable.
+bool st_is_assignable_type(const StDataTypeInfo* a, const StDataTypeInfo* b);
 
 #endif /* end of include guard: PARSER_SEMANT_H */

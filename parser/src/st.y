@@ -138,11 +138,16 @@ stmt:
      * (1) the type of the variable reference has to be the same as the expression
      * (2) the reference should be of a mutable variable
      */
+    // (1)
+    StDataTypeInfo var_ref_type_info = make_data_type_info_from_reference($1);
+    StDataTypeInfo expr_type_info = make_data_type_info_from_expression($3);
+    if (!st_is_assignable_type(&var_ref_type_info, &expr_type_info)) {
+      ST_FATAL_ERROR(@3, "type of the expression cannot be assigned to the reference (TYPE01)\n");
+    }
+    // (2)
     if ($1->is_const) {
-      // (2)
       ST_FATAL_ERROR(@1, "re-assignment on constant reference (CONST02)\n");
     }
-    // TODO: type compare
   }
 | subprog_call
   { /* no check */ }
@@ -224,6 +229,16 @@ var_decl:
     /*
      * (1) the expression has the same type as scalar_type
      */
+    // (1)
+    StDataTypeInfo expr_type_info = make_data_type_info_from_expression($6);
+    if (!st_is_assignable_type($4, &expr_type_info)) {
+      ST_FATAL_ERROR(@4, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
+    }
+    $$ = malloc(sizeof(VarIdentifier));
+    $$->id_type = ST_VAR_IDENTIFIER;
+    $$->name = st_strdup($2->name);
+    // use the declared type, not the type of the expression
+    ST_COPY_TYPE($$, $4);
   }
 ;
 
@@ -240,7 +255,6 @@ const_decl:
      */
     // (1)
     if($4->data_type == ST_ARRAY_TYPE
-        // CompileTimeExpression won't be an array
         && $4->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
@@ -267,6 +281,34 @@ const_decl:
      * (1) the expression has the same type as scalar_type
      * (2) if the expression is a compile-time expression, the id can represent a compile-time expression
      */
+    // although an expression with dynamic array type will never be assignable to a scalar type,
+    // we'll check first to emphasize that a constant identifier cannot be a dynamic array
+    if($6->data_type == ST_ARRAY_TYPE
+        && $6->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
+      ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
+    }
+    // (1)
+    StDataTypeInfo expr_type_info = make_data_type_info_from_expression($6);
+    if (!st_is_assignable_type($4, &expr_type_info)) {
+      ST_FATAL_ERROR(@4, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
+    }
+    // (2)
+    if ($6->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      $$ = malloc(sizeof(CompileTimeConstIdentifier));
+      $$->const_id_type = ST_COMPILE_TIME_CONST_IDENTIFIER;
+      // use the declared type, not the type of the expression
+      ST_COPY_TYPE($$, $4);
+      ST_COPY_SCALAR_VALUE((CompileTimeConstIdentifier*)$$, (CompileTimeExpression*)$6);
+    } else if ($6->expr_type == ST_RUN_TIME_EXPRESSION) {
+      $$ = malloc(sizeof(RunTimeConstIdentifier));
+      $$->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
+      // use the declared type, not the type of the expression
+      ST_COPY_TYPE($$, $4);
+    } else {
+      ST_UNREACHABLE();
+    }
+    $$->id_type = ST_CONST_IDENTIFIER;
+    $$->name = st_strdup($2->name);
   }
 ;
 

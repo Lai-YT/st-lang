@@ -15,7 +15,7 @@
 
 | code | description | example |
 |:----:|:------------|:--------|
-| CONST01 | a constant identifier cannot be a 'dynamic array' | [const01.st](tests/bad/const01.st) |
+| CONST01 | a constant identifier cannot be a 'dynamic array' | [const01-1.st](tests/bad/const01-1.st), [const01-2.st](tests/bad/const01-2.st) |
 | CONST02 | re-assignment on constant reference | [const02-1.st](tests/bad/const02-1.st), [const02-2.st](tests/bad/const02-2.st) |
 
 ## Declarations
@@ -43,3 +43,10 @@
 | STR01 | max length of a 'string' must have type 'int' | [str01.st](tests/bad/str01.st) |
 | STR02 | max length of a 'string' must be a compile-time expression | [str02.st](tests/bad/str02.st) |
 | STR03 | max length of a 'string' must be in range 1 ~ 255 | [str03-1.st](tests/bad/str03-1.st), [str03-2.st](tests/bad/str03-2.st) |
+
+## Types
+
+| code | description | example |
+|:----:|:------------|:--------|
+| TYPE01 | type of the expression cannot be assigned to the reference | [type01-1.st](tests/bad/type01-1.st), [type01-2.st](tests/bad/type01-2.st) |
+| TYPE02 | type of the expression cannot be assigned as the declared type | [type02-1.st](tests/bad/type02-1.st), [type02-2.st](tests/bad/type02-2.st) |
