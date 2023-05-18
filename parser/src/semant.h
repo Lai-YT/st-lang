@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "semant_macros.h"
 
@@ -200,26 +202,68 @@ typedef enum StReferenceType {
   ST_ARRAY_SUBSCRIPT_REFERENCE,
 } StReferenceType;
 
-typedef struct ArraySubscript {
-  /// @brief May also be an array.
-  StDataType data_type;
-  union {
-    /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    StArrayTypeInfo* array_type_info;
-    /// @brief Only available when the data type is ST_STRING_TYPE.
-    StStringTypeInfo* string_type_info;
+#ifndef ST_REFERENCE_COMMON_DATA
+#define ST_REFERENCE_COMMON_DATA \
+  StReferenceType ref_type; \
+  /* data type and constant-ness are forwarded */ \
+  bool is_const; \
+  StDataType data_type; \
+  union { \
+    StArrayTypeInfo* array_type_info; \
+    StStringTypeInfo* string_type_info; \
   };
-  bool is_const;
-} ArraySubscript;
+#endif
+
+typedef struct ArraySubscriptReference {
+  ST_REFERENCE_COMMON_DATA
+} ArraySubscriptReference;
+
+typedef struct IdentifierReference {
+  ST_REFERENCE_COMMON_DATA
+  Identifier* id;
+} IdentifierReference;
 
 typedef struct Reference {
-  StReferenceType ref_type;
-  union {
-    /// @brief The type of the id can't be ST_SUBPROGRAM_IDENTIFIER.
-    Identifier* id_ref;
-    ArraySubscript* array_subscript_ref;
-  };
+  ST_REFERENCE_COMMON_DATA
 } Reference;
+
+/// @return An IdentifierReference with id as its underlying identifier.
+IdentifierReference* make_identifier_reference(Identifier* id) {
+  IdentifierReference* id_ref = malloc(sizeof(IdentifierReference));
+  id_ref->ref_type = ST_IDENTIFIER_REFERENCE;
+  id_ref->id = id;
+  switch (id->id_type) {
+    case ST_CONST_IDENTIFIER:
+      id_ref->is_const = false;
+      switch (((ConstIdentifier*)id)->const_id_type) {
+        case ST_COMPILE_TIME_CONST_IDENTIFIER: {
+          CompileTimeConstIdentifier* compile_time_const_id
+              = (CompileTimeConstIdentifier*)id;
+          id_ref->data_type = compile_time_const_id->data_type;
+          if (compile_time_const_id->data_type == ST_STRING_TYPE) {
+            // a compile-time identifier records the value of the string instead
+            // of its type info, so have to make one
+            id_ref->string_type_info = malloc(sizeof(StStringTypeInfo));
+            id_ref->string_type_info->max_length
+                = strlen(compile_time_const_id->string_val);
+          }
+        } break;
+        case ST_RUN_TIME_CONST_IDENTIFIER:
+          ST_COPY_TYPE(id_ref, (RunTimeConstIdentifier*)id);
+          break;
+        default:
+          ST_UNREACHABLE();
+      }
+      break;
+    case ST_VAR_IDENTIFIER:
+      id_ref->is_const = false;
+      ST_COPY_TYPE(id_ref, (VarIdentifier*)id);
+      break;
+    default:
+      ST_UNREACHABLE();
+  }
+  return id_ref;
+}
 
 int st_dimension_of_array(const StArrayTypeInfo* arr) {
   if (arr->data_type == ST_ARRAY_TYPE) {

@@ -137,22 +137,11 @@ stmt:
      * (1) the type of the variable reference has to be the same as the expression
      * (2) the reference should be of a mutable variable
      */
-    if ($1->ref_type == ST_IDENTIFIER_REFERENCE) {
+    if ($1->is_const) {
       // (2)
-      if ($1->id_ref->id_type == ST_CONST_IDENTIFIER) {
-        ST_FATAL_ERROR(@1, "re-assignment on constant reference (CONST02)\n");
-      }
-      // TODO: type compare
-    } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
-      // (2)
-      if ($1->array_subscript_ref->is_const) {
-        // we don't know the name of the array
-        ST_FATAL_ERROR(@1, "re-assignment on subscript of constant reference (CONST03)\n");
-      }
-      // TODO: type compare
-    } else {
-      ST_UNREACHABLE();
+      ST_FATAL_ERROR(@1, "re-assignment on constant reference (CONST02)\n");
     }
+    // TODO: type compare
   }
 | subprog_call
   { /* no check */ }
@@ -699,9 +688,7 @@ var_ref:
     if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
       ST_FATAL_ERROR(@1, "identifier '%s' is a 'subprogram', cannot be used as reference (REF02)\n", $1->name);
     }
-    $$ = malloc(sizeof(Reference));
-    $$->ref_type = ST_IDENTIFIER_REFERENCE;
-    $$->id_ref = id;
+    $$ = (Reference*)make_identifier_reference(id);
   }
   /*
    * NOTE: a ID subscripting can also be a substring
@@ -747,16 +734,15 @@ var_ref:
       if (num_of_sub > dim_of_arr) {
         ST_FATAL_ERROR(@2, "'%d'-dimensional 'array' cannot have '%d' subscripts (REF05)\n", dim_of_arr, num_of_sub);
       }
-      $$ = malloc(sizeof(Reference));
+      $$ = malloc(sizeof(ArraySubscriptReference));
       $$->ref_type = ST_ARRAY_SUBSCRIPT_REFERENCE;
-      $$->array_subscript_ref = malloc(sizeof(ArraySubscript));
-      $$->array_subscript_ref->is_const = id->id_type == ST_CONST_IDENTIFIER;
+      $$->is_const = id->id_type == ST_CONST_IDENTIFIER;
       StArrayTypeInfo* sub_array_type_info = (StArrayTypeInfo*)array_type_info;
       // find the correct dimension of the array
       for (int i = 0; i < num_of_sub - 1; ++i) {
         sub_array_type_info = sub_array_type_info->array_type_info;
       }
-      ST_COPY_TYPE($$->array_subscript_ref, sub_array_type_info);
+      ST_COPY_TYPE($$, sub_array_type_info);
     } else {
       // (2)
       ST_FATAL_ERROR(@1, "identifier '%s' has unsubscriptable type (REF04)\n", $1->name);
@@ -805,16 +791,17 @@ expr:
   {
     if ($1->ref_type == ST_IDENTIFIER_REFERENCE) {
       // compile-time of not?
-      switch ($1->id_ref->id_type) {
+      Identifier* id = ((IdentifierReference*)$1)->id;
+      switch (id->id_type) {
         case ST_CONST_IDENTIFIER:
-          if (((ConstIdentifier*)$1->id_ref)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
+          if (((ConstIdentifier*)id)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
             $$ = malloc(sizeof(CompileTimeExpression));
             $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
-            ST_COPY_SCALAR_VALUE((CompileTimeExpression*)$$, (CompileTimeConstIdentifier*)$1->id_ref);
-          } else if (((ConstIdentifier*)$1->id_ref)->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
+            ST_COPY_SCALAR_VALUE((CompileTimeExpression*)$$, (CompileTimeConstIdentifier*)((IdentifierReference*)$1)->id);
+          } else if (((ConstIdentifier*)id)->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
             $$ = malloc(sizeof(RunTimeExpression));
             $$->expr_type = ST_RUN_TIME_EXPRESSION;
-            ST_COPY_TYPE((RunTimeExpression*)$$, (RunTimeConstIdentifier*)$1->id_ref);
+            ST_COPY_TYPE((RunTimeExpression*)$$, $1);
           } else {
             ST_UNREACHABLE();
           }
@@ -822,7 +809,7 @@ expr:
         case ST_VAR_IDENTIFIER:
           $$ = malloc(sizeof(RunTimeExpression));
           $$->expr_type = ST_RUN_TIME_EXPRESSION;
-          ST_COPY_TYPE((RunTimeExpression*)$$, (VarIdentifier*)$1->id_ref);
+          ST_COPY_TYPE((RunTimeExpression*)$$, $1);
           break;
         default:
           ST_UNREACHABLE();
@@ -830,7 +817,7 @@ expr:
     } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
       $$ = malloc(sizeof(RunTimeExpression));
       $$->expr_type = ST_RUN_TIME_EXPRESSION;
-      ST_COPY_TYPE((RunTimeExpression*)$$, $1->array_subscript_ref);
+      ST_COPY_TYPE((RunTimeExpression*)$$, $1);
     } else {
       ST_UNREACHABLE();
     }

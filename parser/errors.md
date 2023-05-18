@@ -16,8 +16,7 @@
 | code | description | example |
 |:----:|:------------|:--------|
 | CONST01 | a constant identifier cannot be a 'dynamic array' | [const01.st](tests/bad/const01.st) |
-| CONST02 | re-assignment on constant reference | [const02.st](tests/bad/const02.st) |
-| CONST03 | re-assignment on subscript of constant reference | [const03.st](tests/bad/const03.st) |
+| CONST02 | re-assignment on constant reference | [const02-1.st](tests/bad/const02-1.st), [const02-2.st](tests/bad/const02-2.st) |
 
 ## Declarations
 
