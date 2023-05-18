@@ -208,9 +208,6 @@ typedef struct Reference {
 
 int st_dimension_of_array(const StArrayTypeInfo* arr);
 
-StDataTypeInfo make_data_type_info_from_reference(const Reference*);
-StDataTypeInfo make_data_type_info_from_expression(const Expression*);
-
 /// @return Whether type b is assignable to a.
 /// @note (1) int is considered as assignable to real. (2) strings with the
 /// same max length are considered as assignable; strings without

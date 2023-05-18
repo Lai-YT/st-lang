@@ -54,26 +54,12 @@ static bool st_is_assignable_array_type(const StArrayTypeInfo* a,
     return false;
   }
 
-  StDataTypeInfo a_type;
-  ST_COPY_TYPE(&a_type, a);
-  StDataTypeInfo b_type;
-  ST_COPY_TYPE(&b_type, b);
+  StDataTypeInfo a_type = ST_MAKE_DATA_TYPE_INFO(a);
+  StDataTypeInfo b_type = ST_MAKE_DATA_TYPE_INFO(b);
   return st_is_assignable_type(&a_type, &b_type);
 }
 
 static bool st_is_assignable_string_type(const StStringTypeInfo* a,
                                          const StStringTypeInfo* b) {
   return a->max_length == b->max_length;
-}
-
-StDataTypeInfo make_data_type_info_from_reference(const Reference* ref) {
-  StDataTypeInfo data_type;
-  ST_COPY_TYPE(&data_type, ref);
-  return data_type;
-}
-
-StDataTypeInfo make_data_type_info_from_expression(const Expression* expr) {
-  StDataTypeInfo data_type;
-  ST_COPY_TYPE(&data_type, expr);
-  return data_type;
 }

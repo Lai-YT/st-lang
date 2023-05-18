@@ -73,3 +73,17 @@ extern int allow_semantic_errors;
     } \
   }
 #endif
+
+#ifndef ST_MAKE_DATA_TYPE_INFO
+/// @brief Copies the data type info of x
+/// @param x must necessarily carry all data in ST_DATA_TYPE_INFO
+/// @note This macro uses "statement expression", which is a non-standard
+/// feature. GCC and Clang are known to support this. See also
+/// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
+#define ST_MAKE_DATA_TYPE_INFO(x) \
+  ({ \
+    StDataTypeInfo data_type; \
+    ST_COPY_TYPE(&data_type, x); \
+    data_type; \
+  })
+#endif

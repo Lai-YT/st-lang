@@ -139,8 +139,8 @@ stmt:
      * (2) the reference should be of a mutable variable
      */
     // (1)
-    StDataTypeInfo var_ref_type_info = make_data_type_info_from_reference($1);
-    StDataTypeInfo expr_type_info = make_data_type_info_from_expression($3);
+    StDataTypeInfo var_ref_type_info = ST_MAKE_DATA_TYPE_INFO($1);
+    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($3);
     if (!st_is_assignable_type(&var_ref_type_info, &expr_type_info)) {
       ST_FATAL_ERROR(@3, "type of the expression cannot be assigned to the reference (TYPE01)\n");
     }
@@ -230,7 +230,7 @@ var_decl:
      * (1) the expression has the same type as scalar_type
      */
     // (1)
-    StDataTypeInfo expr_type_info = make_data_type_info_from_expression($6);
+    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($6);
     if (!st_is_assignable_type($4, &expr_type_info)) {
       ST_FATAL_ERROR(@4, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
     }
@@ -288,7 +288,7 @@ const_decl:
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
     // (1)
-    StDataTypeInfo expr_type_info = make_data_type_info_from_expression($6);
+    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($6);
     if (!st_is_assignable_type($4, &expr_type_info)) {
       ST_FATAL_ERROR(@4, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
     }
