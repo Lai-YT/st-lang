@@ -203,19 +203,7 @@ var_decl:
     $$->id_type = ST_VAR_IDENTIFIER;
     $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
     strcpy($$->name, $2->name);
-    // although the value of the expression is irrelevant for the variable,
-    // we have to access the correct expression to get the data type
-    if ($4->expr_type == ST_COMPILE_TIME_EXPRESSION) {
-      $$->data_type = $4->data_type;
-      if ($4->data_type == ST_STRING_TYPE) {
-        $$->string_type_info = malloc(sizeof(StStringTypeInfo));
-        $$->string_type_info->max_length = strlen(((CompileTimeExpression*)$4)->string_val);
-      }
-    } else if ($4->expr_type == ST_RUN_TIME_EXPRESSION) {
-      ST_COPY_TYPE($$, (RunTimeExpression*)$4);
-    } else {
-      ST_UNREACHABLE();
-    }
+    ST_COPY_TYPE($$, $4);
   }
 | VAR ID ':' array_type
   {
@@ -255,7 +243,7 @@ const_decl:
     // (1)
     if($4->data_type == ST_ARRAY_TYPE
         // CompileTimeExpression won't be an array
-        && ((RunTimeExpression*)$4)->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
+        && $4->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
     // (2)
@@ -263,11 +251,12 @@ const_decl:
       $$ = malloc(sizeof(CompileTimeConstIdentifier));
       $$->const_id_type = ST_COMPILE_TIME_CONST_IDENTIFIER;
       // (3)
+      ST_COPY_TYPE($$, $4);
       ST_COPY_SCALAR_VALUE((CompileTimeConstIdentifier*)$$, (CompileTimeExpression*)$4);
     } else if ($4->expr_type == ST_RUN_TIME_EXPRESSION) {
       $$ = malloc(sizeof(RunTimeConstIdentifier));
       $$->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
-      ST_COPY_TYPE((RunTimeConstIdentifier*)$$, (RunTimeExpression*)$4);
+      ST_COPY_TYPE($$, $4);
     } else {
       ST_UNREACHABLE();
     }
@@ -688,7 +677,18 @@ var_ref:
     if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
       ST_FATAL_ERROR(@1, "identifier '%s' is a 'subprogram', cannot be used as reference (REF02)\n", $1->name);
     }
-    $$ = (Reference*)make_identifier_reference(id);
+    $$ = malloc(sizeof(IdentifierReference));
+    $$->ref_type = ST_IDENTIFIER_REFERENCE;
+    ((IdentifierReference*)$$)->id = id;
+    // forward
+    ST_COPY_TYPE($$, id);
+    if (id->id_type == ST_CONST_IDENTIFIER) {
+      $$->is_const = true;
+    } else if (id->id_type == ST_VAR_IDENTIFIER) {
+      $$->is_const = false;
+    } else {
+      ST_UNREACHABLE();
+    }
   }
   /*
    * NOTE: a ID subscripting can also be a substring
@@ -726,10 +726,7 @@ var_ref:
         ST_UNREACHABLE();
       }
       const int num_of_sub = list_length($2);
-      const StArrayTypeInfo* array_type_info = id->id_type == ST_VAR_IDENTIFIER
-          ? ((VarIdentifier*)id)->array_type_info
-          : ((RunTimeConstIdentifier*)id)->array_type_info;
-      const int dim_of_arr = st_dimension_of_array(array_type_info);
+      const int dim_of_arr = st_dimension_of_array(id->array_type_info);
       // (4)
       if (num_of_sub > dim_of_arr) {
         ST_FATAL_ERROR(@2, "'%d'-dimensional 'array' cannot have '%d' subscripts (REF05)\n", dim_of_arr, num_of_sub);
@@ -737,7 +734,7 @@ var_ref:
       $$ = malloc(sizeof(ArraySubscriptReference));
       $$->ref_type = ST_ARRAY_SUBSCRIPT_REFERENCE;
       $$->is_const = id->id_type == ST_CONST_IDENTIFIER;
-      StArrayTypeInfo* sub_array_type_info = (StArrayTypeInfo*)array_type_info;
+      StArrayTypeInfo* sub_array_type_info = (StArrayTypeInfo*)id->array_type_info;
       // find the correct dimension of the array
       for (int i = 0; i < num_of_sub - 1; ++i) {
         sub_array_type_info = sub_array_type_info->array_type_info;
@@ -797,11 +794,12 @@ expr:
           if (((ConstIdentifier*)id)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
             $$ = malloc(sizeof(CompileTimeExpression));
             $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
+            ST_COPY_TYPE($$, ((IdentifierReference*)$1)->id);
             ST_COPY_SCALAR_VALUE((CompileTimeExpression*)$$, (CompileTimeConstIdentifier*)((IdentifierReference*)$1)->id);
           } else if (((ConstIdentifier*)id)->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
             $$ = malloc(sizeof(RunTimeExpression));
             $$->expr_type = ST_RUN_TIME_EXPRESSION;
-            ST_COPY_TYPE((RunTimeExpression*)$$, $1);
+            ST_COPY_TYPE($$, $1);
           } else {
             ST_UNREACHABLE();
           }
@@ -809,7 +807,7 @@ expr:
         case ST_VAR_IDENTIFIER:
           $$ = malloc(sizeof(RunTimeExpression));
           $$->expr_type = ST_RUN_TIME_EXPRESSION;
-          ST_COPY_TYPE((RunTimeExpression*)$$, $1);
+          ST_COPY_TYPE($$, $1);
           break;
         default:
           ST_UNREACHABLE();
@@ -817,7 +815,7 @@ expr:
     } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
       $$ = malloc(sizeof(RunTimeExpression));
       $$->expr_type = ST_RUN_TIME_EXPRESSION;
-      ST_COPY_TYPE((RunTimeExpression*)$$, $1);
+      ST_COPY_TYPE($$, $1);
     } else {
       ST_UNREACHABLE();
     }
@@ -879,6 +877,8 @@ explicit_const:
     $$ = malloc(sizeof(CompileTimeExpression));
     $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
     $$->data_type = ST_STRING_TYPE;
+    $$->string_type_info = malloc(sizeof(StStringTypeInfo));
+    $$->string_type_info->max_length = strlen($1);
     $$->string_val = malloc(sizeof(char) * (strlen($1) + 1));
     strcpy($$->string_val, $1);
   }

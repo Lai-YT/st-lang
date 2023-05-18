@@ -29,12 +29,11 @@ extern int allow_semantic_errors;
 #endif
 
 #ifndef ST_COPY_SCALAR_VALUE
-/// @brief Copies the data type and the correspond scalar value of b to a.
+/// @brief Copies the correspond scalar value of b to a.
 /// @note (1) a and b should be pointers (2) their data_type should be scalar
 /// type (3) they should both have a union of scalar values.
 #define ST_COPY_SCALAR_VALUE(a, b) \
   { \
-    (a)->data_type = (b)->data_type; \
     switch ((b)->data_type) { \
       case ST_INT_TYPE: \
         (a)->int_val = (b)->int_val; \
@@ -57,8 +56,7 @@ extern int allow_semantic_errors;
 #endif
 
 #ifndef ST_COPY_TYPE
-/// @brief Copies the data type and the correspond additional information of b
-/// to a.
+/// @brief Copies the data type and the correspond type info of b to a.
 /// @note (1) a and b should be pointers (2) they should both have a union of
 /// string_type_info and array_type_info.
 #define ST_COPY_TYPE(a, b) \

@@ -31,21 +31,41 @@ typedef struct StStringTypeInfo {
   size_t max_length;
 } StStringTypeInfo;
 
+typedef struct StArrayTypeInfo StArrayTypeInfo;
+
+#ifndef ST_DATA_TYPE_INFO
+/// @note Any struct that carries type information should use this.
+#define ST_DATA_TYPE_INFO \
+  StDataType data_type; \
+  union { \
+    /** @brief Only available when the data type is ST_ARRAY_TYPE. */ \
+    StArrayTypeInfo* array_type_info; \
+    /** @brief Only available when the data type is ST_STRING_TYPE. */ \
+    StStringTypeInfo* string_type_info; \
+  };
+#endif
+
+#ifndef ST_COMPILE_TIME_DATA_VALUE
+/// @brief A union of scalar values.
+/// @note Any structure that hold compile-time values should use this.
+#define ST_COMPILE_TIME_DATA_VALUE \
+  union { \
+    int int_val; \
+    double real_val; \
+    bool bool_val; \
+    char* string_val; \
+  };
+#endif
+
 typedef enum StArrayType {
   ST_DYNAMIC_ARRAY,
   ST_STATIC_ARRAY,
 } StArrayType;
 
-typedef struct StArrayTypeInfo StArrayTypeInfo;
-
 #ifndef ST_ARRAY_TYPE_INFO_COMMON_DATA
 #define ST_ARRAY_TYPE_INFO_COMMON_DATA \
   StArrayType array_type; \
-  StDataType data_type; \
-  union { \
-    StArrayTypeInfo* array_type_info; \
-    StStringTypeInfo* string_type_info; \
-  }; \
+  ST_DATA_TYPE_INFO \
   int lower_bound;
 #endif
 
@@ -64,18 +84,9 @@ struct StArrayTypeInfo {
   ST_ARRAY_TYPE_INFO_COMMON_DATA
 };
 
-/// @brief Wraps the data type and its additional information together.
-/// @note This structure is capable to hold all information of types, especially
-/// useful for complex types, such as string and array. But if only int, real
-/// and bool are needed, simple use a StDataType instead.
+/// @brief A data type structure which carries all necessary type information.
 typedef struct StDataTypeInfo {
-  StDataType data_type;
-  union {
-    /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    StArrayTypeInfo* array_type_info;
-    /// @brief Only available when the data type is ST_STRING_TYPE.
-    StStringTypeInfo* string_type_info;
-  };
+  ST_DATA_TYPE_INFO
 } StDataTypeInfo;
 
 typedef enum StIdentifierType {
@@ -88,7 +99,7 @@ typedef enum StIdentifierType {
 #define ST_IDENTIFIER_COMMON_DATA \
   StIdentifierType id_type; \
   char* name; \
-  StDataType data_type;
+  ST_DATA_TYPE_INFO
 #endif
 
 #ifndef ST_CONST_IDENTIFIER_COMMON_DATA
@@ -101,12 +112,6 @@ typedef enum StIdentifierType {
 /// we don't record its value here.
 typedef struct VarIdentifier {
   ST_IDENTIFIER_COMMON_DATA
-  union {
-    /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    StArrayTypeInfo* array_type_info;
-    /// @brief Only available when the data type is ST_STRING_TYPE.
-    StStringTypeInfo* string_type_info;
-  };
 } VarIdentifier;
 
 typedef enum StConstIdentifierType {
@@ -116,24 +121,13 @@ typedef enum StConstIdentifierType {
 
 typedef struct CompileTimeConstIdentifier {
   ST_CONST_IDENTIFIER_COMMON_DATA
-  union {
-    int int_val;
-    double real_val;
-    bool bool_val;
-    char* string_val;
-  };
+  ST_COMPILE_TIME_DATA_VALUE
 } CompileTimeConstIdentifier;
 
 /// @brief The value of a run-tie constant identifier is, as its name, run-time
 /// determined, so we don't record its value.
 typedef struct RunTimeConstIdentifier {
   ST_CONST_IDENTIFIER_COMMON_DATA
-  union {
-    /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    StArrayTypeInfo* array_type_info;
-    /// @brief Only available when the data type is ST_STRING_TYPE.
-    StStringTypeInfo* string_type_info;
-  };
 } RunTimeConstIdentifier;
 
 /// @brief The value of an const identifier may be run-time determined. In such
@@ -156,30 +150,19 @@ typedef enum StExpressionType {
 #ifndef ST_EXPRESSION_COMMON_DATA
 #define ST_EXPRESSION_COMMON_DATA \
   StExpressionType expr_type; \
-  StDataType data_type;
+  ST_DATA_TYPE_INFO
 #endif
 
 /// @brief The value of a compile-time expression is determined at compile-time.
 typedef struct CompileTimeExpression {
   ST_EXPRESSION_COMMON_DATA
-  union {
-    int int_val;
-    double real_val;
-    bool bool_val;
-    char* string_val;
-  };
+  ST_COMPILE_TIME_DATA_VALUE
 } CompileTimeExpression;
 
 /// @brief The value of a run-time expression is determined at run-time, so we
 /// don't record its value.
 typedef struct RunTimeExpression {
   ST_EXPRESSION_COMMON_DATA
-  union {
-    /// @brief Only available when the data type is ST_ARRAY_TYPE.
-    StArrayTypeInfo* array_type_info;
-    /// @brief Only available when the data type is ST_STRING_TYPE.
-    StStringTypeInfo* string_type_info;
-  };
 } RunTimeExpression;
 
 typedef struct Expression {
@@ -188,7 +171,7 @@ typedef struct Expression {
 
 /*
  * When a reference is used as lhs, we have to know
- *  (1) its const or var
+ *  (1) is const or var
  *  (2) its type
  * When is used as rhs, we have to know
  *  (1) its type
@@ -207,11 +190,7 @@ typedef enum StReferenceType {
   StReferenceType ref_type; \
   /* data type and constant-ness are forwarded */ \
   bool is_const; \
-  StDataType data_type; \
-  union { \
-    StArrayTypeInfo* array_type_info; \
-    StStringTypeInfo* string_type_info; \
-  };
+  ST_DATA_TYPE_INFO
 #endif
 
 typedef struct ArraySubscriptReference {
@@ -226,44 +205,6 @@ typedef struct IdentifierReference {
 typedef struct Reference {
   ST_REFERENCE_COMMON_DATA
 } Reference;
-
-/// @return An IdentifierReference with id as its underlying identifier.
-IdentifierReference* make_identifier_reference(Identifier* id) {
-  IdentifierReference* id_ref = malloc(sizeof(IdentifierReference));
-  id_ref->ref_type = ST_IDENTIFIER_REFERENCE;
-  id_ref->id = id;
-  switch (id->id_type) {
-    case ST_CONST_IDENTIFIER:
-      id_ref->is_const = false;
-      switch (((ConstIdentifier*)id)->const_id_type) {
-        case ST_COMPILE_TIME_CONST_IDENTIFIER: {
-          CompileTimeConstIdentifier* compile_time_const_id
-              = (CompileTimeConstIdentifier*)id;
-          id_ref->data_type = compile_time_const_id->data_type;
-          if (compile_time_const_id->data_type == ST_STRING_TYPE) {
-            // a compile-time identifier records the value of the string instead
-            // of its type info, so have to make one
-            id_ref->string_type_info = malloc(sizeof(StStringTypeInfo));
-            id_ref->string_type_info->max_length
-                = strlen(compile_time_const_id->string_val);
-          }
-        } break;
-        case ST_RUN_TIME_CONST_IDENTIFIER:
-          ST_COPY_TYPE(id_ref, (RunTimeConstIdentifier*)id);
-          break;
-        default:
-          ST_UNREACHABLE();
-      }
-      break;
-    case ST_VAR_IDENTIFIER:
-      id_ref->is_const = false;
-      ST_COPY_TYPE(id_ref, (VarIdentifier*)id);
-      break;
-    default:
-      ST_UNREACHABLE();
-  }
-  return id_ref;
-}
 
 int st_dimension_of_array(const StArrayTypeInfo* arr) {
   if (arr->data_type == ST_ARRAY_TYPE) {
