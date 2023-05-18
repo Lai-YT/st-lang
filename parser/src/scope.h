@@ -1,5 +1,5 @@
-#ifndef LIB_SCOPE_H
-#define LIB_SCOPE_H
+#ifndef PARSER_SCOPE_H
+#define PARSER_SCOPE_H
 
 #include "list.h"
 #include "symtab.h"
@@ -41,4 +41,4 @@ Symbol* insert_scope(Environment*, const char* name);
 /// symbols are not. Call list_delete after inspection.
 List* dump_scope(Environment*);
 
-#endif /* end of include guard: LIB_SCOPE_H */
+#endif /* end of include guard: PARSER_SCOPE_H */
