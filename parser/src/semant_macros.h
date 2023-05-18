@@ -45,9 +45,7 @@ extern int allow_semantic_errors;
         (a)->bool_val = (b)->bool_val; \
         break; \
       case ST_STRING_TYPE: \
-        (a)->string_val \
-            = malloc(sizeof(char) * (strlen((b)->string_val) + 1)); \
-        strcpy((a)->string_val, (b)->string_val); \
+        (a)->string_val = st_strdup((b)->string_val); \
         break; \
       default: \
         ST_UNREACHABLE(); \

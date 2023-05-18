@@ -12,7 +12,8 @@
 
   extern SymbolTable* scope;
 
-  void yyerror(const char *s);  /*  defined below; called for each parse error */
+  /// @brief called for each syntax error
+  void yyerror(const char *s);
 %}
 %locations
 %define parse.error detailed
@@ -201,24 +202,21 @@ var_decl:
   {
     $$ = malloc(sizeof(VarIdentifier));
     $$->id_type = ST_VAR_IDENTIFIER;
-    $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
-    strcpy($$->name, $2->name);
+    $$->name = st_strdup($2->name);
     ST_COPY_TYPE($$, $4);
   }
 | VAR ID ':' array_type
   {
     $$ = malloc(sizeof(VarIdentifier));
     $$->id_type = ST_VAR_IDENTIFIER;
-    $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
-    strcpy($$->name, $2->name);
+    $$->name = st_strdup($2->name);
     ST_COPY_TYPE($$, $4);
   }
 | VAR ID ':' scalar_type
   {
     $$ = malloc(sizeof(VarIdentifier));
     $$->id_type = ST_VAR_IDENTIFIER;
-    $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
-    strcpy($$->name, $2->name);
+    $$->name = st_strdup($2->name);
     ST_COPY_TYPE($$, $4);
   }
 | VAR ID ':' scalar_type ASSIGN expr
@@ -261,8 +259,7 @@ const_decl:
       ST_UNREACHABLE();
     }
     $$->id_type = ST_CONST_IDENTIFIER;
-    $$->name = malloc(sizeof(char) * (strlen($2->name) + 1));
-    strcpy($$->name, $2->name);
+    $$->name = st_strdup($2->name);
   }
 | CONST ID ':' scalar_type ASSIGN expr
   {
@@ -879,8 +876,7 @@ explicit_const:
     $$->data_type = ST_STRING_TYPE;
     $$->string_type_info = malloc(sizeof(StStringTypeInfo));
     $$->string_type_info->max_length = strlen($1);
-    $$->string_val = malloc(sizeof(char) * (strlen($1) + 1));
-    strcpy($$->string_val, $1);
+    $$->string_val = st_strdup($1);
   }
 | bool_const
   { $$ = $1; }

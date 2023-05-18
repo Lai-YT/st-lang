@@ -7,7 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "semant_macros.h"
+/// @return An identical malloc'd string.
+char* st_strdup(const char* s) {
+  char* dup_s = malloc(sizeof(char) * (strlen(s) + 1));
+  strcpy(dup_s, s);
+  return dup_s;
+}
 
 typedef enum StDataType {
   /*
