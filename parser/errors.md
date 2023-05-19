@@ -22,7 +22,7 @@
 
 | code | description | example |
 |:----:|:------------|:--------|
-| DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st) |
+| DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st), [decl01-3.st](tests/bad/decl01-3.st) |
 | DECL02 | identifier 'x' is not declared | [decl02.st](tests/bad/decl02.st) |
 
 ## For Statements
@@ -36,11 +36,19 @@
 | code | description | example |
 |:----:|:------------|:--------|
 | REF01 | identifier 'x' is not declared | [ref01-1.st](tests/bad/ref01-1.st), [ref01-2.st](tests/bad/ref01-2.st) |
-| REF02 | identifier 'x' is a 'subprogram', cannot be used as reference |
+| REF02 | identifier 'x' is a 'subprogram', cannot be used as reference | [ref02-1.st](tests/bad/ref02-1.st), [ref02-2.st](tests/bad/ref02-2.st) |
 | REF03 | 'character' is unsubscriptable, for substrings, use 'x[n .. m]' instead | [ref03-1.st](tests/bad/ref03-1.st), [ref03-2.st](tests/bad/ref03-2.st) |
 | REF04 | identifier 'x' has unsubscriptable type | [ref04-1.st](tests/bad/ref04-1.st), [ref04-2.st](tests/bad/ref04-2.st), [ref04-3.st](tests/bad/ref04-3.st) |
 | REF05 | 'n'-dimensional 'array' cannot have 'm' subscripts | [ref05-1.st](tests/bad/ref05-1.st), [ref05-1.st](tests/bad/ref05-1.st) |
 | REF06 | subscript must have type 'int' | [ref06.st](tests/bad/ref06.st) |
+
+## Statements
+
+| code | description | example |
+|:----:|:------------|:--------|
+| STMT01 | 'return' statement can only appear in the body of 'procedure's | [stmt01.st](tests/bad/stmt01.st) |
+| STMT02 | 'result' statement can only appear in the body of 'function's | [stmt02.st](tests/bad/stmt02.st) |
+| STMT03 | 'exit' statement can only appear in 'for' or 'loop' statements | [stmt03.st](tests/bad/stmt03.st) |
 
 ## Strings
 
@@ -50,13 +58,11 @@
 | STR02 | max length of a 'string' must be a compile-time expression | [str02.st](tests/bad/str02.st) |
 | STR03 | max length of a 'string' must be in range 1 ~ 255 | [str03-1.st](tests/bad/str03-1.st), [str03-2.st](tests/bad/str03-2.st) |
 
-## Statements
+## Subprograms
 
 | code | description | example |
 |:----:|:------------|:--------|
-| STMT01 | 'return' statement can only appear in the body of 'procedure's | [stmt01.st](tests/bad/stmt01.st) |
-| STMT02 | 'result' statement can only appear in the body of 'function's | [stmt02.st](tests/bad/stmt02.st) |
-| STMT03 | 'exit' statement can only appear in 'for' or 'loop' statements | [stmt03.st](tests/bad/stmt03.st) |
+| SUB01 | the name after 'end' should be the name of the 'subprogram' | [sub01-1.st](tests/bad/sub01-1.st), [sub01-2.st](tests/bad/sub01-2.st) |
 
 ## Types
 

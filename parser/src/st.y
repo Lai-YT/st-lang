@@ -30,6 +30,10 @@
   Reference* ref;
   StDataTypeInfo* type_info;
   List* subscript_list;
+  Subprogram* subprogram;
+  ProcedureSubprogram* procedure;
+  FunctionSubprogram* function;
+  List* formals;
 }
 
 /* tokens */
@@ -59,6 +63,8 @@
 %type <ref> var_ref
 %type <type_info> type scalar_type array_type
 %type <subscript_list> subscript subscript_list
+%type <subprogram> subprog_header
+%type <formals> opt_formal_decl_list
 
   /* lowest to highest */
 %left OR
@@ -182,6 +188,7 @@ stmt:
     if (st_get_scope_type(env) != ST_FUNCTION_SCOPE) {
       ST_FATAL_ERROR(@1, "'result' statement can only appear in the body of 'function's (STMT02)\n");
     }
+    // TODO
   }
 | if_stmt
   { /* no check */ }
@@ -356,27 +363,80 @@ subprog_decl:
   {
     /*
      * (1) id is the same name as the one in the header
-     * (2) exit the scope
+     * (2) the name of the subprogram should not be already declared
      */
+    st_exit_scope(&env);
+    // (1)
+    if (strcmp($1->name, $4->name) != 0) {
+      ST_FATAL_ERROR(@4, "the name after 'end' should be the name of the 'subprogram' (SUB01)\n");
+    }
+    // (2)
+    if (st_probe_environment(env, $1->name)) {
+      ST_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
+    }
+    // NOTE: we have the add the procedure into the outmost scope,
+    // so that it remains across the whole program
+    Symbol* symbol = st_add_to_scope(env, $1->name);
+    symbol->attribute = $1;
   }
 ;
 
 subprog_header:
-  PROCEDURE ID '(' opt_formal_decl_list ')'
+  PROCEDURE ID
   {
     /*
+     * mid-rule
      * (1) enter a procedure scope
      * (2) the name of the procedure is a declared identifier within the scope
-     * (3) the types of the formals have to be recorded so can be checked on a call
      */
+    // (1)
+    st_enter_scope(&env, ST_PROCEDURE_SCOPE);
+    $<procedure>$ = malloc(sizeof(ProcedureSubprogram));
+    $<procedure>$->id_type = ST_SUBPROGRAM_IDENTIFIER;
+    $<procedure>$->name = st_strdup($2->name);
+    // the formals of the procedure will be added later
+    // (2)
+    // NOTE: the procedure is added into the scope since it's visible to the
+    // formals and the procedure body.
+    Symbol* symbol = st_add_to_scope(env, $2->name);
+    symbol->attribute = $<procedure>$;
   }
-| FUNCTION ID '(' opt_formal_decl_list ')' ':' type
+  '(' opt_formal_decl_list ')'
   {
     /*
-     * (1) enter a function scope
-     * (1) the name of the function is a declared identifier within the scope
-     * (2) the types of the formals and the result has to be recorded so can be checked on a call
+     * (1) the types of the formals have to be recorded so can be checked on a call
      */
+    $<procedure>3->formals = $5;
+    $$ = (Subprogram*)$<procedure>3;
+  }
+| FUNCTION ID
+  {
+   /*
+    * mid-rule
+    * (1) enter a procedure scope
+    * (2) the name of the procedure is a declared identifier within the scope
+    */
+    // (1)
+    st_enter_scope(&env, ST_FUNCTION_SCOPE);
+    $<function>$ = malloc(sizeof(FunctionSubprogram));
+    $<function>$->id_type = ST_SUBPROGRAM_IDENTIFIER;
+    $<function>$->name = st_strdup($2->name);
+    // the formals and the result type of the function will be added later
+    // (2)
+    // NOTE: the function is added into the scope since it's visible to the
+    // formals and the function body.
+    Symbol* symbol = st_add_to_scope(env, $2->name);
+    symbol->attribute = $<function>$;
+  }
+  '(' opt_formal_decl_list ')' ':' type
+  {
+    /*
+     * (1) the types of the formals and the result has to be recorded so can be checked on a call
+     */
+    // (1)
+    $<function>3->formals = $5;
+    $<function>3->result_type = $8;
+    $$ = (Subprogram*)$<function>3;
   }
 ;
 

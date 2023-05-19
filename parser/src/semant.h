@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "list.h"
 #include "semant_macros.h"
 
 /// @return An identical malloc'd string.
@@ -141,6 +142,32 @@ typedef struct ConstIdentifier {
 typedef struct Identifier {
   ST_IDENTIFIER_COMMON_DATA
 } Identifier;
+
+typedef enum StSubprogramType {
+  ST_PROCEDURE_SUBPROGRAM,
+  ST_FUNCTION_SUBPROGRAM,
+} StSubprogramType;
+
+#ifndef ST_SUBPROGRAM_COMMON_DATA
+#define ST_SUBPROGRAM_COMMON_DATA \
+  StIdentifierType id_type; \
+  char* name; \
+  StSubprogramType subprogram_type; \
+  List* formals;
+#endif
+
+typedef struct Subprogram {
+  ST_SUBPROGRAM_COMMON_DATA
+} Subprogram;
+
+typedef struct ProcedureSubprogram {
+  ST_SUBPROGRAM_COMMON_DATA
+} ProcedureSubprogram;
+
+typedef struct FunctionSubprogram {
+  ST_SUBPROGRAM_COMMON_DATA
+  StDataTypeInfo* result_type;
+} FunctionSubprogram;
 
 typedef enum StExpressionType {
   ST_RUN_TIME_EXPRESSION,
