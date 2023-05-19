@@ -5,12 +5,13 @@
   #include <string.h>
 
   #include "list.h"
+  #include "scope.h"
   #include "semant.h"
   #include "semant_macros.h"
   #include "st-lex.h"
   #include "symtab.h"
 
-  extern SymbolTable* scope;
+  extern StEnvironment* env;
 
   /// @brief called for each syntax error
   void yyerror(const char *s);
@@ -74,11 +75,18 @@
 
 %%
 program:
-  decl_or_stmt_in_main_program_list
   {
     /*
-     * (1) new block scope with subprogram table
+     * mid-rule:
+     * (1) new block scope
+     * NOTE: all subprogram type identifiers will be added to this scope
      */
+    // (1)
+    st_enter_scope(&env, ST_BLOCK_SCOPE);
+  }
+  decl_or_stmt_in_main_program_list
+  {
+    st_exit_scope(&env);
   }
 | /* empty */
   { /* no check */ }
@@ -110,11 +118,12 @@ decl:
      * (2) the identifier should be recorded under the scope
      */
     // (1)
-    if (symtab_lookup(scope, $1->name)) {
+    if (st_probe_environment(env, $1->name)) {
       ST_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
     }
     // (2)
-    symtab_insert(scope, $1->name, $1);
+    Symbol* symbol = st_add_to_scope(env, $1->name);
+    symbol->attribute = $1;
   }
 | const_decl
   {
@@ -123,11 +132,12 @@ decl:
      * (2) the identifier should be recorded under the scope
      */
     // (1)
-    if (symtab_lookup(scope, $1->name)) {
+    if (st_probe_environment(env, $1->name)) {
       ST_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
     }
     // (2)
-    symtab_insert(scope, $1->name, $1);
+    Symbol* symbol = st_add_to_scope(env, $1->name);
+    symbol->attribute = $1;
   }
 ;
 
@@ -176,13 +186,13 @@ stmt:
 | loop_stmt
   {
     /*
-     * (1) new block scope
+     * (1) new loop scope
      */
   }
 | for_stmt
   {
     /*
-     * (1) new block scope
+     * (1) new loop scope
      */
   }
 | block
@@ -706,7 +716,7 @@ var_ref:
      * (1) the id has to be declared
      * (2) the id can't be a subprogram
      */
-    Symbol* symbol = symtab_lookup(scope, $1->name);
+    Symbol* symbol = st_lookup_environment(env, $1->name);
     // (1)
     if (!symbol) {
       ST_FATAL_ERROR(@1, "identifier '%s' is not declared (REF01)\n", $1->name);
@@ -741,7 +751,7 @@ var_ref:
      * (4) if id has type array, the length of the list cannot exceed the dimension of the array
      * NOTE: the expression may be run-time expressions, so range check seems impossible
      */
-    Symbol* symbol = symtab_lookup(scope, $1->name);
+    Symbol* symbol = st_lookup_environment(env, $1->name);
     // (1)
     if (!symbol) {
       ST_FATAL_ERROR(@1, "identifier '%s' is not declared (REF01)\n", $1->name);
