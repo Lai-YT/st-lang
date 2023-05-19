@@ -166,6 +166,10 @@ stmt:
     /*
      * (1) has to be inside the scope of a procedure
      */
+    // (1)
+    if (st_get_scope_type(env) != ST_PROCEDURE_SCOPE) {
+      ST_FATAL_ERROR(@1, "'return' statement can only appear in the body of 'procedure's (STMT01)\n");
+    }
   }
 | RESULT expr
   {
@@ -174,6 +178,10 @@ stmt:
      * (2) expr must have the same type as the declared result type
      * (3) record the occurrence to the function scope
      */
+    // (1)
+    if (st_get_scope_type(env) != ST_FUNCTION_SCOPE) {
+      ST_FATAL_ERROR(@1, "'result' statement can only appear in the body of 'function's (STMT02)\n");
+    }
   }
 | if_stmt
   { /* no check */ }
@@ -182,24 +190,45 @@ stmt:
     /*
      * (1) has to be inside a loop or a for statement
      */
+    // (1)
+    if (st_get_scope_type(env) != ST_LOOP_SCOPE) {
+      ST_FATAL_ERROR(@1, "'exit' statement can only appear in 'for' and 'loop' statements (STMT03)\n");
+    }
   }
-| loop_stmt
-  {
+| {
     /*
+     * mid-rule:
      * (1) new loop scope
      */
+    // (1)
+    st_enter_scope(&env, ST_LOOP_SCOPE);
   }
-| for_stmt
+  loop_stmt
   {
+    st_exit_scope(&env);
+  }
+| {
     /*
+     * mid-rule:
      * (1) new loop scope
      */
+    // (1)
+    st_enter_scope(&env, ST_LOOP_SCOPE);
   }
-| block
+  for_stmt
   {
+    st_exit_scope(&env);
+  }
+| {
     /*
+     * mid-rule:
      * (1) new block scope
      */
+    st_enter_scope(&env, ST_BLOCK_SCOPE);
+  }
+  block
+  {
+    st_exit_scope(&env);
   }
 | get_stmt
   { /* no check */ }
@@ -475,31 +504,91 @@ for_stmt:
   {
     /*
      * (1) the expressions must be both of type int
-     * (2) the second expression can't be smaller than the first one
      */
+    // (1)
+    if ($3->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@3, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    }
+    if ($6->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@6, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    }
   }
-| FOR ID ':' expr '.' '.' expr opt_decl_or_stmt_list END FOR
+| FOR ID ':' expr '.' '.' expr
+  {
+    /*
+     * mid-rule
+     * (1) add id into the scope and marked as constant
+     */
+    if (st_probe_environment(env, $2->name)) {
+      // should always be the first identifier added to the scope
+      ST_UNREACHABLE();
+    }
+    // (1)
+    RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
+    id->id_type = ST_CONST_IDENTIFIER;
+    id->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
+    id->name = st_strdup($2->name);
+    id->data_type = ST_INT_TYPE;
+    Symbol* symbol = st_add_to_scope(env, $2->name);
+    symbol->attribute = id;
+  }
+  opt_decl_or_stmt_list END FOR
   {
     /*
      * (1) the expressions must be both of type int
-     * (2) the second expression can't be smaller than the first one
-     * (3) add id into the scope and marked as constant
      */
+    // (1)
+    if ($4->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@4, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    }
+    if ($7->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@7, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    }
   }
 | FOR DECREASING ':' expr '.' '.' expr opt_decl_or_stmt_list END FOR
   {
     /*
      * (1) the expressions must be both of type int
-     * (2) the first expression can't be smaller than the second one
      */
+    // (1)
+    if ($4->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@4, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    }
+    if ($7->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@7, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    }
   }
-| FOR DECREASING ID ':' expr '.' '.' expr opt_decl_or_stmt_list END FOR
+| FOR DECREASING ID ':' expr '.' '.' expr
+  {
+    /*
+     * mid-rule
+     * (1) add id into the scope and marked as constant
+     */
+    if (st_probe_environment(env, $3->name)) {
+      // should always be the first identifier added to the scope
+      ST_UNREACHABLE();
+    }
+    // (1)
+    RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
+    id->id_type = ST_CONST_IDENTIFIER;
+    id->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
+    id->name = st_strdup($3->name);
+    id->data_type = ST_INT_TYPE;
+    Symbol* symbol = st_add_to_scope(env, $3->name);
+    symbol->attribute = id;
+  }
+  opt_decl_or_stmt_list END FOR
   {
     /*
      * (1) the expressions must be both of type int
-     * (2) the first expression can't be smaller than the second one
-     * (3) add id into the scope and marked as constant
      */
+    // (1)
+    if ($5->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@5, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    }
+    if ($8->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@8, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    }
   }
 ;
 

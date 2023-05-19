@@ -25,11 +25,17 @@
 | DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st) |
 | DECL02 | identifier 'x' is not declared | [decl02.st](tests/bad/decl02.st) |
 
+## For Statements
+
+| code | description | example |
+|:----:|:------------|:--------|
+| FOR01 | range of a 'for' statement must have type 'int' | [for01-1.st](tests/bad/for01-1.st), [for01-2.st](tests/bad/for01-2.st), [for01-2.st](tests/bad/for01-2.st), [for01-4.st](tests/bad/for01-4.st), [for01-5.st](tests/bad/for01-5.st), [for01-6.st](tests/bad/for01-6.st), [for01-7.st](tests/bad/for01-7.st), [for01-8.st](tests/bad/for01-8.st) |
+
 ## References
 
 | code | description | example |
 |:----:|:------------|:--------|
-| REF01 | identifier 'x' is not declared | [ref01.st](tests/bad/ref01.st) |
+| REF01 | identifier 'x' is not declared | [ref01-1.st](tests/bad/ref01-1.st), [ref01-2.st](tests/bad/ref01-2.st) |
 | REF02 | identifier 'x' is a 'subprogram', cannot be used as reference |
 | REF03 | 'character' is unsubscriptable, for substrings, use 'x[n .. m]' instead | [ref03-1.st](tests/bad/ref03-1.st), [ref03-2.st](tests/bad/ref03-2.st) |
 | REF04 | identifier 'x' has unsubscriptable type | [ref04-1.st](tests/bad/ref04-1.st), [ref04-2.st](tests/bad/ref04-2.st), [ref04-3.st](tests/bad/ref04-3.st) |
@@ -43,6 +49,14 @@
 | STR01 | max length of a 'string' must have type 'int' | [str01.st](tests/bad/str01.st) |
 | STR02 | max length of a 'string' must be a compile-time expression | [str02.st](tests/bad/str02.st) |
 | STR03 | max length of a 'string' must be in range 1 ~ 255 | [str03-1.st](tests/bad/str03-1.st), [str03-2.st](tests/bad/str03-2.st) |
+
+## Statements
+
+| code | description | example |
+|:----:|:------------|:--------|
+| STMT01 | 'return' statement can only appear in the body of 'procedure's | [stmt01.st](tests/bad/stmt01.st) |
+| STMT02 | 'result' statement can only appear in the body of 'function's | [stmt02.st](tests/bad/stmt02.st) |
+| STMT03 | 'exit' statement can only appear in 'for' or 'loop' statements | [stmt03.st](tests/bad/stmt03.st) |
 
 ## Types
 
