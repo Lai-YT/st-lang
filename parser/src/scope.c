@@ -7,65 +7,65 @@
 
 #include "symtab.h"
 
-struct Environment {
+struct StEnvironment {
   SymbolTable* scope;
-  struct Environment* rest;
+  struct StEnvironment* rest;
 };
 
-static Environment* create_scope(Environment* rest) {
-  Environment* scope = malloc(sizeof(Environment));
+static StEnvironment* create_scope(StEnvironment* rest) {
+  StEnvironment* scope = malloc(sizeof(StEnvironment));
   scope->scope = symtab_create();
   scope->rest = rest;
   return scope;
 }
 
-static void delete_scope(Environment* env) {
+static void delete_scope(StEnvironment* env) {
   symtab_delete(env->scope);
   env->rest = NULL;
   free(env);
 }
 
-static bool in_scope(Environment* env) {
+static bool in_scope(StEnvironment* env) {
   return env->scope;
 }
 
-Environment* create_environment() {
-  Environment* env = malloc(sizeof(Environment));
+StEnvironment* st_create_environment() {
+  StEnvironment* env = malloc(sizeof(StEnvironment));
   env->scope = NULL;
   env->rest = NULL;
   return env;
 }
 
-void delete_environment(Environment* env) {
+void st_delete_environment(StEnvironment* env) {
   while (in_scope(env)) {
-    Environment* rest = env->rest;
-    exit_scope(&env);
+    StEnvironment* rest = env->rest;
+    st_exit_scope(&env);
     env = rest;
   }
   free(env);
 }
 
-void enter_scope(Environment** env) {
+void st_enter_scope(StEnvironment** env) {
   *env = create_scope(*env);
 }
 
-void exit_scope(Environment** env) {
+void st_exit_scope(StEnvironment** env) {
   if (!in_scope(*env)) {
     fputs("no more scope to exit\n", stderr);
     exit(EXIT_FAILURE);
   }
-  Environment* tmp = *env;
+  StEnvironment* tmp = *env;
   *env = (*env)->rest;
   delete_scope(tmp);
 }
 
-Symbol* lookup_environment(Environment* env, const char* name) {
+Symbol* st_lookup_environment(StEnvironment* env, const char* name) {
   if (!in_scope(env)) {
     fputs("enter a scope before looking up\n", stderr);
     exit(EXIT_FAILURE);
   }
   while (in_scope(env)) {
-    Symbol* e = probe_environment(env, name);
+    Symbol* e = st_probe_environment(env, name);
     if (e) {
       return e;
     }
@@ -74,7 +74,7 @@ Symbol* lookup_environment(Environment* env, const char* name) {
   return NULL;
 }
 
-Symbol* probe_environment(Environment* env, const char* name) {
+Symbol* st_probe_environment(StEnvironment* env, const char* name) {
   if (!in_scope(env)) {
     fputs("enter a scope before probing\n", stderr);
     exit(EXIT_FAILURE);
@@ -82,7 +82,7 @@ Symbol* probe_environment(Environment* env, const char* name) {
   return symtab_lookup(env->scope, name) ?: NULL;
 }
 
-Symbol* insert_scope(Environment* env, const char* name) {
+Symbol* st_add_to_scope(StEnvironment* env, const char* name) {
   if (!in_scope(env)) {
     fputs("enter a scope to insert symbol\n", stderr);
     exit(EXIT_FAILURE);
@@ -90,7 +90,7 @@ Symbol* insert_scope(Environment* env, const char* name) {
   return symtab_insert(env->scope, name, NULL);
 }
 
-List* dump_scope(Environment* env) {
+List* st_dump_scope(StEnvironment* env) {
   if (!in_scope(env)) {
     fputs("no scope to dump\n", stderr);
     exit(EXIT_FAILURE);

@@ -124,7 +124,7 @@ typedef struct CompileTimeConstIdentifier {
   ST_COMPILE_TIME_DATA_VALUE
 } CompileTimeConstIdentifier;
 
-/// @brief The value of a run-tie constant identifier is, as its name, run-time
+/// @brief The value of a run-time constant identifier is, as its name, run-time
 /// determined, so we don't record its value.
 typedef struct RunTimeConstIdentifier {
   ST_CONST_IDENTIFIER_COMMON_DATA
