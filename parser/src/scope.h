@@ -4,6 +4,16 @@
 #include "list.h"
 #include "symtab.h"
 
+/// @brief Some statements can only appear in certain scopes.
+typedef enum StScopeType {
+  /// @brief the normal scope with no special functionality
+  ST_BLOCK_SCOPE,
+  ST_FUNCTION_SCOPE,
+  ST_PROCEDURE_SCOPE,
+  /// @brief the scope of a loop or for statement
+  ST_LOOP_SCOPE,
+} StScopeType;
+
 /// @brief An environment holds stack of scopes. Providing operations for
 /// entering and exiting new scopes, or adding and looking up symbols from
 /// scopes.
@@ -12,11 +22,14 @@ typedef struct StEnvironment StEnvironment;
 /// @return An empty environment which does not enter any scope.
 StEnvironment* st_create_environment();
 
+/// @return The scope type of the current scope.
+StScopeType st_get_scope_type(StEnvironment*);
+
 /// @brief Exits all of the scopes and deletes the environment.
 void st_delete_environment(StEnvironment*);
 
 /// @brief Enters a new current scope.
-void st_enter_scope(StEnvironment**);
+void st_enter_scope(StEnvironment**, StScopeType);
 
 /// @brief Exits and deletes all the symbols from the current scope.
 void st_exit_scope(StEnvironment**);

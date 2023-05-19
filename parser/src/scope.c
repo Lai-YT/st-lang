@@ -9,15 +9,9 @@
 
 struct StEnvironment {
   SymbolTable* scope;
+  StScopeType scope_type;
   struct StEnvironment* rest;
 };
-
-static StEnvironment* create_scope(StEnvironment* rest) {
-  StEnvironment* scope = malloc(sizeof(StEnvironment));
-  scope->scope = symtab_create();
-  scope->rest = rest;
-  return scope;
-}
 
 static void delete_scope(StEnvironment* env) {
   symtab_delete(env->scope);
@@ -36,6 +30,10 @@ StEnvironment* st_create_environment() {
   return env;
 }
 
+StScopeType st_get_scope_type(StEnvironment* env) {
+  return env->scope_type;
+}
+
 void st_delete_environment(StEnvironment* env) {
   while (in_scope(env)) {
     StEnvironment* rest = env->rest;
@@ -45,8 +43,12 @@ void st_delete_environment(StEnvironment* env) {
   free(env);
 }
 
-void st_enter_scope(StEnvironment** env) {
-  *env = create_scope(*env);
+void st_enter_scope(StEnvironment** env, StScopeType scope_type) {
+  StEnvironment* scope = malloc(sizeof(StEnvironment));
+  scope->scope = symtab_create();
+  scope->scope_type = scope_type;
+  scope->rest = *env;
+  *env = scope;
 }
 
 void st_exit_scope(StEnvironment** env) {
@@ -84,7 +86,7 @@ Symbol* st_probe_environment(StEnvironment* env, const char* name) {
 
 Symbol* st_add_to_scope(StEnvironment* env, const char* name) {
   if (!in_scope(env)) {
-    fputs("enter a scope to insert symbol\n", stderr);
+    fputs("enter a scope to add symbol\n", stderr);
     exit(EXIT_FAILURE);
   }
   return symtab_insert(env->scope, name, NULL);
