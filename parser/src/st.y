@@ -61,11 +61,11 @@
 %type <var_id> var_decl
 %type <const_id> const_decl
 %type <ref> var_ref
-%type <type_info> type scalar_type array_type formal_type
+%type <type_info> type scalar_type array_type formal_decl formal_type
 %type <type_info> formal_star_string_type formal_star_array_type formal_star_array_nested_type
 %type <subscript_list> subscript subscript_list
 %type <subprogram> subprog_header
-%type <formals> opt_formal_decl_list
+%type <formals> opt_formal_decl_list formal_decl_list
 
   /* lowest to highest */
 %left OR
@@ -462,20 +462,32 @@ decl_or_stmt:
   { /* no check */ }
 ;
 
+  /*
+   * Returns a List of StDataTypeInfo.
+   */
 opt_formal_decl_list:
-  formal_decl_list
-  { /* no check */ }
-| /* empty */
-  { /* no check */ }
+  formal_decl_list { $$ = $1; }
+| /* empty */      { $$ = NULL; }
 ;
 
+  /*
+   * Returns a List of StDataTypeInfo.
+   */
 formal_decl_list:
   formal_decl_list ',' formal_decl
-  { /* no check */ }
+  {
+    $$ = list_create($3, $1);
+  }
 | formal_decl
-  { /* no check */ }
+  { $$ = list_create($1, NULL); }
 ;
 
+  /*
+   * Returns a StDataTypeInfo.
+   * NOTE: the subprogram itself only has to record the types of the formals,
+   * while the scope of the subprogram body has to record the formals as identifiers.
+   * So formals are added to the scope in the action, add only the type info as semantic value.
+   */
 formal_decl:
   ID ':' formal_type
   {
@@ -483,6 +495,22 @@ formal_decl:
      * (1) re-declaration error if name exists in the current scope
      * (2) the identifier should be recorded under the scope marked as constant
      */
+    // (1)
+    if (st_probe_environment(env, $1->name)) {
+      ST_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
+    }
+    // (2): formals cannot be compile-time
+    RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
+    id->id_type = ST_CONST_IDENTIFIER;
+    id->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
+    id->name = st_strdup($1->name);
+    ST_COPY_TYPE(id, $3);
+    // add the identifier to the scope
+    Symbol* symbol = st_add_to_scope(env, id->name);
+    symbol->attribute = id;
+    // copy the type info as semantic value
+    $$ = malloc(sizeof(StDataTypeInfo));
+    ST_COPY_TYPE($$, id);
   }
 | VAR ID ':' formal_type
   {
@@ -490,13 +518,40 @@ formal_decl:
      * (1) re-declaration error if name exists in the current scope
      * (2) the identifier should be recorded under the scope marked as mutable
      */
+    // (1)
+    if (st_probe_environment(env, $2->name)) {
+      ST_FATAL_ERROR(@2, "re-declaration of identifier '%s' (DECL01)\n", $2->name);
+    }
+    // (2)
+    VarIdentifier* id = malloc(sizeof(VarIdentifier));
+    id->id_type = ST_VAR_IDENTIFIER;
+    id->name = st_strdup($2->name);
+    ST_COPY_TYPE(id, $4);
+    // add the identifier to the scope
+    Symbol* symbol = st_add_to_scope(env, id->name);
+    symbol->attribute = id;
+    // copy the type info as semantic value
+    $$ = malloc(sizeof(StDataTypeInfo));
+    ST_COPY_TYPE($$, id);
   }
 ;
 
 formal_type:
-  type                    { $$ = $1; }
-| formal_star_string_type { $$ = $1; }
-| formal_star_array_type  { $$ = $1; }
+  type
+  {
+    /*
+     * (1) if the formal type is an array type, it cannot be a dynamic array
+     */
+    if ($1->data_type == ST_ARRAY_TYPE
+        && $1->array_type_info->array_type != ST_STATIC_ARRAY) {
+      ST_FATAL_ERROR(@1, "type of formal parameter cannot be a 'dynamic array' (SUB03)\n");
+    }
+    $$ = $1;
+  }
+| formal_star_string_type
+  { $$ = $1; }
+| formal_star_array_type
+  { $$ = $1; }
 ;
 
 formal_star_string_type:

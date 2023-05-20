@@ -16,13 +16,13 @@
 | code | description | example |
 |:----:|:------------|:--------|
 | CONST01 | a constant identifier cannot be a 'dynamic array' | [const01-1.st](tests/bad/const01-1.st), [const01-2.st](tests/bad/const01-2.st) |
-| CONST02 | re-assignment on constant reference | [const02-1.st](tests/bad/const02-1.st), [const02-2.st](tests/bad/const02-2.st) |
+| CONST02 | re-assignment on constant reference | [const02-1.st](tests/bad/const02-1.st), [const02-2.st](tests/bad/const02-2.st), [const02-3.st](tests/bad/const02-3.st) |
 
 ## Declarations
 
 | code | description | example |
 |:----:|:------------|:--------|
-| DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st), [decl01-3.st](tests/bad/decl01-3.st) |
+| DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st), [decl01-3.st](tests/bad/decl01-3.st), [decl01-4.st](tests/bad/decl01-4.st), [decl01-5.st](tests/bad/decl01-5.st), [decl01-6.st](tests/bad/decl01-6.st) |
 | DECL02 | identifier 'x' is not declared | [decl02.st](tests/bad/decl02.st) |
 
 ## For Statements
@@ -63,6 +63,7 @@
 | code | description | example |
 |:----:|:------------|:--------|
 | SUB01 | the name after 'end' should be the name of the 'subprogram' | [sub01-1.st](tests/bad/sub01-1.st), [sub01-2.st](tests/bad/sub01-2.st) |
+| SUB03 | type of formal parameter cannot be a 'dynamic array' | [sub03.st](tests/bad/sub03.st) |
 
 ## Types
 
