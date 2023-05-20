@@ -62,6 +62,7 @@
 %type <const_id> const_decl
 %type <ref> var_ref
 %type <type_info> type scalar_type array_type formal_type
+%type <type_info> formal_star_string_type formal_star_array_type formal_star_array_nested_type
 %type <subscript_list> subscript subscript_list
 %type <subprogram> subprog_header
 %type <formals> opt_formal_decl_list
@@ -492,13 +493,14 @@ formal_decl:
   }
 ;
 
-  /*
-   * TODO: decompose grammar to reduce duplicate
-   */
 formal_type:
-  type
-  { $$ = $1; }
-| STRING '(' '*' ')'
+  type                    { $$ = $1; }
+| formal_star_string_type { $$ = $1; }
+| formal_star_array_type  { $$ = $1; }
+;
+
+formal_star_string_type:
+ STRING '(' '*' ')'
   {
     /*
      * (1) the max length of the string is unknown
@@ -507,17 +509,32 @@ formal_type:
     $$->data_type = ST_STRING_TYPE;
     $$->string_type_info = malloc(sizeof(StStringTypeInfo));
     // (1)
-    $$->string_type_info->max_length = ST_FORMAL_STRING_LENGTH;
+    $$->string_type_info->max_length = ST_STAR_STRING_LENGTH;
   }
-| ARRAY expr '.' '.' '*' OF type
+;
+
+ /*
+  * NOTE: Can nest a normal type or a star string, but not a star array.
+  * This distinguishes it from the formal_type, so a new non-terminal is introduced.
+  */
+formal_star_array_nested_type:
+  type                    { $$ = $1; }
+| formal_star_string_type { $$ = $1; }
+;
+
+  /*
+   * A star array is a static array with special upper-bound.
+   */
+formal_star_array_type:
+  ARRAY expr '.' '.' '*' OF formal_star_array_nested_type
   {
     /*
      * (1) the expression at the lower bound must be a compile-time expression
      * (2) the expression at the lower bound must have type int
      * (3) type may also be an array, but such array type must be a static array
+     *     NOTE: a star array is also a static array, but is excluded syntactically
      * (4) lower bound must have positive value
      */
-    // a static array with special upper-bound
     // (1)
     if ($2->expr_type != ST_COMPILE_TIME_EXPRESSION) {
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression (ARR01)\n");
@@ -543,41 +560,7 @@ formal_type:
     ST_COPY_TYPE($$->array_type_info, $7);
     $$->array_type_info->lower_bound = lower_bound->int_val;
     ((StStaticArrayTypeInfo*)$$->array_type_info)->upper_bound
-        = ST_FORMAL_ARRAY_UPPER_BOUND;
-  }
-| ARRAY expr '.' '.' '*' OF STRING '(' '*' ')'
-  {
-    /*
-     * (1) the expression at the lower bound must be a compile-time expression
-     * (2) the expression at the lower bound must have type int
-     * (3) lower bound must have positive value
-     */
-    if ($2->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression (ARR01)\n");
-    }
-    CompileTimeExpression* lower_bound = (CompileTimeExpression*)$2;
-    // (2)
-    if (lower_bound->data_type != ST_INT_TYPE) {
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must have type 'int' (ARR02)\n");
-    }
-    // (3)
-    if (lower_bound->int_val < 1) {
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive (ARR04)\n");
-    }
-    // construct the formal string type
-    StDataTypeInfo* string_type = malloc(sizeof(StDataTypeInfo));
-    string_type->data_type = ST_STRING_TYPE;
-    string_type->string_type_info = malloc(sizeof(StStringTypeInfo));
-    string_type->string_type_info->max_length = ST_FORMAL_STRING_LENGTH;
-    // construct the formal array type
-    $$ = malloc(sizeof(StDataTypeInfo));
-    $$->data_type = ST_ARRAY_TYPE;
-    $$->array_type_info = malloc(sizeof(StStaticArrayTypeInfo));
-    $$->array_type_info->array_type = ST_STATIC_ARRAY;
-    ST_COPY_TYPE($$->array_type_info, string_type);
-    $$->array_type_info->lower_bound = lower_bound->int_val;
-    ((StStaticArrayTypeInfo*)$$->array_type_info)->upper_bound
-        = ST_FORMAL_ARRAY_UPPER_BOUND;
+        = ST_STAR_ARRAY_UPPER_BOUND;
   }
 ;
 
