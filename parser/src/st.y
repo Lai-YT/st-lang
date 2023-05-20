@@ -30,7 +30,6 @@
   Reference* ref;
   StDataTypeInfo* type_info;
   List* subscript_list;
-  Subprogram* subprogram;
   ProcedureSubprogram* procedure;
   FunctionSubprogram* function;
   List* formals;
@@ -50,11 +49,13 @@
 %type program decl_or_stmt_in_main_program_list decl_or_stmt_in_main_program
 %type decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
 %type array_type scalar_type type const_decl explicit_const bool_const
-%type subscript_list subscript subprog_decl subprog_header opt_decl_or_stmt_list
+%type subscript_list subscript subprog_decl opt_decl_or_stmt_list
 %type opt_formal_decl_list formal_decl_list formal_decl formal_type subprog_call if_stmt
 %type bool_expr operation numeric_operation comparison_operation boolean_operation
-%type sign_operation exit_stmt loop_stmt for_stmt block get_stmt put_stmt
+%type sign_operation result_stmt exit_stmt loop_stmt for_stmt block get_stmt put_stmt
 %type var_ref_comma_list expr_comma_list
+  /* to enforce ending with result statement in a function syntactically */
+%type opt_decl_or_stmt_list_end_with_result_list decl_or_stmt_list_end_with_result_list decl_or_stmt_or_result
 
 %type <expr> expr
 %type <compile_time_expr> bool_const explicit_const
@@ -64,7 +65,8 @@
 %type <type_info> type scalar_type array_type formal_decl formal_type
 %type <type_info> formal_star_string_type formal_star_array_type formal_star_array_nested_type
 %type <subscript_list> subscript subscript_list
-%type <subprogram> subprog_header
+%type <procedure> procedure_decl procedure_header
+%type <function> function_decl function_header
 %type <formals> opt_formal_decl_list formal_decl_list
 
   /* lowest to highest */
@@ -177,19 +179,6 @@ stmt:
     if (st_get_scope_type(env) != ST_PROCEDURE_SCOPE) {
       ST_FATAL_ERROR(@1, "'return' statement can only appear in the body of 'procedure's (STMT01)\n");
     }
-  }
-| RESULT expr
-  {
-    /*
-     * (1) has to be inside the scope of a function
-     * (2) expr must have the same type as the declared result type
-     * (3) record the occurrence to the function scope
-     */
-    // (1)
-    if (st_get_scope_type(env) != ST_FUNCTION_SCOPE) {
-      ST_FATAL_ERROR(@1, "'result' statement can only appear in the body of 'function's (STMT02)\n");
-    }
-    // TODO
   }
 | if_stmt
   { /* no check */ }
@@ -360,29 +349,121 @@ const_decl:
 ;
 
 subprog_decl:
-  subprog_header opt_decl_or_stmt_list END ID
+  {
+    /*
+     * mid-rule:
+     * (1) enter a function scope
+     */
+    st_enter_scope(&env, ST_FUNCTION_SCOPE);
+  }
+  function_decl
+  {
+    /*
+     * (1) the name of the function should not be already declared
+     */
+    st_exit_scope(&env);
+    // (1)
+    if (st_probe_environment(env, $2->name)) {
+      ST_FATAL_ERROR(@2, "re-declaration of identifier '%s' (DECL01)\n", $2->name);
+    }
+    // NOTE: we have the add the function into the outmost scope,
+    // so that it remains across the whole program
+    Symbol* symbol = st_add_to_scope(env, $2->name);
+    symbol->attribute = $2;
+  }
+| {
+    /*
+     * mid-rule:
+     * (1) enter a procedure scope
+     */
+    st_enter_scope(&env, ST_PROCEDURE_SCOPE);
+  }
+  procedure_decl
+  {
+    /*
+     * (1) the name of the procedure should not be already declared
+     */
+    st_exit_scope(&env);
+    // (1)
+    if (st_probe_environment(env, $2->name)) {
+      ST_FATAL_ERROR(@2, "re-declaration of identifier '%s' (DECL01)\n", $2->name);
+    }
+    // NOTE: we have the add the procedure into the outmost scope,
+    // so that it remains across the whole program
+    Symbol* symbol = st_add_to_scope(env, $2->name);
+    symbol->attribute = $2;
+  }
+;
+
+procedure_decl:
+  procedure_header opt_decl_or_stmt_list END ID
   {
     /*
      * (1) id is the same name as the one in the header
-     * (2) the name of the subprogram should not be already declared
      */
-    st_exit_scope(&env);
     // (1)
     if (strcmp($1->name, $4->name) != 0) {
       ST_FATAL_ERROR(@4, "the name after 'end' should be the name of the 'subprogram' (SUB01)\n");
     }
-    // (2)
-    if (st_probe_environment(env, $1->name)) {
-      ST_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
-    }
-    // NOTE: we have the add the procedure into the outmost scope,
-    // so that it remains across the whole program
-    Symbol* symbol = st_add_to_scope(env, $1->name);
-    symbol->attribute = $1;
+    $$ = $1;
   }
 ;
 
-subprog_header:
+  /*
+   * Enforce a function to end with a result statement syntactically.
+   */
+function_decl:
+  function_header opt_decl_or_stmt_list_end_with_result_list END ID
+  {
+    /*
+     * (1) id is the same name as the one in the header
+     */
+    // (1)
+    if (strcmp($1->name, $4->name) != 0) {
+      ST_FATAL_ERROR(@4, "the name after 'end' should be the name of the 'subprogram' (SUB01)\n");
+    }
+    $$ = $1;
+  }
+;
+
+  /*
+   * A list where the result_stmt may appear and must end with a result_stmt.
+   */
+opt_decl_or_stmt_list_end_with_result_list:
+  decl_or_stmt_list_end_with_result_list
+  { /* no check */ }
+| /* empty */
+  { /* no check */ }
+;
+
+decl_or_stmt_list_end_with_result_list:
+  decl_or_stmt_or_result decl_or_stmt_list_end_with_result_list
+  { /* no check */ }
+| result_stmt
+  { /* no check */ }
+| decl
+  {
+    ST_FATAL_ERROR(@1, "'function' must ends with a 'result' statement (SUB02)\n");
+  }
+| stmt
+  {
+    ST_FATAL_ERROR(@1, "'function' must ends with a 'result' statement (SUB02)\n");
+  }
+;
+
+decl_or_stmt_or_result:
+  decl
+  { /* no check */ }
+| stmt
+  { /* no check */ }
+| result_stmt
+  { /* no check */ }
+;
+
+  /*
+   * Returns a ProcedureSubprogram.
+   */
+procedure_header:
   PROCEDURE ID
   {
     /*
@@ -391,9 +472,9 @@ subprog_header:
      * (2) the name of the procedure is a declared identifier within the scope
      */
     // (1)
-    st_enter_scope(&env, ST_PROCEDURE_SCOPE);
     $<procedure>$ = malloc(sizeof(ProcedureSubprogram));
     $<procedure>$->id_type = ST_SUBPROGRAM_IDENTIFIER;
+    $<procedure>$->subprogram_type = ST_PROCEDURE_SUBPROGRAM;
     $<procedure>$->name = st_strdup($2->name);
     // the formals of the procedure will be added later
     // (2)
@@ -408,9 +489,15 @@ subprog_header:
      * (1) the types of the formals have to be recorded so can be checked on a call
      */
     $<procedure>3->formals = $5;
-    $$ = (Subprogram*)$<procedure>3;
+    $$ = $<procedure>3;
   }
-| FUNCTION ID
+;
+
+  /*
+   * Returns a FunctionSubprogram.
+   */
+function_header:
+  FUNCTION ID
   {
    /*
     * mid-rule
@@ -418,16 +505,19 @@ subprog_header:
     * (2) the name of the procedure is a declared identifier within the scope
     */
     // (1)
-    st_enter_scope(&env, ST_FUNCTION_SCOPE);
     $<function>$ = malloc(sizeof(FunctionSubprogram));
     $<function>$->id_type = ST_SUBPROGRAM_IDENTIFIER;
+    $<function>$->subprogram_type = ST_FUNCTION_SUBPROGRAM;
     $<function>$->name = st_strdup($2->name);
     // the formals and the result type of the function will be added later
     // (2)
     // NOTE: the function is added into the scope since it's visible to the
     // formals and the function body.
-    Symbol* symbol = st_add_to_scope(env, $2->name);
-    symbol->attribute = $<function>$;
+    st_add_to_scope(env, $2->name)->attribute = $<function>$;
+    // NOTE: add again with a special name for the result statement to check the result type.
+    // Since no user-defined identifier can have name leading with underscore,
+    // the name "__function" will never collied with user-defined identifiers.
+    st_add_to_scope(env, "__function")->attribute = $<function>$;
   }
   '(' opt_formal_decl_list ')' ':' type
   {
@@ -437,7 +527,7 @@ subprog_header:
     // (1)
     $<function>3->formals = $5;
     $<function>3->result_type = $8;
-    $$ = (Subprogram*)$<function>3;
+    $$ = $<function>3;
   }
 ;
 
@@ -460,6 +550,16 @@ decl_or_stmt:
   { /* no check */ }
 | stmt
   { /* no check */ }
+| {
+    // NOTE: an error production on the result_stmt since we want to provide more expressive error message.
+    // We have to report the error before recognizing the result_stmt, so a mid-rule is used.
+    // Here we directly refer to the yylloc, which is the lookahead located at the first(result_stmt).
+    ST_FATAL_ERROR(yylloc, "'result' statement can only appear in the body of 'function's (STMT02)\n");
+  } result_stmt
+  {
+    //fatal error in the mid-rule
+    ST_UNREACHABLE();
+  }
 ;
 
   /*
@@ -648,6 +748,26 @@ if_stmt:
      * (1) new block scope for then
      * (2) new block scope for else
      */
+  }
+;
+
+result_stmt:
+  RESULT expr
+  {
+    /*
+     * (1) expr must have the same type as the declared result type
+     */
+    // NOTE: not checking whether is now in the function scope or not because it's already enforced by the grammar.
+    // (1): get the current function through the special identifier name
+    Symbol* symbol = st_probe_environment(env, "__function");
+    if (!symbol) {
+      ST_UNREACHABLE();
+    }
+    FunctionSubprogram* function = (FunctionSubprogram*)symbol->attribute;
+    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($2);
+    if (!st_is_assignable_type(function->result_type, &expr_type_info)) {
+      ST_FATAL_ERROR(@2, "type of the 'result' expression cannot be assigned as the result type of the 'function' (STMT05)\n");
+    }
   }
 ;
 

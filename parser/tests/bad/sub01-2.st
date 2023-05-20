@@ -3,4 +3,5 @@
 
 function p(i: int): int
   % empty
+  result i
 end q

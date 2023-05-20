@@ -49,6 +49,7 @@
 | STMT01 | 'return' statement can only appear in the body of 'procedure's | [stmt01.st](tests/bad/stmt01.st) |
 | STMT02 | 'result' statement can only appear in the body of 'function's | [stmt02.st](tests/bad/stmt02.st) |
 | STMT03 | 'exit' statement can only appear in 'for' or 'loop' statements | [stmt03.st](tests/bad/stmt03.st) |
+| STMT05 | type of the 'result' expression cannot be assigned as the result type of the 'function' | [stmt05](tests/bad/stmt05.st) |
 
 ## Strings
 
@@ -63,6 +64,7 @@
 | code | description | example |
 |:----:|:------------|:--------|
 | SUB01 | the name after 'end' should be the name of the 'subprogram' | [sub01-1.st](tests/bad/sub01-1.st), [sub01-2.st](tests/bad/sub01-2.st) |
+| SUB02 | 'function' must ends with a 'result' statement | [sub02-1.st](tests/bad/sub02-1.st), [sub02-2.st](tests/bad/sub02-2.st), , [sub02-3.st](tests/bad/sub02-3.st) |
 | SUB03 | type of formal parameter cannot be a 'dynamic array' | [sub03.st](tests/bad/sub03.st) |
 
 ## Types
