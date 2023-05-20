@@ -27,6 +27,9 @@ typedef enum StDataType {
   ST_ARRAY_TYPE,
 } StDataType;
 
+/// @brief The max length when the formal type is declared as "string(*)".
+extern const int ST_FORMAL_STRING_LENGTH;
+
 /// @brief The max length of a string is always determined at compile-time.
 typedef struct StStringTypeInfo {
   size_t max_length;
@@ -62,6 +65,10 @@ typedef enum StArrayType {
   ST_DYNAMIC_ARRAY,
   ST_STATIC_ARRAY,
 } StArrayType;
+
+/// @brief The upper bound when the formal type is declared as "array: n..* of
+/// someType".
+extern const int ST_FORMAL_ARRAY_UPPER_BOUND;
 
 #ifndef ST_ARRAY_TYPE_INFO_COMMON_DATA
 #define ST_ARRAY_TYPE_INFO_COMMON_DATA \

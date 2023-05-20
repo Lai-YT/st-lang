@@ -6,6 +6,12 @@
 
 #include "semant_macros.h"
 
+// User-defined lengths are never allowed to be non-positive, so negative
+// values can be used as special meanings.
+
+const int ST_FORMAL_STRING_LENGTH = -1;
+const int ST_FORMAL_ARRAY_UPPER_BOUND = -1;
+
 char* st_strdup(const char* s) {
   char* dup_s = malloc(sizeof(char) * (strlen(s) + 1));
   strcpy(dup_s, s);
