@@ -2,7 +2,6 @@
 #define PARSER_SEMANT_H
 
 #include <stdbool.h>
-#include <stddef.h>
 
 #include "list.h"
 #include "semant_macros.h"
@@ -32,7 +31,7 @@ extern const int ST_STAR_STRING_LENGTH;
 
 /// @brief The max length of a string is always determined at compile-time.
 typedef struct StStringTypeInfo {
-  size_t max_length;
+  int max_length;
 } StStringTypeInfo;
 
 typedef struct StArrayTypeInfo StArrayTypeInfo;
@@ -242,11 +241,15 @@ typedef struct Reference {
 
 int st_dimension_of_array(const StArrayTypeInfo* arr);
 
-/// @return Whether type b is assignable to a.
+/// @return Whether type rhs is assignable to lhs.
 /// @note (1) int is considered as assignable to real. (2) strings with the
 /// same max length are considered as assignable; strings without
-// explicit max length has max length 255. (3) arrays with same lower and
-// upper-bound and component type are assignable.
-bool st_is_assignable_type(const StDataTypeInfo* a, const StDataTypeInfo* b);
+/// explicit max length has max length 255. (3) arrays with same lower and
+/// upper-bound and component type are assignable (4) formal strings with max
+/// length declared as '*' is assignable by strings of any max length (5) formal
+/// arrays with upper-bound declared as '*' is assignable by any array whose
+/// lower-bound an component type are as same as them.
+bool st_is_assignable_type(const StDataTypeInfo* lhs,
+                           const StDataTypeInfo* rhs);
 
 #endif /* end of include guard: PARSER_SEMANT_H */

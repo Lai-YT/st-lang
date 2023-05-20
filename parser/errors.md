@@ -11,6 +11,14 @@
 | ARR05 | upper bound of a 'static array' must be positive | [arr05.st](tests/bad/arr05.st) |
 | ARR06 | upper bound of a 'static array' must be greater than its lower bound | [arr06.st](tests/bad/arr06.st) |
 
+## Call of Subprograms
+
+| code | description | example |
+|:----:|:------------|:--------|
+| CALL01 | identifier 'x' is not a subprogram | [call01.st](tests/bad/call01.st) |
+| CALL02 | mismatch number of formals, expect 'n' but get 'm' | [call02.st](tests/bad/call02.st) |
+| CALL03 | type of the actual parameter cannot be assigned as type of the formal parameter | [call03.st](tests/bad/call03.st) |
+
 ## Constants
 
 | code | description | example |
@@ -24,6 +32,12 @@
 |:----:|:------------|:--------|
 | DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st), [decl01-3.st](tests/bad/decl01-3.st), [decl01-4.st](tests/bad/decl01-4.st), [decl01-5.st](tests/bad/decl01-5.st), [decl01-6.st](tests/bad/decl01-6.st) |
 | DECL02 | identifier 'x' is not declared | [decl02.st](tests/bad/decl02.st) |
+
+## Expressions
+
+| code | description | example |
+|:----:|:------------|:--------|
+| EXPR01 | 'procedure' call cannot be an expression | [expr01.st](tests/bad/expr01.st) |
 
 ## For Statements
 
@@ -49,6 +63,7 @@
 | STMT01 | 'return' statement can only appear in the body of 'procedure's | [stmt01.st](tests/bad/stmt01.st) |
 | STMT02 | 'result' statement can only appear in the body of 'function's | [stmt02.st](tests/bad/stmt02.st) |
 | STMT03 | 'exit' statement can only appear in 'for' or 'loop' statements | [stmt03.st](tests/bad/stmt03.st) |
+| STMT04 | 'function' call cannot be a statement | [stmt04.st](tests/bad/stmt04.st) |
 | STMT05 | type of the 'result' expression cannot be assigned as the result type of the 'function' | [stmt05](tests/bad/stmt05.st) |
 
 ## Strings

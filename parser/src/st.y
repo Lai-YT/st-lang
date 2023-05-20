@@ -30,9 +30,11 @@
   Reference* ref;
   StDataTypeInfo* type_info;
   List* subscript_list;
+  Subprogram* subprogram;
   ProcedureSubprogram* procedure;
   FunctionSubprogram* function;
   List* formals;
+  List* actuals;
 }
 
 /* tokens */
@@ -53,7 +55,7 @@
 %type opt_formal_decl_list formal_decl_list formal_decl formal_type subprog_call if_stmt
 %type bool_expr operation numeric_operation comparison_operation boolean_operation
 %type sign_operation result_stmt exit_stmt loop_stmt for_stmt block get_stmt put_stmt
-%type var_ref_comma_list expr_comma_list
+%type var_ref_comma_list opt_expr_comma_list expr_comma_list
   /* to enforce ending with result statement in a function syntactically */
 %type opt_decl_or_stmt_list_end_with_result_list decl_or_stmt_list_end_with_result_list decl_or_stmt_or_result
 
@@ -68,6 +70,8 @@
 %type <procedure> procedure_decl procedure_header
 %type <function> function_decl function_header
 %type <formals> opt_formal_decl_list formal_decl_list
+%type <actuals> opt_expr_comma_list expr_comma_list
+%type <subprogram> subprog_call
 
   /* lowest to highest */
 %left OR
@@ -169,7 +173,17 @@ stmt:
     }
   }
 | subprog_call
-  { /* no check */ }
+  {
+    /*
+     * (1) the subprogram must be a procedure
+     */
+    if ($1->subprogram_type != ST_PROCEDURE_SUBPROGRAM) {
+      if ($1->subprogram_type != ST_FUNCTION_SUBPROGRAM) {
+        ST_UNREACHABLE();
+      }
+      ST_FATAL_ERROR(@1, "'function' call cannot be a statement (STMT04)\n");
+    }
+  }
 | RETURN
   {
     /*
@@ -290,7 +304,7 @@ const_decl:
      * (3) if the expression is a compile-time expression, the value has to be recorded
      */
     // (1)
-    if($4->data_type == ST_ARRAY_TYPE
+    if ($4->data_type == ST_ARRAY_TYPE
         && $4->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
@@ -719,19 +733,45 @@ formal_star_array_type:
   }
 ;
 
+  /*
+   * Returns a Subprogram.
+   */
 subprog_call:
-  ID '(' ')'
-  {
-    /*
-     * (1) the subprogram which the id indicates should take no parameter
-     */
-  }
-| ID '(' expr_comma_list ')'
+  ID '(' opt_expr_comma_list ')'
   {
     /*
      * (1) the number of the expression should match the number of the declared formals
      * (2) each expressions in the list should have their types match the declared formal types
      */
+    Symbol* symbol = st_lookup_environment(env, $1->name);
+    if (!symbol) {
+      ST_FATAL_ERROR(@1, "identifier '%s' is not declared (REF01)\n", $1->name);
+    }
+    Identifier* id = (Identifier*)symbol->attribute;
+    if (id->id_type != ST_SUBPROGRAM_IDENTIFIER) {
+      ST_FATAL_ERROR(@1, "identifier '%s' is not a subprogram (CALL01)\n", $1->name);
+    }
+    Subprogram* subprogram = (Subprogram*)id;
+    // (1)
+    const int num_of_formals = list_length(subprogram->formals);
+    const int num_of_actuals = list_length($3);
+    if (num_of_actuals != num_of_formals) {
+      ST_FATAL_ERROR(@3, "mismatch number of formals, expect '%d' but get '%d' (CALL02)\n", num_of_formals, num_of_actuals);
+    }
+    // (2)
+    List* formals = subprogram->formals;
+    List* actuals = $3;
+    while (actuals) {
+      StDataTypeInfo* formal_type = (StDataTypeInfo*)formals->val;
+      Expression* actual = (Expression*)actuals->val;
+      StDataTypeInfo actual_type = ST_MAKE_DATA_TYPE_INFO(actual);
+      if (!st_is_assignable_type(formal_type, &actual_type)) {
+        ST_FATAL_ERROR(@3, "type of the actual parameter cannot be assigned as type of the formal parameter (CALL03)\n");
+      }
+      actuals = actuals->rest;
+      formals = formals->rest;
+    }
+    $$ = subprogram;
   }
 ;
 
@@ -913,11 +953,26 @@ put_stmt:
   }
 ;
 
+ /*
+  * Returns a List of Expression.
+  * NOTE: due to the rightmost parsing technique,
+  * the last expression is the first value of the list.
+  */
+opt_expr_comma_list:
+  expr_comma_list
+  { $$ = $1; }
+| /* empty */
+  { $$ = NULL; }
+;
+
+ /*
+  * Returns a List of Expression.
+  */
 expr_comma_list:
   expr_comma_list ',' expr
-  { /* no check */ }
+  { $$ = list_create($3, $1); }
 | expr
-  { /* no check */ }
+  { $$ = list_create($1, NULL); }
 ;
 
 bool_expr:
@@ -1251,6 +1306,17 @@ expr:
      * (1) always a run-time expression
      * (2) the subprogram has to be a function
      */
+    // (2)
+    if ($1->subprogram_type != ST_FUNCTION_SUBPROGRAM) {
+      if ($1->subprogram_type != ST_PROCEDURE_SUBPROGRAM) {
+        ST_UNREACHABLE();
+      }
+      ST_FATAL_ERROR(@1, "'procedure' call cannot be an expression (EXPR01)\n");
+    }
+    // (1)
+    $$ = (Expression*)malloc(sizeof(RunTimeExpression));
+    $$->expr_type = ST_RUN_TIME_EXPRESSION;
+    ST_COPY_TYPE($$, ((FunctionSubprogram*)$1)->result_type);
   }
   /*
    * Here a hack on the ambiguous grammar:

@@ -30,42 +30,63 @@ static bool st_is_assignable_array_type(const StArrayTypeInfo*,
 static bool st_is_assignable_string_type(const StStringTypeInfo*,
                                          const StStringTypeInfo*);
 
-bool st_is_assignable_type(const StDataTypeInfo* a, const StDataTypeInfo* b) {
-  if (b->data_type == ST_INT_TYPE && a->data_type == ST_REAL_TYPE) {
+bool st_is_assignable_type(const StDataTypeInfo* lhs,
+                           const StDataTypeInfo* rhs) {
+  if (rhs->data_type == ST_INT_TYPE && lhs->data_type == ST_REAL_TYPE) {
     return true;
   }
-  if (a->data_type != b->data_type) {
+  if (lhs->data_type != rhs->data_type) {
     return false;
   }
-  if (a->data_type == ST_STRING_TYPE) {
-    return st_is_assignable_string_type(a->string_type_info,
-                                        b->string_type_info);
+  if (lhs->data_type == ST_STRING_TYPE) {
+    return st_is_assignable_string_type(lhs->string_type_info,
+                                        rhs->string_type_info);
   }
-  if (a->data_type == ST_ARRAY_TYPE) {
-    return st_is_assignable_array_type(a->array_type_info, b->array_type_info);
+  if (lhs->data_type == ST_ARRAY_TYPE) {
+    return st_is_assignable_array_type(lhs->array_type_info,
+                                       rhs->array_type_info);
   }
   // simple scalar types
   return true;
 }
 
-static bool st_is_assignable_array_type(const StArrayTypeInfo* a,
-                                        const StArrayTypeInfo* b) {
-  // have to always be the same but upper bound of dynamic arrays may vary
-  if (a->array_type == ST_DYNAMIC_ARRAY || b->array_type == ST_DYNAMIC_ARRAY) {
-    return false;
-  }
-  if (a->lower_bound != b->lower_bound
-      || ((StStaticArrayTypeInfo*)a)->upper_bound
-             != ((StStaticArrayTypeInfo*)b)->upper_bound) {
-    return false;
-  }
-
-  StDataTypeInfo a_type = ST_MAKE_DATA_TYPE_INFO(a);
-  StDataTypeInfo b_type = ST_MAKE_DATA_TYPE_INFO(b);
-  return st_is_assignable_type(&a_type, &b_type);
+static bool is_star_array(const StArrayTypeInfo* array_type_info) {
+  return array_type_info->array_type == ST_STATIC_ARRAY
+         && ((StStaticArrayTypeInfo*)array_type_info)->upper_bound
+                == ST_STAR_ARRAY_UPPER_BOUND;
 }
 
-static bool st_is_assignable_string_type(const StStringTypeInfo* a,
-                                         const StStringTypeInfo* b) {
-  return a->max_length == b->max_length;
+static bool has_same_bounds(const StStaticArrayTypeInfo* a,
+                            const StStaticArrayTypeInfo* b) {
+  return a->lower_bound == b->lower_bound && a->upper_bound == b->upper_bound;
+}
+
+static bool st_is_assignable_array_type(const StArrayTypeInfo* lhs,
+                                        const StArrayTypeInfo* rhs) {
+  // for a formal star array, any array with the same lower bound is assignable
+  if (is_star_array(lhs) && rhs->lower_bound == lhs->lower_bound) {
+    StDataTypeInfo lhs_type = ST_MAKE_DATA_TYPE_INFO(lhs);
+    StDataTypeInfo rhs_type = ST_MAKE_DATA_TYPE_INFO(rhs);
+    return st_is_assignable_type(&lhs_type, &rhs_type);
+  }
+
+  // a dynamic array doesn't even have a upper-bound
+  if (lhs->array_type == ST_DYNAMIC_ARRAY
+      || rhs->array_type == ST_DYNAMIC_ARRAY) {
+    return false;
+  }
+  if (!has_same_bounds((StStaticArrayTypeInfo*)lhs,
+                       (StStaticArrayTypeInfo*)rhs)) {
+    return false;
+  }
+
+  StDataTypeInfo lhs_type = ST_MAKE_DATA_TYPE_INFO(lhs);
+  StDataTypeInfo rhs_type = ST_MAKE_DATA_TYPE_INFO(rhs);
+  return st_is_assignable_type(&lhs_type, &rhs_type);
+}
+
+static bool st_is_assignable_string_type(const StStringTypeInfo* lhs,
+                                         const StStringTypeInfo* rhs) {
+  return rhs->max_length <= lhs->max_length
+         || lhs->max_length == ST_STAR_STRING_LENGTH;
 }
