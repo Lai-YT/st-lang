@@ -823,7 +823,6 @@ array_type:
     }
     $$ = malloc(sizeof(StDataTypeInfo));
     $$->data_type = ST_ARRAY_TYPE;
-    $$->array_type_info = malloc(sizeof(StArrayTypeInfo));
     if ($5->expr_type == ST_COMPILE_TIME_EXPRESSION) {
       CompileTimeExpression* upper_bound = (CompileTimeExpression*)$5;
       // (5)
@@ -834,11 +833,13 @@ array_type:
       if (upper_bound->int_val <= lower_bound->int_val) {
         ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be greater than its lower bound (ARR06)\n");
       }
+      $$->array_type_info = malloc(sizeof(StStaticArrayTypeInfo));
       $$->array_type_info->array_type = ST_STATIC_ARRAY;
       ST_COPY_TYPE($$->array_type_info, $7);
       $$->array_type_info->lower_bound = lower_bound->int_val;
       ((StStaticArrayTypeInfo*)($$->array_type_info))->upper_bound = upper_bound->int_val;
     } else if ($5->expr_type == ST_RUN_TIME_EXPRESSION) {
+      $$->array_type_info = malloc(sizeof(StDynamicArrayTypeInfo));
       $$->array_type_info->array_type = ST_DYNAMIC_ARRAY;
       ST_COPY_TYPE($$->array_type_info, $7);
       $$->array_type_info->lower_bound = lower_bound->int_val;
