@@ -84,6 +84,7 @@ A *parameter_type* is one of:
 3. **array** _[expr](#expressions)_ **..** __*__ **of** _type_
 4. **array** _expr_ **..** __*__ **of** **string** **(** __*__ **)**
 
+In form (1), if the type is *[array_type](#array-types)*, it cannot be a dynamic array.
 In form (2), the maximum length of a dynamic string is declared as `*`, it inherits the size of its actual parameter.
 In form (3) and (4), the _expr_ at the lower bound must be a [compile-time expression](#compile-time-expressions); the upper bound of a dynamic array are declared as `*`, in which case any array whose lower bound are equivalent to the parameter's can be passed to the parameter.
 
@@ -217,6 +218,8 @@ A _statement_ is one of:
 10. *[get_statement](#get-statements)*
 11. *[put_statement](#put-statements)*
 12. **skip**
+
+In form (2), the subprogram must be a procedure, functions are not allowed.
 
 Form (3) is a **return** statement, which causes immediate return from a procedure.
 
