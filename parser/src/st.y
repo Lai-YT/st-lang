@@ -9,7 +9,6 @@
   #include "semant.h"
   #include "semant_macros.h"
   #include "st-lex.h"
-  #include "symtab.h"
 
   extern StEnvironment* env;
 
@@ -19,10 +18,12 @@
 %locations
 %define parse.error detailed
 %union {
+  /* terminal values */
   Symbol* symbol;
   char str_const[256];
   int int_const;
   double real_const;
+  /* non-terminal values */
   Expression* expr;
   CompileTimeExpression* compile_time_expr;
   ConstIdentifier* const_id;
@@ -49,17 +50,15 @@
 %token <real_const> REAL_CONST 291
 %token AND 292 OR 293 MOD 294 LE 295 GE 296 NOT 297 ASSIGN 298 NE 299
 
+/* non-terminals without semantic value */
 %type program decl_or_stmt_in_main_program_list decl_or_stmt_in_main_program
-%type decl_or_stmt_list decl_or_stmt decl stmt var_decl var_ref expr
-%type array_type scalar_type type const_decl explicit_const bool_const
-%type subscript_list subscript subprog_decl opt_decl_or_stmt_list
-%type opt_formal_decl_list formal_decl_list formal_decl formal_type subprog_call if_stmt
-%type bool_expr operation numeric_operation comparison_operation boolean_operation
-%type sign_operation result_stmt exit_stmt loop_stmt for_stmt block get_stmt put_stmt
-%type var_ref_comma_list opt_expr_comma_list expr_comma_list then_block else_block opt_dot_dot
+%type opt_decl_or_stmt_list decl_or_stmt_list decl_or_stmt decl stmt
+%type subprog_decl if_stmt then_block else_block result_stmt exit_stmt
+%type loop_stmt for_stmt block get_stmt put_stmt opt_dot_dot
   /* to enforce ending with result statement in a function syntactically */
 %type opt_decl_or_stmt_list_end_with_result_list decl_or_stmt_list_end_with_result_list decl_or_stmt_or_result
 
+/* non-terminals with semantic value */
 %type <expr> expr operation sign_operation numeric_operation comparison_operation boolean_operation bool_expr
 %type <compile_time_expr> bool_const explicit_const
 %type <var_id> var_decl
