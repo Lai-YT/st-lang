@@ -1,6 +1,6 @@
 % re-declaration of identifier 'x'
-%   constant formal
+%   formal has the same name as the subprogram
 
-procedure p(i: int, i: int)
+procedure p(p: int)
   % empty
 end p

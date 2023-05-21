@@ -30,7 +30,7 @@
 
 | code | description | example |
 |:----:|:------------|:--------|
-| DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st), [decl01-3.st](tests/bad/decl01-3.st), [decl01-4.st](tests/bad/decl01-4.st), [decl01-5.st](tests/bad/decl01-5.st), [decl01-6.st](tests/bad/decl01-6.st) |
+| DECL01 | re-declaration of identifier 'x' | [decl01-1.st](tests/bad/decl01-1.st), [decl01-2.st](tests/bad/decl01-2.st), [decl01-3.st](tests/bad/decl01-3.st), [decl01-4.st](tests/bad/decl01-4.st), [decl01-5.st](tests/bad/decl01-5.st) |
 | DECL02 | identifier 'x' is not declared | [decl02.st](tests/bad/decl02.st) |
 
 ## Expressions
@@ -50,17 +50,17 @@
 
 | code | description | example |
 |:----:|:------------|:--------|
-| FOR01 | range of a 'for' statement must have type 'int' | [for01-1.st](tests/bad/for01-1.st), [for01-2.st](tests/bad/for01-2.st), [for01-2.st](tests/bad/for01-2.st), [for01-4.st](tests/bad/for01-4.st), [for01-5.st](tests/bad/for01-5.st), [for01-6.st](tests/bad/for01-6.st), [for01-7.st](tests/bad/for01-7.st), [for01-8.st](tests/bad/for01-8.st) |
+| FOR01 | range of a 'for' statement must have type 'int' | [for01-1.st](tests/bad/for01-1.st), [for01-2.st](tests/bad/for01-2.st), [for01-2.st](tests/bad/for01-2.st) |
 
 ## References
 
 | code | description | example |
 |:----:|:------------|:--------|
-| REF01 | identifier 'x' is not declared | [ref01-1.st](tests/bad/ref01-1.st), [ref01-2.st](tests/bad/ref01-2.st) |
+| REF01 | identifier 'x' is not declared | [ref01-1.st](tests/bad/ref01-1.st), [ref01-2.st](tests/bad/ref01-2.st), [ref01-3.st](tests/bad/ref01-3.st) |
 | REF02 | identifier 'x' is a 'subprogram', cannot be used as reference | [ref02-1.st](tests/bad/ref02-1.st), [ref02-2.st](tests/bad/ref02-2.st) |
-| REF03 | 'character' is unsubscriptable, for substrings, use 'x[n .. m]' instead | [ref03-1.st](tests/bad/ref03-1.st), [ref03-2.st](tests/bad/ref03-2.st) |
-| REF04 | identifier 'x' has unsubscriptable type | [ref04-1.st](tests/bad/ref04-1.st), [ref04-2.st](tests/bad/ref04-2.st), [ref04-3.st](tests/bad/ref04-3.st) |
-| REF05 | 'n'-dimensional 'array' cannot have 'm' subscripts | [ref05-1.st](tests/bad/ref05-1.st), [ref05-1.st](tests/bad/ref05-1.st) |
+| REF03 | 'character' is unsubscriptable, for substrings, use 'x[n .. m]' instead | [ref03.st](tests/bad/ref03.st) |
+| REF04 | identifier 'x' has unsubscriptable type | [ref04.st](tests/bad/ref04.st) |
+| REF05 | 'n'-dimensional 'array' cannot have 'm' subscripts | [ref05.st](tests/bad/ref05.st) |
 | REF06 | subscript must have type 'int' | [ref06.st](tests/bad/ref06.st) |
 
 ## Statements

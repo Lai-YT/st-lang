@@ -1,6 +1,5 @@
 % re-declaration of identifier 'x'
-%   variable formal
 
-procedure p(var i: int, var i: int)
+procedure p(var i: int, i: int)
   % empty
 end p

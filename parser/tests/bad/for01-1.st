@@ -1,6 +1,6 @@
 % range of a 'for' statement must have type 'int'
-%   increasing, no id, begin
+%   decreasing, id, begin
 
-for : 1.0..3
+for decreasing i: 3.0..1
   % empty
 end for

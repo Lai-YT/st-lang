@@ -1,5 +1,5 @@
 % re-assignment on constant reference
-%   inside subprogram body
+%   constant parameter
 
 procedure p(i: int, n: int)
   i := n

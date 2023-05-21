@@ -1,5 +1,5 @@
 % re-declaration of identifier 'x'
-%   subprogram
+%   procedure
 
 const p := 1
 procedure p()
