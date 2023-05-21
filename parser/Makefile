@@ -1,4 +1,4 @@
-.PHONY: parser coverage fmt tidy clean
+.PHONY: parser coverage tests fmt tidy clean
 
 CC := gcc
 YSRC := src/st.y
@@ -28,6 +28,10 @@ parser: $(CGEN)
 
 $(CGEN): $(YSRC)
 	$(YACC) $(YFLAGS) $<
+
+tests: coverage
+	@echo "---"
+	@./test.sh
 
 # use gcc for gcov (clang needs some more setups)
 coverage: $(CGEN)
