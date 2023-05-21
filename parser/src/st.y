@@ -975,19 +975,39 @@ expr_comma_list:
   { $$ = list_create($1, NULL); }
 ;
 
+  /*
+   * Returns an Expression.
+   */
 bool_expr:
   var_ref
   {
     /*
      * (1) the reference must be of a variable in type bool
      */
+    // (1)
+    if ($1->data_type != ST_BOOL_TYPE) {
+      ST_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
+    }
+    if ($1->ref_type == ST_IDENTIFIER_REFERENCE) {
+      Identifier* id = ((IdentifierReference*)$1)->id;
+      if (id->id_type == ST_CONST_IDENTIFIER
+          && ((ConstIdentifier*)id)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
+        $$ = (Expression*)malloc(sizeof(CompileTimeExpression));
+        $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
+        $$->data_type = ST_BOOL_TYPE;
+        ((CompileTimeExpression*)$$)->bool_val = ((CompileTimeConstIdentifier*)id)->bool_val;
+      }
+    } else {
+      $$ = (Expression*)malloc(sizeof(RunTimeExpression));
+      $$->expr_type = ST_RUN_TIME_EXPRESSION;
+    }
   }
 | bool_const
-  { /* no check */ }
+  { $$ = (Expression*)$1; }
 | comparison_operation %prec COMPARISON_OP
-  { /* no check */ }
+  { $$ = $1; }
 | boolean_operation %prec BOOLEAN_OP
-  { /* no check */ }
+  { $$ = $1; }
   /*
    * NOTE: using '(' bool_expr ')' makes the grammar not LALR(1):
    *  If there's another operator after ')', the expression is an expr,
@@ -1001,6 +1021,10 @@ bool_expr:
     /*
      * (1) the expression should have type bool
      */
+    if ($2->data_type != ST_BOOL_TYPE) {
+      ST_FATAL_ERROR(@2, "'boolean' expression must have type 'bool' (EXPR08)\n");
+    }
+    $$ = $2;
   }
 ;
 
