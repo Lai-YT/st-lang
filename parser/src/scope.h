@@ -22,14 +22,11 @@ typedef struct StEnvironment StEnvironment;
 /// @return An empty environment which does not enter any scope.
 StEnvironment* st_create_environment();
 
-/// @return The scope type of the current scope.
-StScopeType st_get_scope_type(StEnvironment*);
-
 /// @brief Exits all of the scopes and deletes the environment.
 void st_delete_environment(StEnvironment*);
 
 /// @brief Enters a new current scope.
-void st_enter_scope(StEnvironment**, StScopeType);
+void st_enter_scope(StEnvironment**);
 
 /// @brief Exits and deletes all the symbols from the current scope.
 void st_exit_scope(StEnvironment**);

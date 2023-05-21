@@ -9,7 +9,6 @@
 
 struct StEnvironment {
   SymbolTable* scope;
-  StScopeType scope_type;
   struct StEnvironment* rest;
 };
 
@@ -30,10 +29,6 @@ StEnvironment* st_create_environment() {
   return env;
 }
 
-StScopeType st_get_scope_type(StEnvironment* env) {
-  return env->scope_type;
-}
-
 void st_delete_environment(StEnvironment* env) {
   while (in_scope(env)) {
     StEnvironment* rest = env->rest;
@@ -43,10 +38,9 @@ void st_delete_environment(StEnvironment* env) {
   free(env);
 }
 
-void st_enter_scope(StEnvironment** env, StScopeType scope_type) {
+void st_enter_scope(StEnvironment** env) {
   StEnvironment* scope = malloc(sizeof(StEnvironment));
   scope->scope = symtab_create();
-  scope->scope_type = scope_type;
   scope->rest = *env;
   *env = scope;
 }

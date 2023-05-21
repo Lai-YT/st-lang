@@ -9,6 +9,20 @@
 /// @return An identical malloc'd string.
 char* st_strdup(const char* s);
 
+/*
+ * Adding special identifier into the scope to distinguish different kinds of
+ * scopes. Since no user-defined identifier can have name leading with
+ * underscore, these "__xxx" identifiers will never collied with user-defined
+ * identifiers.
+ */
+#ifndef ST_SCOPE_NAME
+#define ST_SCOPE_NAME
+#define ST_BLOCK_SCOPE_NAME "__block"
+#define ST_FUNCTION_SCOPE_NAME "__function"
+#define ST_PROCEDURE_SCOPE_NAME "__procedure"
+#define ST_LOOP_SCOPE_NAME "__loop"
+#endif
+
 typedef enum StDataType {
   /*
    * scalar types

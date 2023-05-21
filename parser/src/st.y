@@ -97,7 +97,8 @@ program:
      * NOTE: all subprogram type identifiers will be added to this scope
      */
     // (1)
-    st_enter_scope(&env, ST_BLOCK_SCOPE);
+    st_enter_scope(&env);
+    st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
   }
   decl_or_stmt_in_main_program_list
   {
@@ -192,7 +193,7 @@ stmt:
      * (1) has to be inside the scope of a procedure
      */
     // (1)
-    if (st_get_scope_type(env) != ST_PROCEDURE_SCOPE) {
+    if (!st_lookup_environment(env, ST_PROCEDURE_SCOPE_NAME)) {
       ST_FATAL_ERROR(@1, "'return' statement can only appear in the body of 'procedure's (STMT01)\n");
     }
   }
@@ -204,7 +205,7 @@ stmt:
      * (1) has to be inside a loop or a for statement
      */
     // (1)
-    if (st_get_scope_type(env) != ST_LOOP_SCOPE) {
+    if (!st_lookup_environment(env, ST_LOOP_SCOPE_NAME)) {
       ST_FATAL_ERROR(@1, "'exit' statement can only appear in 'for' and 'loop' statements (STMT03)\n");
     }
   }
@@ -214,7 +215,8 @@ stmt:
      * (1) new loop scope
      */
     // (1)
-    st_enter_scope(&env, ST_LOOP_SCOPE);
+    st_enter_scope(&env);
+    st_add_to_scope(env, ST_LOOP_SCOPE_NAME);
   }
   loop_stmt
   {
@@ -226,7 +228,8 @@ stmt:
      * (1) new loop scope
      */
     // (1)
-    st_enter_scope(&env, ST_LOOP_SCOPE);
+    st_enter_scope(&env);
+    st_add_to_scope(env, ST_LOOP_SCOPE_NAME);
   }
   for_stmt
   {
@@ -237,7 +240,8 @@ stmt:
      * mid-rule:
      * (1) new block scope
      */
-    st_enter_scope(&env, ST_BLOCK_SCOPE);
+    st_enter_scope(&env);
+    st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
   }
   block
   {
@@ -370,7 +374,8 @@ subprog_decl:
      * mid-rule:
      * (1) enter a function scope
      */
-    st_enter_scope(&env, ST_FUNCTION_SCOPE);
+    st_enter_scope(&env);
+    st_add_to_scope(env, ST_FUNCTION_SCOPE_NAME);
   }
   function_decl
   {
@@ -392,7 +397,8 @@ subprog_decl:
      * mid-rule:
      * (1) enter a procedure scope
      */
-    st_enter_scope(&env, ST_PROCEDURE_SCOPE);
+    st_enter_scope(&env);
+    st_add_to_scope(env, ST_PROCEDURE_SCOPE_NAME);
   }
   procedure_decl
   {
@@ -443,7 +449,7 @@ function_decl:
 ;
 
   /*
-   * A list where the result_stmt may appear and must end with a result_stmt.
+   * A list which must end with a result_stmt.
    */
 opt_decl_or_stmt_list_end_with_result_list:
   decl_or_stmt_list_end_with_result_list
@@ -530,10 +536,8 @@ function_header:
     // NOTE: the function is added into the scope since it's visible to the
     // formals and the function body.
     st_add_to_scope(env, $2->name)->attribute = $<function>$;
-    // NOTE: add again with a special name for the result statement to check the result type.
-    // Since no user-defined identifier can have name leading with underscore,
-    // the name "__function" will never collied with user-defined identifiers.
-    st_add_to_scope(env, "__function")->attribute = $<function>$;
+    // add to the special identifier for result statements to retrieve the result type of the function
+    st_lookup_environment(env, ST_FUNCTION_SCOPE_NAME)->attribute = $<function>$;
   }
   '(' opt_formal_decl_list ')' ':' type
   {
@@ -566,16 +570,12 @@ decl_or_stmt:
   { /* no check */ }
 | stmt
   { /* no check */ }
-| {
-    // NOTE: an error production on the result_stmt since we want to provide more expressive error message.
-    // We have to report the error before recognizing the result_stmt, so a mid-rule is used.
-    // Here we directly refer to the yylloc, which is the lookahead located at the first(result_stmt).
-    ST_FATAL_ERROR(yylloc, "'result' statement can only appear in the body of 'function's (STMT02)\n");
-  } result_stmt
-  {
-    //fatal error in the mid-rule
-    ST_UNREACHABLE();
-  }
+  /*
+   * NOTE: To make decl_or_stmt_list distinguishable from decl_or_stmt_list_end_with_result_list,
+   * the result_stmt is handled separately instead of put inside stmt
+   */
+| result_stmt
+  { /* no check */ }
 ;
 
   /*
@@ -788,7 +788,8 @@ then_block:
   THEN
   {
     // mid-rule
-    st_enter_scope(&env, ST_BLOCK_SCOPE);
+    st_enter_scope(&env);
+    st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
   }
   opt_decl_or_stmt_list
   {
@@ -800,7 +801,8 @@ else_block:
   ELSE
   {
     // mid-rule
-    st_enter_scope(&env, ST_BLOCK_SCOPE);
+    st_enter_scope(&env);
+    st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
   }
   opt_decl_or_stmt_list
   {
@@ -814,11 +816,10 @@ result_stmt:
     /*
      * (1) expr must have the same type as the declared result type
      */
-    // NOTE: not checking whether is now in the function scope or not because it's already enforced by the grammar.
     // (1): get the current function through the special identifier name
-    Symbol* symbol = st_probe_environment(env, "__function");
+    Symbol* symbol = st_lookup_environment(env, ST_FUNCTION_SCOPE_NAME);
     if (!symbol) {
-      ST_UNREACHABLE();
+      ST_FATAL_ERROR(@1, "'result' statement can only appear in the body of 'function's (STMT02)\n");
     }
     FunctionSubprogram* function = (FunctionSubprogram*)symbol->attribute;
     StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($2);
