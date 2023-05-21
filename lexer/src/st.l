@@ -211,7 +211,7 @@ when        TOKEN(WHEN);
   strcat(string, "\"");
 }
 <STRING_>\" {
-  strncpy(yylval.str_const, string, MAX_LINE_LENG - strlen(string) - 1);
+  strncpy(yylval.str_const, string, MAX_LINE_LENG);
   string[0] = '\0';
   BEGIN(INITIAL);
   TOKEN_STRING();
