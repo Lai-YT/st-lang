@@ -35,6 +35,7 @@
   FunctionSubprogram* function;
   List* formals;
   List* actuals;
+  List* references;
 }
 
 /* tokens */
@@ -55,7 +56,7 @@
 %type opt_formal_decl_list formal_decl_list formal_decl formal_type subprog_call if_stmt
 %type bool_expr operation numeric_operation comparison_operation boolean_operation
 %type sign_operation result_stmt exit_stmt loop_stmt for_stmt block get_stmt put_stmt
-%type var_ref_comma_list opt_expr_comma_list expr_comma_list
+%type var_ref_comma_list opt_expr_comma_list expr_comma_list then_block else_block opt_dot_dot
   /* to enforce ending with result statement in a function syntactically */
 %type opt_decl_or_stmt_list_end_with_result_list decl_or_stmt_list_end_with_result_list decl_or_stmt_or_result
 
@@ -72,6 +73,7 @@
 %type <formals> opt_formal_decl_list formal_decl_list
 %type <actuals> opt_expr_comma_list expr_comma_list
 %type <subprogram> subprog_call
+%type <references> var_ref_comma_list
 
   /* lowest to highest */
 %left OR
@@ -776,18 +778,33 @@ subprog_call:
 ;
 
 if_stmt:
-  IF bool_expr THEN opt_decl_or_stmt_list END IF
+  IF bool_expr then_block END IF
+  { /* no check */ }
+| IF bool_expr then_block else_block END IF
+  { /* no check */ }
+;
+
+then_block:
+  THEN
   {
-    /*
-     * (1) new block scope
-     */
+    // mid-rule
+    st_enter_scope(&env, ST_BLOCK_SCOPE);
   }
-| IF bool_expr THEN opt_decl_or_stmt_list ELSE opt_decl_or_stmt_list END IF
+  opt_decl_or_stmt_list
   {
-    /*
-     * (1) new block scope for then
-     * (2) new block scope for else
-     */
+    st_exit_scope(&env);
+  }
+;
+
+else_block:
+  ELSE
+  {
+    // mid-rule
+    st_enter_scope(&env, ST_BLOCK_SCOPE);
+  }
+  opt_decl_or_stmt_list
+  {
+    st_exit_scope(&env);
   }
 ;
 
@@ -928,29 +945,51 @@ get_stmt:
      * (1) all variable references should be mutable
      * (2) no variable reference can be in type array
      */
+    List* refs = $2;
+    while (refs) {
+      Reference* ref = (Reference*)refs->val;
+      // (1)
+      if (ref->is_const) {
+        ST_FATAL_ERROR(@2, "references in 'get' statement cannot be constant (STMT07)\n");
+      }
+      // (2)
+      if (ref->data_type == ST_ARRAY_TYPE) {
+        ST_FATAL_ERROR(@2, "references in 'get' statement cannot have type 'array' (STMT08)\n");
+      }
+      refs = refs->rest;
+    }
   }
 ;
 
 var_ref_comma_list:
   var_ref_comma_list ',' var_ref
-  { /* no check */ }
+  { $$ = list_create($3, $1); }
 | var_ref
-  { /* no check */ }
+  { $$ = list_create($1, NULL); }
 ;
 
 put_stmt:
-  PUT expr_comma_list
+  PUT expr_comma_list opt_dot_dot
   {
     /*
      * (1) no expression can be in type array
      */
+    List* exprs = $2;
+    // (1)
+    while (exprs) {
+      if (((Expression*)exprs->val)->data_type == ST_ARRAY_TYPE) {
+        ST_FATAL_ERROR(@2, "expressions in 'put' statement cannot have type 'array' (STMT06)\n");
+      }
+      exprs = exprs->rest;
+    }
   }
-| PUT expr_comma_list '.' '.'
-  {
-    /*
-     * (1) no expression can be in type array
-     */
-  }
+;
+
+opt_dot_dot:
+  '.' '.'
+  { /* no check */ }
+| /* empty */
+  { /* no check */ }
 ;
 
  /*

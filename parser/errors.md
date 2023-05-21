@@ -71,7 +71,10 @@
 | STMT02 | 'result' statement can only appear in the body of 'function's | [stmt02.st](tests/bad/stmt02.st) |
 | STMT03 | 'exit' statement can only appear in 'for' or 'loop' statements | [stmt03.st](tests/bad/stmt03.st) |
 | STMT04 | 'function' call cannot be a statement | [stmt04.st](tests/bad/stmt04.st) |
-| STMT05 | type of the 'result' expression cannot be assigned as the result type of the 'function' | [stmt05](tests/bad/stmt05.st) |
+| STMT05 | type of the 'result' expression cannot be assigned as the result type of the 'function' | [stmt05.st](tests/bad/stmt05.st) |
+| STMT06 | expressions in 'put' statement cannot have type 'array' | [stmt06.st](tests/bad/stmt06.st) |
+| STMT07 | references in 'get' statement cannot be constant | [stmt07.st](tests/bad/stmt07.st) |
+| STMT08 | references in 'get' statement cannot have type 'array' | [stmt08.st](tests/bad/stmt08.st) |
 
 ## Strings
 
