@@ -59,7 +59,7 @@
   /* to enforce ending with result statement in a function syntactically */
 %type opt_decl_or_stmt_list_end_with_result_list decl_or_stmt_list_end_with_result_list decl_or_stmt_or_result
 
-%type <expr> expr
+%type <expr> expr operation sign_operation numeric_operation comparison_operation boolean_operation bool_expr
 %type <compile_time_expr> bool_const explicit_const
 %type <var_id> var_decl
 %type <const_id> const_decl
@@ -1333,11 +1333,12 @@ expr:
      * (2) both expression has to have type int
      * NOTE: the expression may be run-time expressions, so range check seems impossible
      */
+    // TODO
   }
 | operation
-  { /* no check */ }
+  { $$ = $1; }
 | '(' expr ')'
-  { /* no check */ }
+  { $$ = $2; }
 ;
 
   /*
@@ -1413,7 +1414,52 @@ numeric_operation:
      * (2) if one of the expression is a string, the other one must also be a string, which is then a string concatenation
      * (3) if both of the expression have type int, the result type is int
      * (4) if one of the expression has type real, the result type is real
+     * (5) if both expressions are compile-time expressions, the operation is also a compile-time operation
+     * (6) if is a compile-time string concatenation, the length of the result string must not exceed 255
      */
+    /*
+     * Handle string concatenation first, then elementary arithmetic
+     */
+    if ($1->data_type != $3->data_type
+        && ($1->data_type == ST_STRING_TYPE || $3->data_type == ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@2, "operands of 'string' concatenation must both have type 'string' (STR04)\n");
+    }
+    // is string concatenation
+    if ($1->data_type == ST_STRING_TYPE && $3->data_type == ST_STRING_TYPE) {
+      if ($1->expr_type == ST_COMPILE_TIME_EXPRESSION && $3->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+        CompileTimeExpression* lhs = (CompileTimeExpression*)$1;
+        CompileTimeExpression* rhs = (CompileTimeExpression*)$3;
+        $$ = (Expression*)malloc(sizeof(CompileTimeExpression));
+        $$->data_type = ST_STRING_TYPE;
+        $$->string_type_info = malloc(sizeof(StStringTypeInfo));
+        $$->string_type_info->max_length = strlen(lhs->string_val) + strlen(rhs->string_val);
+        // (6)
+        if ($$->string_type_info->max_length > 255) {
+          ST_FATAL_ERROR(@1, "in compile-time 'string' concatenation, length of the result 'string' must not exceed 255 (STR05)\n");
+        }
+        ((CompileTimeExpression*)$$)->string_val = malloc(sizeof(char) * ($$->string_type_info->max_length + 1));
+        strcpy(((CompileTimeExpression*)$$)->string_val, lhs->string_val);
+        strcat(((CompileTimeExpression*)$$)->string_val, rhs->string_val);
+      } else {
+        $$->data_type = ST_STRING_TYPE;
+        $$->string_type_info = malloc(sizeof(StStringTypeInfo));
+        $$->string_type_info->max_length
+            = $1->string_type_info->max_length + $3->string_type_info->max_length;
+        // saturate
+        if ($$->string_type_info->max_length > 255) {
+          $$->string_type_info->max_length = 255;
+        }
+      }
+    } else {
+      // (1)
+      if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE)) {
+        ST_FATAL_ERROR(@1, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
+      }
+      if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE)) {
+        ST_FATAL_ERROR(@3, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
+      }
+      $$ = ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, +, $3);
+    }
   }
 | expr '-' expr
   {
@@ -1422,6 +1468,14 @@ numeric_operation:
      * (2) if both of the expression have type int, the result type is int
      * (3) if one of the expression has type real, the result type is real
      */
+    // (1)
+    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE)) {
+      ST_FATAL_ERROR(@1, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
+    }
+    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE)) {
+      ST_FATAL_ERROR(@3, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
+    }
+    $$ = ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, -, $3);
   }
 | expr '*' expr
   {
@@ -1430,6 +1484,14 @@ numeric_operation:
      * (2) if both of the expression have type int, the result type is int
      * (3) if one of the expression has type real, the result type is real
      */
+    // (1)
+    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE)) {
+      ST_FATAL_ERROR(@1, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
+    }
+    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE)) {
+      ST_FATAL_ERROR(@3, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
+    }
+    $$ = ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, *, $3);
   }
 | expr '/' expr
   {
@@ -1438,28 +1500,123 @@ numeric_operation:
      * (2) if both of the expression have type int, the result type is int
      * (3) if one of the expression has type real, the result type is real
      */
+    // (1)
+    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE)) {
+      ST_FATAL_ERROR(@1, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
+    }
+    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE)) {
+      ST_FATAL_ERROR(@3, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
+    }
+    $$ = ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, *, $3);
   }
 | expr MOD expr
   {
     /*
      * (1) both of the expressions must have type int
      */
+    // (1)
+    if ($1->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@1, "operand of 'mod' operation must have type 'int' (EXPR07)\n");
+    }
+    if ($3->data_type != ST_INT_TYPE) {
+      ST_FATAL_ERROR(@3, "operand of 'mod' operation must have type 'int' (EXPR07)\n");
+    }
+    if ($1->expr_type == ST_COMPILE_TIME_EXPRESSION && $3->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      $$ = (Expression*)malloc(sizeof(CompileTimeExpression));
+      $$->data_type = ST_INT_TYPE;
+      ((CompileTimeExpression*)$$)->int_val = ((CompileTimeExpression*)$1)->int_val % ((CompileTimeExpression*)$3)->int_val;
+    } else {
+      $$ = (Expression*)malloc(sizeof(RunTimeExpression));
+      $$->data_type = ST_INT_TYPE;
+    }
   }
 ;
 
 comparison_operation:
  /*
   * All of the comparison operations are the same.
-  * (1) both expressions must be one of the scalar types
+  * (1) expressions can't have type other than int, real, and string
   * (2) both expressions must have the same type
   * (3) if both expressions are compile-time expressions, the operation is also a compile-time operation
   */
-  expr '<' expr {}
-| expr '>' expr {}
-| expr '=' expr {}
-| expr LE expr {}
-| expr GE expr {}
-| expr NE expr {}
+  expr '<' expr
+  {
+    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if ($1->data_type != $3->data_type) {
+      ST_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
+    }
+    $$ = ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, <, $3);
+  }
+| expr '>' expr
+  {
+    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if ($1->data_type != $3->data_type) {
+      ST_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
+    }
+    $$ = ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, >, $3);
+  }
+| expr '=' expr
+  {
+    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if ($1->data_type != $3->data_type) {
+      ST_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
+    }
+    $$ = ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, ==, $3);
+  }
+| expr LE expr
+  {
+    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if ($1->data_type != $3->data_type) {
+      ST_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
+    }
+    $$ = ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, <=, $3);
+  }
+| expr GE expr
+  {
+    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if ($1->data_type != $3->data_type) {
+      ST_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
+    }
+    $$ = ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, >=, $3);
+  }
+| expr NE expr
+  {
+    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
+      ST_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
+    }
+    if ($1->data_type != $3->data_type) {
+      ST_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
+    }
+    $$ = ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, !=, $3);
+  }
 ;
 
   /*
@@ -1474,6 +1631,15 @@ boolean_operation:
      * (1) both expressions must have type bool
      * (2) if both expressions are compile-time expressions, the operation is also a compile-time operation
      */
+    // (1)
+    if ($1->data_type != ST_BOOL_TYPE) {
+      ST_FATAL_ERROR(@1, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
+    }
+    if ($3->data_type != ST_BOOL_TYPE) {
+      ST_FATAL_ERROR(@3, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
+    }
+    // (2)
+    $$ = ST_MAKE_BINARY_BOOLEAN_EXPRESSION($1, &&, $3);
   }
 | expr OR expr
   {
@@ -1481,6 +1647,15 @@ boolean_operation:
      * (1) both expressions must have type bool
      * (2) if both expressions are compile-time expressions, the operation is also a compile-time operation
      */
+    // (1)
+    if ($1->data_type != ST_BOOL_TYPE) {
+      ST_FATAL_ERROR(@1, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
+    }
+    if ($3->data_type != ST_BOOL_TYPE) {
+      ST_FATAL_ERROR(@3, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
+    }
+    // (2)
+    $$ = ST_MAKE_BINARY_BOOLEAN_EXPRESSION($1, ||, $3);
   }
 | NOT expr
   {
@@ -1488,6 +1663,23 @@ boolean_operation:
      * (1) the expression must have type bool
      * (2) if the expression is a compile-time expression, the operation is also a compile-time operation
      */
+    // (1)
+    if ($2->data_type != ST_BOOL_TYPE) {
+      ST_FATAL_ERROR(@2, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
+    }
+    // (2)
+    if ($2->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      $$ = malloc(sizeof(CompileTimeExpression));
+      $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
+      $$->data_type = ST_BOOL_TYPE;
+      ((CompileTimeExpression*)$$)->bool_val = !((CompileTimeExpression*)$2)->bool_val;
+    } else if ($2->expr_type == ST_RUN_TIME_EXPRESSION) {
+      $$ = malloc(sizeof(RunTimeExpression));
+      $$->expr_type = ST_RUN_TIME_EXPRESSION;
+      $$->data_type = ST_BOOL_TYPE;
+    } else {
+      ST_UNREACHABLE();
+    }
   }
 ;
 
@@ -1497,8 +1689,24 @@ boolean_operation:
    * (2) if the expression is a compile-time expression, the operation is also a compile-time operation
    */
 sign_operation:
-  '+' expr {}
-| '-' expr {}
+  '+' expr
+  {
+    // (1)
+    if (!ST_HAS_ONE_OF_DATA_TYPES($2, ST_INT_TYPE, ST_REAL_TYPE)) {
+      ST_FATAL_ERROR(@2, "operand of 'sign' operation must have type 'int' or 'real' (EXPR02)\n");
+    }
+    // (2)
+    $$ = ST_MAKE_UNARY_SIGN_EXPRESSION(+, $2);
+  }
+| '-' expr
+  {
+    // (1)
+    if (!ST_HAS_ONE_OF_DATA_TYPES($2, ST_INT_TYPE, ST_REAL_TYPE)) {
+      ST_FATAL_ERROR(@2, "operand of 'sign' operation must have type 'int' or 'real' (EXPR02)\n");
+    }
+    // (2)
+    $$ = ST_MAKE_UNARY_SIGN_EXPRESSION(-, $2);
+  }
 ;
 
 %%

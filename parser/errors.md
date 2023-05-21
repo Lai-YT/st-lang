@@ -38,6 +38,12 @@
 | code | description | example |
 |:----:|:------------|:--------|
 | EXPR01 | 'procedure' call cannot be an expression | [expr01.st](tests/bad/expr01.st) |
+| EXPR02 | operand of 'sign' operation must have type 'int' or 'real' | [expr02.st](tests/bad/expr02.st) |
+| EXPR03 | operand of 'boolean' operation must have type 'bool' | [expr03.st](tests/bad/expr03.st) |
+| EXPR04 | operand of 'comparison' operation must have type 'int', 'real', or 'string' | [expr04.st](tests/bad/expr04.st) |
+| EXPR05 | operands of 'comparison' operation must have the same type | [expr05.st](tests/bad/expr05.st) |
+| EXPR06 | operand of 'arithmetic' operation must have type 'int' or 'real' | [expr06.st](tests/bad/expr06.st) |
+| EXPR07 | operand of 'mod' operation must have type 'int' | [expr07.st](tests/bad/expr07.st) |
 
 ## For Statements
 
@@ -73,6 +79,8 @@
 | STR01 | max length of a 'string' must have type 'int' | [str01.st](tests/bad/str01.st) |
 | STR02 | max length of a 'string' must be a compile-time expression | [str02.st](tests/bad/str02.st) |
 | STR03 | max length of a 'string' must be in range 1 ~ 255 | [str03-1.st](tests/bad/str03-1.st), [str03-2.st](tests/bad/str03-2.st) |
+| STR04 | operands of 'string' concatenation must both have type 'string' | [str04.st](tests/bad/str04.st) |
+| STR05 | in compile-time 'string' concatenation, length of the result 'string' must not exceed 255 | [str05.st](tests/bad/str05.st) |
 
 ## Subprograms
 

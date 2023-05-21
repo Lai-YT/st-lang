@@ -1,7 +1,7 @@
 % increasing, no id, exit
 var i := 0
 for : 1..2
-  % i := i + 1
+  i := i + 1
   % exit when i > 0
 end for
 
@@ -14,7 +14,7 @@ end for
 % decreasing, no id
 var l := 0
 for decreasing : 2..1
-  % l := l - 1
+  l := l - 1
 end for
 
 % decreasing, id

@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,6 +75,14 @@ extern int allow_semantic_errors;
   }
 #endif
 
+#ifndef ST_HAS_ONE_OF_DATA_TYPES
+/// @return Whether x has one of the listed data types.
+#define ST_HAS_ONE_OF_DATA_TYPES(x, ...) \
+  is_one_of_data_types( \
+      (x)->data_type, \
+      sizeof((StDataType[]){__VA_ARGS__}) / sizeof(StDataType), __VA_ARGS__)
+#endif
+
 #ifndef ST_MAKE_DATA_TYPE_INFO
 /// @brief Copies the data type info of x
 /// @param x must necessarily carry all data in ST_DATA_TYPE_INFO
@@ -85,5 +94,130 @@ extern int allow_semantic_errors;
     StDataTypeInfo data_type; \
     ST_COPY_TYPE(&data_type, x); \
     data_type; \
+  })
+#endif
+
+#ifndef ST_MAKE_BINARY_BOOLEAN_EXPRESSION
+/// @note This macro uses "statement expression", which is a non-standard
+/// feature. GCC and Clang are known to support this. See also
+/// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
+#define ST_MAKE_BINARY_BOOLEAN_EXPRESSION(a, bin_op, b) \
+  ({ \
+    Expression* result = NULL; \
+    if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION \
+        && (b)->expr_type == ST_COMPILE_TIME_EXPRESSION) { \
+      result = (Expression*)malloc(sizeof(CompileTimeExpression)); \
+      result->expr_type = ST_COMPILE_TIME_EXPRESSION; \
+      result->data_type = ST_BOOL_TYPE; \
+      ((CompileTimeExpression*)result)->bool_val \
+          = ((CompileTimeExpression*)(a)) \
+                ->bool_val bin_op((CompileTimeExpression*)(b)) \
+                ->bool_val; \
+    } else { \
+      result = (Expression*)malloc(sizeof(RunTimeExpression)); \
+      result->expr_type = ST_RUN_TIME_EXPRESSION; \
+      result->data_type = ST_BOOL_TYPE; \
+    } \
+    result; \
+  })
+#endif
+
+#ifndef ST_MAKE_BINARY_COMPARISON_EXPRESSION
+/// @note This macro uses "statement expression", which is a non-standard
+/// feature. GCC and Clang are known to support this. See also
+/// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
+#define ST_MAKE_BINARY_COMPARISON_EXPRESSION(a, bin_op, b) \
+  ({ \
+    Expression* result = NULL; \
+    if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION \
+        && (b)->expr_type == ST_COMPILE_TIME_EXPRESSION) { \
+      result = (Expression*)malloc(sizeof(CompileTimeExpression)); \
+      CompileTimeExpression* lhs = (CompileTimeExpression*)(a); \
+      CompileTimeExpression* rhs = (CompileTimeExpression*)(b); \
+      result->data_type = ST_BOOL_TYPE; \
+      switch ((a)->data_type) { \
+        case ST_INT_TYPE: \
+          ((CompileTimeExpression*)result)->bool_val \
+              = lhs->int_val bin_op rhs->int_val; \
+          break; \
+        case ST_REAL_TYPE: \
+          ((CompileTimeExpression*)result)->bool_val \
+              = lhs->real_val bin_op rhs->real_val; \
+          break; \
+        case ST_STRING_TYPE: \
+          ((CompileTimeExpression*)result)->bool_val \
+              = strcmp(lhs->string_val, rhs->string_val) bin_op 0; \
+          break; \
+        default: \
+          ST_UNREACHABLE(); \
+      } \
+    } \
+    result; \
+  })
+#endif
+
+#ifndef ST_MAKE_UNARY_SIGN_EXPRESSION
+/// @note This macro uses "statement expression", which is a non-standard
+/// feature. GCC and Clang are known to support this. See also
+/// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
+#define ST_MAKE_UNARY_SIGN_EXPRESSION(un_op, a) \
+  ({ \
+    Expression* result = NULL; \
+    if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION) { \
+      result = (Expression*)malloc(sizeof(CompileTimeExpression)); \
+      result->expr_type = ST_COMPILE_TIME_EXPRESSION; \
+      ST_COPY_TYPE(result, (a)); \
+      if ((a)->data_type == ST_INT_TYPE) { \
+        ((CompileTimeExpression*)result)->int_val \
+            = un_op abs(((CompileTimeExpression*)(a))->int_val); \
+      } else if ((a)->data_type == ST_REAL_TYPE) { \
+        ((CompileTimeExpression*)result)->real_val \
+            = un_op fabs(((CompileTimeExpression*)(a))->real_val); \
+      } else { \
+        ST_UNREACHABLE(); \
+      } \
+    } else if ((a)->expr_type == ST_RUN_TIME_EXPRESSION) { \
+      result = (Expression*)malloc(sizeof(RunTimeExpression)); \
+      result->expr_type = ST_RUN_TIME_EXPRESSION; \
+      ST_COPY_TYPE(result, (a)); \
+    } else { \
+      ST_UNREACHABLE(); \
+    } \
+    result; \
+  })
+#endif
+
+#ifndef ST_MAKE_BINARY_ARITHMETIC_EXPRESSION
+/// @note This macro uses "statement expression", which is a non-standard
+/// feature. GCC and Clang are known to support this. See also
+/// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
+#define ST_MAKE_BINARY_ARITHMETIC_EXPRESSION(a, bin_op, b) \
+  ({ \
+    Expression* result = NULL; \
+    if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION \
+        && (b)->expr_type == ST_COMPILE_TIME_EXPRESSION) { \
+      result = (Expression*)malloc(sizeof(CompileTimeExpression)); \
+      CompileTimeExpression* lhs = (CompileTimeExpression*)(a); \
+      CompileTimeExpression* rhs = (CompileTimeExpression*)(b); \
+      if ((a)->data_type == ST_INT_TYPE && (b)->data_type == ST_INT_TYPE) { \
+        result->data_type = ST_INT_TYPE; \
+        ((CompileTimeExpression*)result)->int_val \
+            = lhs->int_val bin_op rhs->int_val; \
+      } else { \
+        result->data_type = ST_REAL_TYPE; \
+        ((CompileTimeExpression*)result)->real_val \
+            = (lhs->data_type == ST_INT_TYPE ? lhs->int_val : lhs->real_val) \
+                bin_op(rhs->data_type == ST_INT_TYPE ? rhs->int_val \
+                                                     : rhs->real_val); \
+      } \
+    } else { \
+      result = (Expression*)malloc(sizeof(RunTimeExpression)); \
+      if ((a)->data_type == ST_INT_TYPE && (b)->data_type == ST_INT_TYPE) { \
+        result->data_type = ST_INT_TYPE; \
+      } else { \
+        result->data_type = ST_REAL_TYPE; \
+      } \
+    } \
+    result; \
   })
 #endif

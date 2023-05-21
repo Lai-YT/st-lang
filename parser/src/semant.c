@@ -1,5 +1,6 @@
 #include "semant.h"
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,19 @@ int st_dimension_of_array(const StArrayTypeInfo* arr) {
     return 1 + st_dimension_of_array(arr->array_type_info);
   }
   return 1;
+}
+
+bool is_one_of_data_types(const StDataType type, int num_of_types, ...) {
+  va_list types;
+  va_start(types, num_of_types);
+  while (num_of_types--) {
+    if (type == va_arg(types, StDataType)) {
+      va_end(types);
+      return true;
+    }
+  }
+  va_end(types);
+  return false;
 }
 
 static bool st_is_assignable_array_type(const StArrayTypeInfo*,

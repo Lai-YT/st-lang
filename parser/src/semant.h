@@ -239,6 +239,9 @@ typedef struct Reference {
   ST_REFERENCE_COMMON_DATA
 } Reference;
 
+/// @note Used with the macro ST_HAS_ONE_OF_DATA_TYPES.
+bool is_one_of_data_types(const StDataType type, int num_of_types, ...);
+
 int st_dimension_of_array(const StArrayTypeInfo* arr);
 
 /// @return Whether type rhs is assignable to lhs.
