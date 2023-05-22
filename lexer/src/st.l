@@ -18,7 +18,7 @@
 #define MAX_LINE_LENG 256
 
 // The content of the line which the lexer is scanning on.
-char* st_cur_line;
+char st_cur_line[MAX_LINE_LENG];
 
 extern SymbolTable* symtab;
 extern bool verbose;
@@ -35,26 +35,25 @@ static int yycolumn = 1;
   yylloc.last_column = yycolumn + yyleng - 1; \
   yycolumn += yyleng;
 
-static size_t st_buf_len = 0;
 // Get an entire line at a time.
 #define YY_INPUT(buf, result, max_size) \
   { \
-    (result) = getline(&st_cur_line, &st_buf_len, yyin); \
-    if (st_buf_len > (size_t)max_size) { \
-      free(st_cur_line); \
-      YY_FATAL_ERROR("length of line exceed buffer size"); \
+    int c = '*'; \
+    int n; \
+    for (n = 0; n < max_size \
+        && (c = getc(yyin)) != EOF && c != '\n'; ++n) { \
+      buf[n] = (char)c; \
     } \
-    if ((result) == -1) { \
-      free(st_cur_line); \
-      if (feof(yyin)) { \
-        (result) = YY_NULL; \
-      } else { \
-        YY_FATAL_ERROR("input in flex scanner failed"); \
-      } \
+    if (c == '\n') { \
+      buf[n++] = (char)c; \
+      yycolumn = 1; \
     } \
-    strncpy((buf), st_cur_line, st_buf_len); \
-    /* newline, reset column */ \
-    yycolumn = 1; \
+    if (c == EOF && ferror(yyin)) { \
+      YY_FATAL_ERROR("input in flex scanner failed"); \
+    } \
+    strncpy(st_cur_line, buf, n); \
+    st_cur_line[n] = '\0'; \
+    result = n; \
   }
 
 // records the line content along with the recognition
