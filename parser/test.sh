@@ -11,8 +11,15 @@ for file in tests/bad/*.st; do
   sed <tmp -n 's/.*(\(.*\))$/\1/p' >code
   # Every bad test has the expected error code as the prefix of its name, extract it.
   echo "${file}" | sed -n 's/.*\/\(.*\)\..*$/\1/p' |
-    # Some error code has several tests file, only get the error code itself, no test number.
-    awk '{split($0, a, "-"); print a[1]}' >expcode
+    # Some error code has several tests file, only get the error code itself, no test number ("-").
+    # Muliple errors can be encoded into the filename with "_" as the separater.
+    awk '{
+      split($0, errs, "_");
+      for (i in errs) {  # get errors
+        split(errs[i], e, "-");
+        print e[1];  # ignore test number
+      }
+    }' >expcode
 
   # Compare the actual error message and the expected error message.
   # Case of the letters are irrelevant.

@@ -24,7 +24,7 @@
 | code | description | kind | example |
 |:----:|:------------|:----:|:--------|
 | CONST01 | a constant identifier cannot be a 'dynamic array' | fatal | [const01-1.st](tests/bad/const01-1.st), [const01-2.st](tests/bad/const01-2.st) |
-| CONST02 | re-assignment on constant reference | non-fatal | [const02-1.st](tests/bad/const02-1.st), [const02-2.st](tests/bad/const02-2.st), [const02-3.st](tests/bad/const02-3.st) |
+| CONST02 | re-assignment on constant reference | non-fatal | [const02.st](tests/bad/const02_const02_const02.st) |
 
 ## Declarations
 
@@ -37,19 +37,19 @@
 | code | description | kind | example |
 |:----:|:------------|:----:|:--------|
 | EXPR01 | 'procedure' call cannot be an expression | fatal | [expr01.st](tests/bad/expr01.st) |
-| EXPR02 | operand of 'sign' operation must have type 'int' or 'real' | non-fatal | [expr02.st](tests/bad/expr02.st) |
-| EXPR03 | operand of 'boolean' operation must have type 'bool' | non-fatal | [expr03.st](tests/bad/expr03.st) |
-| EXPR04 | operand of 'comparison' operation must have type 'int', 'real', or 'string' | non-fatal | [expr04.st](tests/bad/expr04.st) |
-| EXPR05 | operands of 'comparison' operation must have the same type | non-fatal | [expr05.st](tests/bad/expr05.st) |
-| EXPR06 | operand of 'arithmetic' operation must have type 'int' or 'real' | non-fatal | [expr06.st](tests/bad/expr06.st) |
-| EXPR07 | operand of 'mod' operation must have type 'int' | non-fatal | [expr07.st](tests/bad/expr07.st) |
+| EXPR02 | operand of 'sign' operation must have type 'int' or 'real' | non-fatal | [expr02.st](tests/bad/expr02_expr02.st) |
+| EXPR03 | operand of 'boolean' operation must have type 'bool' | non-fatal | [expr03.st](tests/bad/expr03_expr03_expr03_expr03_expr03.stt) |
+| EXPR04 | operand of 'comparison' operation must have type 'int', 'real', or 'string' | non-fatal | [expr04.st](tests/bad/expr04_expr04_expr04_expr04_expr04_expr04_expr04_expr04_expr04_expr04_expr04_expr04.st) |
+| EXPR05 | operands of 'comparison' operation must have the same type | non-fatal | [expr05.st](tests/bad/expr05_expr05_expr05_expr05_expr05_expr05.st) |
+| EXPR06 | operand of 'arithmetic' operation must have type 'int' or 'real' | non-fatal | [expr06.st](tests/bad/expr06_expr06_expr06_expr06_expr06_expr06_expr06_expr06.st) |
+| EXPR07 | operand of 'mod' operation must have type 'int' | non-fatal | [expr07.st](tests/bad/expr07_expr07.st) |
 | EXPR08 | 'boolean' expression must have type 'bool' | non-fatal | [expr08-1.st](tests/bad/expr08-1.st), [expr08-2.st](tests/bad/expr08-2.st) |
 
 ## For Statements
 
 | code | description | kind | example |
 |:----:|:------------|:----:|:--------|
-| FOR01 | range of a 'for' statement must have type 'int' | non-fatal | [for01-1.st](tests/bad/for01-1.st), [for01-2.st](tests/bad/for01-2.st), [for01-2.st](tests/bad/for01-2.st) |
+| FOR01 | range of a 'for' statement must have type 'int' | non-fatal | [for01-1.st](tests/bad/for01_for01.st) |
 
 ## References
 
@@ -81,7 +81,7 @@
 |:----:|:------------|:----:|:--------|
 | STR01 | max length of a 'string' must have type 'int' | non-fatal | [str01.st](tests/bad/str01.st) |
 | STR02 | max length of a 'string' must be a compile-time expression | non-fatal | [str02.st](tests/bad/str02.st) |
-| STR03 | max length of a 'string' must be in range 1 ~ 255 | non-fatal | [str03-1.st](tests/bad/str03-1.st), [str03-2.st](tests/bad/str03-2.st) |
+| STR03 | max length of a 'string' must be in range 1 ~ 255 | non-fatal | [str03.st](tests/bad/str03_str03.st) |
 | STR04 | operands of 'string' concatenation must both have type 'string' | fatal | [str04.st](tests/bad/str04.st) |
 | STR05 | in compile-time 'string' concatenation, length of the result 'string' must not exceed 255 | fatal | [str05.st](tests/bad/str05.st) |
 
@@ -89,13 +89,13 @@
 
 | code | description | kind | example |
 |:----:|:------------|:----:|:--------|
-| SUB01 | the name after 'end' should be the name of the 'subprogram' | non-fatal | [sub01-1.st](tests/bad/sub01-1.st), [sub01-2.st](tests/bad/sub01-2.st) |
-| SUB02 | 'function' must ends with a 'result' statement | non-fatal | [sub02-1.st](tests/bad/sub02-1.st), [sub02-2.st](tests/bad/sub02-2.st), [sub02-3.st](tests/bad/sub02-3.st) |
+| SUB01 | the name after 'end' should be the name of the 'subprogram' | non-fatal | [sub01.st](tests/bad/sub01_sub01.st) |
+| SUB02 | 'function' must ends with a 'result' statement | non-fatal | [sub02.st](tests/bad/sub02_sub02_sub02.st) |
 | SUB03 | type of formal parameter cannot be a 'dynamic array' | fatal | [sub03.st](tests/bad/sub03.st) |
 
 ## Types
 
-| code | description | example |
-|:----:|:------------|:--------|
-| TYPE01 | type of the expression cannot be assigned to the reference | non-fatal | [type01-1.st](tests/bad/type01-1.st), [type01-2.st](tests/bad/type01-2.st) |
-| TYPE02 | type of the expression cannot be assigned as the declared type | non-fatal | [type02-1.st](tests/bad/type02-1.st), [type02-2.st](tests/bad/type02-2.st) |
+| code | description | kind | example |
+|:----:|:------------|:----:|:--------|
+| TYPE01 | type of the expression cannot be assigned to the reference | non-fatal | [type01.st](tests/bad/type01_type01.st) |
+| TYPE02 | type of the expression cannot be assigned as the declared type | non-fatal | [type02-1.st](tests/bad/type02-1.st) |
