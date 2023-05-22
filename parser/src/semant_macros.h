@@ -9,6 +9,7 @@
 /// @brief The file being semantically checked.
 extern char* input_filename;
 extern int allow_semantic_errors;
+extern int semantic_errors;
 
 #ifndef ST_TRACE
 #define ST_TRACE(...) fprintf(stderr, __VA_ARGS__)
@@ -16,12 +17,21 @@ extern int allow_semantic_errors;
 
 #ifndef ST_FATAL_ERROR
 /// @brief Prints the format message to stderr and exits as failure.
+/// @note If allow_semantic_errors is a non-zero value, exits as success.
 #define ST_FATAL_ERROR(yylloc, ...) \
+  { \
+    ST_NON_FATAL_ERROR(yyloc, __VA_ARGS__); \
+    exit(allow_semantic_errors ? EXIT_SUCCESS : EXIT_FAILURE); \
+  }
+#endif
+
+#ifndef ST_NON_FATAL_ERROR
+#define ST_NON_FATAL_ERROR(yylloc, ...) \
   { \
     fprintf(stderr, "%s:%d:%d: error: ", input_filename, (yylloc).first_line, \
             (yylloc).first_column); \
     fprintf(stderr, __VA_ARGS__); \
-    exit(allow_semantic_errors ? EXIT_SUCCESS : EXIT_FAILURE); \
+    ++semantic_errors; \
   }
 #endif
 

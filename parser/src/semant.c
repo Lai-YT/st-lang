@@ -26,6 +26,13 @@ int st_dimension_of_array(const StArrayTypeInfo* arr) {
   return 1;
 }
 
+Expression* st_create_recovery_expression(StDataType type) {
+  Expression* result = (Expression*)malloc(sizeof(RunTimeExpression));
+  result->expr_type = ST_RUN_TIME_EXPRESSION;
+  result->data_type = type;
+  return result;
+}
+
 bool is_one_of_data_types(const StDataType type, int num_of_types, ...) {
   va_list types;
   va_start(types, num_of_types);

@@ -27,12 +27,10 @@ int main(int argc, char* argv[]) {
   env = st_create_environment();
 
   /* perform parsing */
-  if (yyparse() != 0) {                 /* parsing */
-    fprintf(stderr, "Parsing error !"); /* syntax error */
-    return 1;
-  }
+  int parse_status = yyparse();
+
   st_delete_environment(env);
   symtab_delete(symtab);
   fclose(yyin);
-  return 0;
+  return parse_status;
 }

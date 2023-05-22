@@ -253,6 +253,10 @@ typedef struct Reference {
   ST_REFERENCE_COMMON_DATA
 } Reference;
 
+/// @param type one of ST_INT_TYPE, ST_REAL_TYPE, and ST_BOOL_TYPE
+/// @return A run-time expression of the specified type.
+Expression* st_create_recovery_expression(StDataType type);
+
 /// @note Used with the macro ST_HAS_ONE_OF_DATA_TYPES.
 bool is_one_of_data_types(const StDataType type, int num_of_types, ...);
 

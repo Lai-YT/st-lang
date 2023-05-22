@@ -4,4 +4,4 @@ function f(i: int, r: real, s: string) : int
   result i
 end f
 
-const i := f("1", 2.0, 3)
+const i := f("1", 2.0, "3")
