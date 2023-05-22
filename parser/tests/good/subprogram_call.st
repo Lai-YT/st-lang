@@ -1,4 +1,7 @@
-function f(r: real, str: string(*), arr: array 1..* of int): bool
+function f(
+    r: real, str: string(*),
+    arr: array 1..* of int
+): bool
   result false
 end f
 
