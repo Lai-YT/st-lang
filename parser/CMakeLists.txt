@@ -12,7 +12,7 @@ add_executable(Parser ${C_SRC_FILES})
 
 target_link_libraries(Parser
     PRIVATE
-    Lib LexerLib m
+    Lib LexerLib
 )
 
 option(COVERAGE OFF)

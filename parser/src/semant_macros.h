@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -241,10 +240,10 @@ extern int semantic_errors;
       ST_COPY_TYPE(result, (a)); \
       if ((a)->data_type == ST_INT_TYPE) { \
         ((CompileTimeExpression*)result)->int_val \
-            = un_op abs(((CompileTimeExpression*)(a))->int_val); \
+            = un_op((CompileTimeExpression*)(a))->int_val; \
       } else if ((a)->data_type == ST_REAL_TYPE) { \
         ((CompileTimeExpression*)result)->real_val \
-            = un_op fabs(((CompileTimeExpression*)(a))->real_val); \
+            = un_op((CompileTimeExpression*)(a))->real_val; \
       } else { \
         ST_UNREACHABLE(); \
       } \
