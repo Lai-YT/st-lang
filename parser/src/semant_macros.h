@@ -195,9 +195,10 @@ extern int semantic_errors;
     if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION \
         && (b)->expr_type == ST_COMPILE_TIME_EXPRESSION) { \
       result = (Expression*)malloc(sizeof(CompileTimeExpression)); \
+      result->expr_type = ST_COMPILE_TIME_EXPRESSION; \
+      result->data_type = ST_BOOL_TYPE; \
       CompileTimeExpression* lhs = (CompileTimeExpression*)(a); \
       CompileTimeExpression* rhs = (CompileTimeExpression*)(b); \
-      result->data_type = ST_BOOL_TYPE; \
       switch ((a)->data_type) { \
         case ST_INT_TYPE: \
           ((CompileTimeExpression*)result)->bool_val \
@@ -214,6 +215,12 @@ extern int semantic_errors;
         default: \
           ST_UNREACHABLE(); \
       } \
+    } else if ((a)->expr_type == ST_RUN_TIME_EXPRESSION) { \
+      result = (Expression*)malloc(sizeof(RunTimeExpression)); \
+      result->expr_type = ST_RUN_TIME_EXPRESSION; \
+      result->data_type = ST_BOOL_TYPE; \
+    } else { \
+      ST_UNREACHABLE(); \
     } \
     result; \
   })
