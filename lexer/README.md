@@ -12,7 +12,7 @@ You need `gcc`, `make`, `cmake`, and `flex`.
 
 ### Build Steps
 
-To compiler the _Lexer_, make sure you are under `{root}/lexer/`.
+To compile the _Lexer_, make sure you are under `{root}/lexer/`.
 
 ```shell
 $ make
