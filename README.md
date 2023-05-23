@@ -23,7 +23,7 @@ We provide a Docker image that contains only the necessary tools for compiling t
 The image can be built locally with the `Dockerfile`.
 
 ```
-$ docker build --name st-lang .
+$ docker build --tag st-lang .
 ```
 
 Then, run a new container in interactive mode with a pseudo-TTY allocated. We've already specified the `/bin/sh` command in the image, so you can omit the command argument.
