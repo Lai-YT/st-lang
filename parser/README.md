@@ -12,11 +12,17 @@ You need `gcc`, `make`, `cmake`, and `bison`.
 
 ### Build Steps
 
-To compiler the _Parser_, make sure you are under `{root}/parser/`.
+To compile the _Parser_, make sure you are under `{root}/parser/`.
 
 ```shell
 $ make
 ```
+
+> **Note**
+> You have to first generate the `st-lex.h` file of the lexer before compiling the parser.
+> ```shell
+> $ make -C ../lexer
+> ```
 
 The executable will be located in the `build/` folder and named `Parser`.
 
