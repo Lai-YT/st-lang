@@ -25,6 +25,7 @@
                 "timonwong.shellcheck",
                 "Gruntfuggly.todo-tree",
                 "ms-azuretools.vscode-docker",
+                "ms-vscode.live-server",
                 "ms-vscode.cpptools",
                 "ms-vscode.cpptools-extension-pack",
                 "ms-vscode.cpptools-themes",
