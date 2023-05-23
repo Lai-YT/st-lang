@@ -69,7 +69,7 @@ put abs(1.0)
 ```
 
 This code contains two errors:
-1. As per the syntax definition, a function must always end with a result statement.
+1. As per the semantic definition, a function must always end with a result statement.
 2. The function abs expects an `int` as a parameter, but a `real` value is provided.
 
 When running the parser with this code, the following error messages are generated:
