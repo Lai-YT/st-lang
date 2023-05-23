@@ -41,7 +41,8 @@ void usage(const char* prog) {
   fprintf(stderr,
           "usage: %s [-d] FILE\n"
           "\n"
-          "  FILE            The file to be lexically analyzed\n"
+          "  FILE            The file to be syntactically and semantically "
+          "analyzed\n"
           "\n"
           "Options:\n"
           "  -d, --debug     Prints the shifts and reduces\n"
