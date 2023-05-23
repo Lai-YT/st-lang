@@ -2,6 +2,7 @@
 
 #include "handle_flags.h"
 #include "scope.h"
+#include "st-lex.h"
 #include "symtab.h"
 
 // the symbol table used in the lexer
@@ -17,7 +18,7 @@ int main(int argc, char* argv[]) {
   handle_flags(argc, argv);
 
   /* open the source program file */
-  yyin = fopen(input_filename, "r"); /* open input file */
+  yyin = fopen(input_filename, "r");
   if (!yyin) {
     fprintf(stderr, "error: could not open input file %s\n", argv[1]);
     return 1;
@@ -32,5 +33,8 @@ int main(int argc, char* argv[]) {
   st_delete_environment(env);
   symtab_delete(symtab);
   fclose(yyin);
+
+  /* free resource of lexer */
+  yylex_destroy();
   return parse_status;
 }
