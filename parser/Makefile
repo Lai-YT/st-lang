@@ -1,4 +1,4 @@
-.PHONY: parser coverage tests fmt tidy clean
+.PHONY: parser coverage tests fmt tidy clean valgrind
 
 CC := gcc
 YSRC := src/st.y
@@ -29,7 +29,7 @@ parser: $(CGEN)
 $(CGEN): $(YSRC)
 	$(YACC) $(YFLAGS) $<
 
-tests: coverage
+tests: parser
 	@echo "---"
 	@./test.sh
 
@@ -61,3 +61,12 @@ tidy: parser
 
 clean:
 	rm -rf $(BUILD_DIR) $(CGEN) $(COVERAGE_DIR)
+
+valgrind: BUILD_TYPE := Debug
+valgrind: parser
+	@valgrind \
+		--track-origins=yes \
+		--leak-check=full \
+		--leak-resolution=high \
+		--error-exitcode=1 \
+		$(BUILD_DIR)/Parser tests/good/msb.st
