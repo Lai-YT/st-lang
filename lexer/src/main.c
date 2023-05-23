@@ -48,7 +48,8 @@ int main(int argc, char* argv[]) {
 
   symtab_delete(symtab);
   fclose(yyin);
-
+  // free resource of lexer
+  yylex_destroy();
   return 0;
 }
 
