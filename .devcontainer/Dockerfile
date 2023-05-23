@@ -18,7 +18,7 @@ RUN addgroup --gid 10001 --system $USERNAME \
 RUN apt-get update \
     && apt-get install -y sudo \
     && apt-get install -y vim git gcc make cmake \
-    && apt-get install -y flex bison clang-format clang-tidy valgrind \
+    && apt-get install -y flex bison clang-format clang-tidy valgrind lcov \
     # Clean up the apt cache, see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#run.
     && rm -rf /var/lib/apt/lists/*
 # Give sudo privilege to user.
