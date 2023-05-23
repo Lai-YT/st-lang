@@ -17,3 +17,6 @@ jobs:
     - name: Run lexer tests
       if: always()
       run: docker run st-lang /bin/sh -c "cd lexer && make tests"
+    - name: Run parser tests
+      if: always()
+      run: docker run st-lang /bin/sh -c "cd parser && make -C ../lexer && make tests"
