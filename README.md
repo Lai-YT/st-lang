@@ -66,7 +66,7 @@ You will then be taken into the container. Here you have all the tools you need,
 ## Resources
 
 - [The lexical definition of _sT_](./lexer/lexical-definition.md)
-- [The syntactic & semantic definition of _st_](./parser/syntactic_and_semantic_definition.md)
+- [The syntactic & semantic definition of _sT_](./parser/syntactic_and_semantic_definition.md)
 - [The _Turing_ Language Report](https://txl.ca/tplus/Turing_Report.pdf)
 
 ## License
