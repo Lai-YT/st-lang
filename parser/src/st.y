@@ -1257,13 +1257,13 @@ bool_const:
 
 operation:
   numeric_operation %prec NUMERIC_OP
-  { /* no check */ }
+  { $$ = $1; }
 | comparison_operation %prec COMPARISON_OP
-  { /* no check */ }
+  { $$ = $1; }
 | boolean_operation %prec BOOLEAN_OP
-  { /* no check */ }
+  { $$ = $1; }
 | sign_operation %prec SIGN_OP
-  { /* no check */ }
+  { $$ = $1; }
 ;
 
 numeric_operation:
