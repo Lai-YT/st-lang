@@ -1282,6 +1282,7 @@ numeric_operation:
         CompileTimeExpression* lhs = (CompileTimeExpression*)$1;
         CompileTimeExpression* rhs = (CompileTimeExpression*)$3;
         $$ = (Expression*)malloc(sizeof(CompileTimeExpression));
+        $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
         $$->data_type = ST_STRING_TYPE;
         $$->string_type_info = malloc(sizeof(StStringTypeInfo));
         $$->string_type_info->max_length = strlen(lhs->string_val) + strlen(rhs->string_val);
@@ -1293,6 +1294,8 @@ numeric_operation:
         strcpy(((CompileTimeExpression*)$$)->string_val, lhs->string_val);
         strcat(((CompileTimeExpression*)$$)->string_val, rhs->string_val);
       } else {
+        $$ = (Expression*)malloc(sizeof(RunTimeExpression));
+        $$->expr_type = ST_RUN_TIME_EXPRESSION;
         $$->data_type = ST_STRING_TYPE;
         $$->string_type_info = malloc(sizeof(StStringTypeInfo));
         $$->string_type_info->max_length
