@@ -847,15 +847,17 @@ bool_expr:
       ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
       $$ = st_create_recovery_expression(ST_BOOL_TYPE);
     } else {
-      if ($1->ref_type == ST_IDENTIFIER_REFERENCE) {
-        Identifier* id = ((IdentifierReference*)$1)->id;
-        if (id->id_type == ST_CONST_IDENTIFIER
-            && ((ConstIdentifier*)id)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
+      // only a id reference may be a compile-time expression
+      if ($1->ref_type == ST_IDENTIFIER_REFERENCE
+            && ((IdentifierReference*)$1)->id->id_type
+                == ST_CONST_IDENTIFIER
+            && ((ConstIdentifier*)((IdentifierReference*)$1)->id)->const_id_type
+                == ST_COMPILE_TIME_CONST_IDENTIFIER) {
           $$ = (Expression*)malloc(sizeof(CompileTimeExpression));
           $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
           $$->data_type = ST_BOOL_TYPE;
-          ((CompileTimeExpression*)$$)->bool_val = ((CompileTimeConstIdentifier*)id)->bool_val;
-        }
+          ((CompileTimeExpression*)$$)->bool_val
+              = ((CompileTimeConstIdentifier*)((IdentifierReference*)$1)->id)->bool_val;
       } else {
         $$ = (Expression*)malloc(sizeof(RunTimeExpression));
         $$->expr_type = ST_RUN_TIME_EXPRESSION;
