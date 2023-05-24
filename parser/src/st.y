@@ -859,6 +859,7 @@ bool_expr:
       } else {
         $$ = (Expression*)malloc(sizeof(RunTimeExpression));
         $$->expr_type = ST_RUN_TIME_EXPRESSION;
+        $$->data_type = ST_BOOL_TYPE;
       }
     }
   }
