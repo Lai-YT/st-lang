@@ -271,6 +271,7 @@ extern int semantic_errors;
     if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION \
         && (b)->expr_type == ST_COMPILE_TIME_EXPRESSION) { \
       result = (Expression*)malloc(sizeof(CompileTimeExpression)); \
+      result->expr_type = ST_COMPILE_TIME_EXPRESSION; \
       CompileTimeExpression* lhs = (CompileTimeExpression*)(a); \
       CompileTimeExpression* rhs = (CompileTimeExpression*)(b); \
       if ((a)->data_type == ST_INT_TYPE && (b)->data_type == ST_INT_TYPE) { \
@@ -286,6 +287,7 @@ extern int semantic_errors;
       } \
     } else { \
       result = (Expression*)malloc(sizeof(RunTimeExpression)); \
+      result->expr_type = ST_RUN_TIME_EXPRESSION; \
       if ((a)->data_type == ST_INT_TYPE && (b)->data_type == ST_INT_TYPE) { \
         result->data_type = ST_INT_TYPE; \
       } else { \
