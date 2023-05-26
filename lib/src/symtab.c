@@ -8,6 +8,8 @@
 
 struct SymbolTable {
   HashTable* symbols;
+  ///@brief a customize deleter for the values of the symbol
+  void (*free_val)(void*);
 };
 
 static Symbol* symbol_create(const char* name, void* attribute) {
@@ -24,6 +26,13 @@ static inline void symbol_delete(Symbol* symbol) {
 SymbolTable* symtab_create() {
   SymbolTable* table = malloc(sizeof(SymbolTable));
   table->symbols = hashtab_create();
+  table->free_val = NULL;
+  return table;
+}
+
+SymbolTable* symtab_create_with_deleter(void (*free_val)(void*)) {
+  SymbolTable* table = symtab_create();
+  table->free_val = free_val;
   return table;
 }
 
@@ -52,7 +61,10 @@ List* symtab_dump(SymbolTable* table) {
 void symtab_delete(SymbolTable* table) {
   HASHTAB_ITR_FOR_EACH(table->symbols, itr, {
     Symbol* symbol = hashtab_itr_value(itr);
-    symbol_delete(symbol);
+    if (table->free_val && symbol->attribute) {
+      table->free_val(symbol->attribute);
+    }
+    free(symbol);
   });
   hashtab_delete(table->symbols);
   free(table);

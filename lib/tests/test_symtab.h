@@ -3,6 +3,8 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "list.h"
@@ -81,6 +83,31 @@ void test_symtab_dump_should_return_all_inserted_symbols() {
   }
   assert(curr == NULL);
   list_delete(symbol_dump);
+
+  symtab_delete(table);
+}
+
+void deleter_test_delete_int(void* integer) {
+  free((int*)integer);
+}
+
+/// @brief This is a test on memory leak, has to turn on valgrind or other
+/// memory inspector.
+void test_symtab_create_with_deleter_has_no_memory_leak() {
+  SymbolTable* table = symtab_create_with_deleter(deleter_test_delete_int);
+
+  struct {
+    char* name;
+    int* i;
+  } symbols[3] = {{"a", NULL}, {"b", NULL}, {"c", NULL}};
+  for (int i = 0; i < 3; ++i) {
+    symbols[i].i = malloc(sizeof(int));
+    *symbols[i].i = i;
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    symtab_insert(table, symbols[i].name, symbols[i].i);
+  }
 
   symtab_delete(table);
 }
