@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "semant.h"
 #include "symtab.h"
 
 struct StEnvironment {
@@ -40,7 +41,8 @@ void st_delete_environment(StEnvironment* env) {
 
 void st_enter_scope(StEnvironment** env) {
   StEnvironment* scope = malloc(sizeof(StEnvironment));
-  scope->scope = symtab_create();
+  scope->scope
+      = symtab_create_with_deleter((void (*)(void*))st_free_identifier);
   scope->rest = *env;
   *env = scope;
 }
