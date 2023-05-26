@@ -72,10 +72,11 @@ extern int semantic_errors;
     (a)->data_type = (b)->data_type; \
     switch ((b)->data_type) { \
       case ST_STRING_TYPE: \
-        (a)->string_type_info = (b)->string_type_info; \
+        (a)->string_type_info = malloc(sizeof(StStringTypeInfo)); \
+        (a)->string_type_info->max_length = (b)->string_type_info->max_length; \
         break; \
       case ST_ARRAY_TYPE: \
-        (a)->array_type_info = (b)->array_type_info; \
+        (a)->array_type_info = st_dup_array_type_info((b)->array_type_info); \
         break; \
       default: \
         /* has no additional information to copy */ \
@@ -93,16 +94,27 @@ extern int semantic_errors;
 #endif
 
 #ifndef ST_MAKE_DATA_TYPE_INFO
-/// @brief Copies the data type info of x
+/// @brief Shallow copies the data type info of x
 /// @param x must necessarily carry all data in ST_DATA_TYPE_INFO
 /// @note This macro uses "statement expression", which is a non-standard
 /// feature. GCC and Clang are known to support this. See also
 /// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
 #define ST_MAKE_DATA_TYPE_INFO(x) \
   ({ \
-    StDataTypeInfo data_type; \
-    ST_COPY_TYPE(&data_type, x); \
-    data_type; \
+    StDataTypeInfo result; \
+    result.data_type = (x)->data_type; \
+    switch ((x)->data_type) { \
+      case ST_STRING_TYPE: \
+        result.string_type_info = (x)->string_type_info; \
+        break; \
+      case ST_ARRAY_TYPE: \
+        result.array_type_info = (x)->array_type_info; \
+        break; \
+      default: \
+        /* has no additional information to copy */ \
+        break; \
+    } \
+    result; \
   })
 #endif
 
