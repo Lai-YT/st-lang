@@ -12,6 +12,8 @@ void test_list_length_on_empty_list() {
   int length = list_length(list);
 
   assert(length == 0);
+
+  list_delete(list);
 }
 
 void test_list_length() {
@@ -25,6 +27,8 @@ void test_list_length() {
   int length = list_length(list);
 
   assert(length == expect_length);
+
+  list_delete(list);
 }
 
 #endif /* end of include guard: TESTS_TEST_LIST_H */
