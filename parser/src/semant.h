@@ -253,6 +253,18 @@ typedef struct Reference {
   ST_REFERENCE_COMMON_DATA
 } Reference;
 
+StArrayTypeInfo* st_dup_array_type_info(StArrayTypeInfo*);
+
+void st_free_identifier(Identifier*);
+
+/// @note For an IdentifierReference, the underlying identifier refers to an
+/// existing identifier in the symbol table, so we'll not free that here.
+void st_free_reference(Reference*);
+
+void st_free_expression(Expression*);
+
+void st_free_data_type_info(StDataTypeInfo*);
+
 /// @param type one of ST_INT_TYPE, ST_REAL_TYPE, and ST_BOOL_TYPE
 /// @return A run-time expression of the specified type.
 Expression* st_create_recovery_expression(StDataType type);

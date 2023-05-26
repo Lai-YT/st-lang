@@ -26,6 +26,143 @@ int st_dimension_of_array(const StArrayTypeInfo* arr) {
   return 1;
 }
 
+StArrayTypeInfo* st_dup_array_type_info(StArrayTypeInfo* array_type_info) {
+  StArrayTypeInfo* result = NULL;
+  if (array_type_info->array_type == ST_STATIC_ARRAY) {
+    result = (StArrayTypeInfo*)malloc(sizeof(StStaticArrayTypeInfo));
+    ((StStaticArrayTypeInfo*)result)->upper_bound
+        = ((StStaticArrayTypeInfo*)array_type_info)->upper_bound;
+  } else if (array_type_info->array_type == ST_DYNAMIC_ARRAY) {
+    result = (StArrayTypeInfo*)malloc(sizeof(StDynamicArrayTypeInfo));
+  }
+  result->lower_bound = array_type_info->lower_bound;
+  result->array_type = array_type_info->array_type;
+  result->data_type = array_type_info->data_type;
+  if (array_type_info->data_type == ST_STRING_TYPE) {
+    result->string_type_info = malloc(sizeof(StStringTypeInfo));
+    result->string_type_info->max_length
+        = array_type_info->string_type_info->max_length;
+  } else if (array_type_info->data_type == ST_ARRAY_TYPE) {
+    result->array_type_info
+        = st_dup_array_type_info(array_type_info->array_type_info);
+  }
+  return result;
+}
+
+#ifndef ST_FREE_DATA_TYPE_INFO
+/// @param x must necessarily carry all data in ST_DATA_TYPE_INFO
+/// @note x itself is not freed since we don't know its type here
+#define ST_FREE_DATA_TYPE_INFO(x) \
+  { \
+    if ((x)->data_type == ST_STRING_TYPE) { \
+      free((x)->string_type_info); \
+    } else if ((x)->data_type == ST_ARRAY_TYPE) { \
+      st_free_array_type_info((x)->array_type_info); \
+    } \
+  }
+#endif
+
+void st_free_array_type_info(StArrayTypeInfo* array_type_info) {
+  /* free underlying type */
+  if (array_type_info->data_type == ST_STRING_TYPE) {
+    free(array_type_info->string_type_info);
+  } else if (array_type_info->data_type == ST_ARRAY_TYPE) {
+    // multi-dimensional arrays are recursively defined, so free them
+    // recursively
+    st_free_array_type_info(array_type_info->array_type_info);
+  }
+  // other scalar types have no type info to be freed
+
+  /* free the array info itself */
+  if (array_type_info->array_type == ST_DYNAMIC_ARRAY) {
+    free((StDynamicArrayTypeInfo*)array_type_info);
+  } else if (array_type_info->array_type == ST_STATIC_ARRAY) {
+    free((StStaticArrayTypeInfo*)array_type_info);
+  } else {
+    ST_UNREACHABLE();
+  }
+}
+
+void st_free_data_type_info(StDataTypeInfo* data_type_info) {
+  ST_FREE_DATA_TYPE_INFO(data_type_info);
+  free(data_type_info);
+}
+
+static void st_free_formals(List* formals);
+
+void st_free_identifier(Identifier* id) {
+  ST_FREE_DATA_TYPE_INFO(id);
+  free(id->name);
+  if (id->id_type == ST_CONST_IDENTIFIER) {
+    ConstIdentifier* const_id = (ConstIdentifier*)id;
+    if (const_id->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
+      if (const_id->data_type == ST_STRING_TYPE) {
+        free(((CompileTimeConstIdentifier*)const_id)->string_val);
+      }
+      free((CompileTimeConstIdentifier*)const_id);
+    } else if (const_id->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
+      free((RunTimeConstIdentifier*)const_id);
+    } else {
+      ST_UNREACHABLE();
+    }
+  } else if (id->id_type == ST_VAR_IDENTIFIER) {
+    free((VarIdentifier*)id);
+  } else if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
+    Subprogram* subprogram = (Subprogram*)id;
+    if (subprogram->subprogram_type == ST_PROCEDURE_SUBPROGRAM) {
+      st_free_formals(subprogram->formals);
+      free((ProcedureSubprogram*)subprogram);
+    } else if (subprogram->subprogram_type == ST_FUNCTION_SUBPROGRAM) {
+      st_free_formals(subprogram->formals);
+      st_free_data_type_info(((FunctionSubprogram*)subprogram)->result_type);
+      free((FunctionSubprogram*)subprogram);
+    } else {
+      ST_UNREACHABLE();
+    }
+  } else {
+    ST_UNREACHABLE();
+  }
+}
+
+static void st_free_formals(List* formals) {
+  List* curr = formals;
+  while (curr) {
+    st_free_data_type_info((StDataTypeInfo*)curr->val);
+    curr = curr->rest;
+  }
+  list_delete(formals);
+}
+
+void st_free_reference(Reference* ref) {
+  if (ref->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
+    free((ArraySubscriptReference*)ref);
+  } else if (ref->ref_type == ST_IDENTIFIER_REFERENCE) {
+    free((IdentifierReference*)ref);
+  } else {
+    ST_UNREACHABLE();
+  }
+}
+
+void st_free_expression(Expression* expr) {
+  if (expr->data_type == ST_STRING_TYPE) {
+    free(expr->string_type_info);
+  } else if (expr->data_type == ST_ARRAY_TYPE) {
+    st_free_array_type_info(expr->array_type_info);
+  }
+  // other scalar types have no type info to be freed
+
+  if (expr->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+    if (expr->data_type == ST_STRING_TYPE) {
+      free(((CompileTimeExpression*)expr)->string_val);
+    }
+    free((CompileTimeExpression*)expr);
+  } else if (expr->expr_type == ST_RUN_TIME_EXPRESSION) {
+    free((RunTimeExpression*)expr);
+  } else {
+    ST_UNREACHABLE();
+  }
+}
+
 Expression* st_create_recovery_expression(StDataType type) {
   Expression* result = (Expression*)malloc(sizeof(RunTimeExpression));
   result->expr_type = ST_RUN_TIME_EXPRESSION;
