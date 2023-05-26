@@ -16,6 +16,11 @@ typedef struct SymbolTable SymbolTable;
 /// @return An empty symbol table.
 SymbolTable* symtab_create();
 
+/// @param free_val a deleter that is called on each of the symbols in the table
+/// when the being deleted with symtab_delete.
+/// @return An empty symbol table that has a custom deleter.
+SymbolTable* symtab_create_with_deleter(void (*free_val)(void*));
+
 /// @param name The name of the symbol to lookup.
 /// @return The symbol with the specified name. NULL if not exist.
 Symbol* symtab_lookup(SymbolTable*, const char* name);
