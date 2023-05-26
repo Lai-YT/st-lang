@@ -258,8 +258,8 @@ static bool is_prime(int n) {
   if (n % 2 == 0) {
     return false;
   }
-  const int SQRT = floor(sqrt(n));
-  for (int i = 3; i <= SQRT; i += 2) {
+  const int the_sqrt = floor(sqrt(n));
+  for (int i = 3; i <= the_sqrt; i += 2) {
     if (n % i == 0) {
       return false;
     }
