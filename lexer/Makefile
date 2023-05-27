@@ -29,6 +29,7 @@ lexer: $(CGEN)
 $(CGEN): $(LSRC)
 	$(LEX) $(LFLAGS) $<
 
+tests: export LEXER=$(BUILD_DIR)/Lexer
 tests: lexer
 	@./test.sh
 
@@ -45,3 +46,8 @@ tidy: lexer
 
 clean:
 	rm -rf $(BUILD_DIR) $(CGEN) $(HGEN)
+
+valgrind: BUILD_TYPE := Debug
+valgrind: export LEXER=$(BUILD_DIR)/Lexer
+valgrind: lexer
+	@./memory_test.sh
