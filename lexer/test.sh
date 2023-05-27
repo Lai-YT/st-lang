@@ -1,6 +1,5 @@
 #!/usr/bin/env sh
 
-LEXER=./build/Lexer
 if ! command -v "$LEXER" >/dev/null 2>&1; then
     echo "${LEXER}: not found"
     exit 1
