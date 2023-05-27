@@ -98,13 +98,13 @@ extern int semantic_errors;
   })
 #endif
 
-#ifndef ST_MAKE_VAR_IDENTIFIER
+#ifndef ST_CREATE_VAR_IDENTIFIER
 /// @param id_name a char string
 /// @param type a structure that carries all data in ST_DATA_TYPE_INFO
 /// @note This macro uses "statement expression", which is a non-standard
 /// feature. GCC and Clang are known to support this. See also
 /// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
-#define ST_MAKE_VAR_IDENTIFIER(id_name, type) \
+#define ST_CREATE_VAR_IDENTIFIER(id_name, type) \
   ({ \
     VarIdentifier* var_id = malloc(sizeof(VarIdentifier)); \
     var_id->id_type = ST_VAR_IDENTIFIER; \
@@ -114,7 +114,7 @@ extern int semantic_errors;
   })
 #endif
 
-#ifndef ST_MAKE_CONST_IDENTIFIER
+#ifndef ST_CREATE_CONST_IDENTIFIER
 /// @param id_name a char string
 /// @param type a structure that carries all data in ST_DATA_TYPE_INFO
 /// @param expr an Expression
@@ -125,7 +125,7 @@ extern int semantic_errors;
 /// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
 /// @details If expr is a compile-time expression, the result id can represent a
 /// compile-time expression, and so the value are recorded.
-#define ST_MAKE_CONST_IDENTIFIER(id_name, type, expr) \
+#define ST_CREATE_CONST_IDENTIFIER(id_name, type, expr) \
   ({ \
     ConstIdentifier* result = NULL; \
     if ((expr)->expr_type == ST_COMPILE_TIME_EXPRESSION) { \
@@ -147,13 +147,13 @@ extern int semantic_errors;
   })
 #endif
 
-#ifndef ST_MAKE_BINARY_BOOLEAN_EXPRESSION
+#ifndef ST_CREATE_BINARY_BOOLEAN_EXPRESSION
 /// @note If both expressions are compile-time expressions, the operation is
 /// also a compile-time operation.
 /// @note This macro uses "statement expression", which is a non-standard
 /// feature. GCC and Clang are known to support this. See also
 /// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
-#define ST_MAKE_BINARY_BOOLEAN_EXPRESSION(a, bin_op, b) \
+#define ST_CREATE_BINARY_BOOLEAN_EXPRESSION(a, bin_op, b) \
   ({ \
     Expression* result = NULL; \
     if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION \
@@ -174,13 +174,13 @@ extern int semantic_errors;
   })
 #endif
 
-#ifndef ST_MAKE_BINARY_COMPARISON_EXPRESSION
+#ifndef ST_CREATE_BINARY_COMPARISON_EXPRESSION
 /// @note If both expressions are compile-time expressions, the operation is
 /// also a compile-time operation.
 /// @note This macro uses "statement expression", which is a non-standard
 /// feature. GCC and Clang are known to support this. See also
 /// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
-#define ST_MAKE_BINARY_COMPARISON_EXPRESSION(a, bin_op, b) \
+#define ST_CREATE_BINARY_COMPARISON_EXPRESSION(a, bin_op, b) \
   ({ \
     Expression* result = NULL; \
     if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION \
@@ -217,13 +217,13 @@ extern int semantic_errors;
   })
 #endif
 
-#ifndef ST_MAKE_UNARY_SIGN_EXPRESSION
+#ifndef ST_CREATE_UNARY_SIGN_EXPRESSION
 /// @note If the expression is a compile-time expressions, the operation is also
 /// a compile-time operation.
 /// @note This macro uses "statement expression", which is a non-standard
 /// feature. GCC and Clang are known to support this. See also
 /// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
-#define ST_MAKE_UNARY_SIGN_EXPRESSION(un_op, a) \
+#define ST_CREATE_UNARY_SIGN_EXPRESSION(un_op, a) \
   ({ \
     Expression* result = NULL; \
     if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION) { \
@@ -250,14 +250,14 @@ extern int semantic_errors;
   })
 #endif
 
-#ifndef ST_MAKE_BINARY_ARITHMETIC_EXPRESSION
+#ifndef ST_CREATE_BINARY_ARITHMETIC_EXPRESSION
 /// @note If both of the expression have type int, the result type is int,
 /// otherwise the result type is real. If both expressions are compile-time
 /// expressions, the operation is also a compile-time operation.
 /// @note This macro uses "statement expression", which is a non-standard
 /// feature. GCC and Clang are known to support this. See also
 /// https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html.
-#define ST_MAKE_BINARY_ARITHMETIC_EXPRESSION(a, bin_op, b) \
+#define ST_CREATE_BINARY_ARITHMETIC_EXPRESSION(a, bin_op, b) \
   ({ \
     Expression* result = NULL; \
     if ((a)->expr_type == ST_COMPILE_TIME_EXPRESSION \

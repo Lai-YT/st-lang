@@ -256,17 +256,17 @@ stmt:
 var_decl:
   VAR ID ASSIGN expr
   {
-    $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4);
+    $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
     st_free_expression($4);
   }
 | VAR ID ':' array_type
   {
-    $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4);
+    $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
     st_free_data_type_info($4);
   }
 | VAR ID ':' scalar_type
   {
-    $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4);
+    $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
     st_free_data_type_info($4);
   }
 | VAR ID ':' scalar_type ASSIGN expr
@@ -278,7 +278,7 @@ var_decl:
       ST_NON_FATAL_ERROR(@6, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
     }
     // use the declared type, not the type of the expression
-    $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4);
+    $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
     st_free_data_type_info($4);
     st_free_expression($6);
   }
@@ -296,7 +296,7 @@ const_decl:
       st_free_expression($4);
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
-    $$ = ST_MAKE_CONST_IDENTIFIER($2->name, $4, $4);
+    $$ = ST_CREATE_CONST_IDENTIFIER($2->name, $4, $4);
     st_free_expression($4);
   }
 | CONST ID ':' scalar_type ASSIGN expr
@@ -323,8 +323,8 @@ const_decl:
     // Use the declared type, not the type of the expression.
     // The exception is string constant, respect the true length.
     $$ = $6->data_type == ST_STRING_TYPE
-        ? ST_MAKE_CONST_IDENTIFIER($2->name, $6, $6)
-        : ST_MAKE_CONST_IDENTIFIER($2->name, $4, $6);
+        ? ST_CREATE_CONST_IDENTIFIER($2->name, $6, $6)
+        : ST_CREATE_CONST_IDENTIFIER($2->name, $4, $6);
     st_free_data_type_info($4);
     st_free_expression($6);
   }
@@ -1471,7 +1471,7 @@ numeric_operation:
       }
       $$ = has_error
           ? st_create_recovery_expression(ST_INT_TYPE)
-          : ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, +, $3);
+          : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, +, $3);
     }
     CLEAN_UP;
     #undef CLEAN_UP
@@ -1490,7 +1490,7 @@ numeric_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_INT_TYPE)
-        : ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, -, $3);
+        : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, -, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1508,7 +1508,7 @@ numeric_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_INT_TYPE)
-        : ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, *, $3);
+        : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, *, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1526,7 +1526,7 @@ numeric_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_INT_TYPE)
-        : ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, /, $3);
+        : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, /, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1588,7 +1588,7 @@ comparison_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, <, $3);
+        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, <, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1610,7 +1610,7 @@ comparison_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, >, $3);
+        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, >, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1632,7 +1632,7 @@ comparison_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, ==, $3);
+        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, ==, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1654,7 +1654,7 @@ comparison_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, <=, $3);
+        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, <=, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1676,7 +1676,7 @@ comparison_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, >=, $3);
+        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, >=, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1698,7 +1698,7 @@ comparison_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, !=, $3);
+        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, !=, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1724,7 +1724,7 @@ boolean_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_MAKE_BINARY_BOOLEAN_EXPRESSION($1, &&, $3);
+        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, &&, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1742,7 +1742,7 @@ boolean_operation:
     }
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_MAKE_BINARY_BOOLEAN_EXPRESSION($1, ||, $3);
+        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, ||, $3);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1783,7 +1783,7 @@ sign_operation:
       // NOTE: 'int' can be implicitly converted to 'real', so choose 'int'
       $$ = st_create_recovery_expression(ST_INT_TYPE);
     } else {
-      $$ = ST_MAKE_UNARY_SIGN_EXPRESSION(+, $2);
+      $$ = ST_CREATE_UNARY_SIGN_EXPRESSION(+, $2);
     }
     st_free_expression($2);
   }
@@ -1794,7 +1794,7 @@ sign_operation:
       // NOTE: 'int' can be implicitly converted to 'real', so choose 'int'
       $$ = st_create_recovery_expression(ST_INT_TYPE);
     } else {
-      $$ = ST_MAKE_UNARY_SIGN_EXPRESSION(-, $2);
+      $$ = ST_CREATE_UNARY_SIGN_EXPRESSION(-, $2);
     }
     st_free_expression($2);
   }
