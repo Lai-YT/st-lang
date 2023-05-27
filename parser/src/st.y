@@ -12,6 +12,29 @@
   #include "semant_macros.h"
   #include "st-lex.h"
 
+  #ifndef ST_FATAL_ERROR
+  /// @brief Prints the format message to stderr and exits as failure.
+  /// @note If allow_semantic_errors is a non-zero value, exits as success.
+  #define ST_FATAL_ERROR(yylloc, ...) \
+    { \
+      ST_NON_FATAL_ERROR(yyloc, __VA_ARGS__); \
+      if (allow_semantic_errors) { \
+        YYACCEPT; \
+      } \
+      YYABORT; \
+    }
+  #endif
+
+  #ifndef ST_NON_FATAL_ERROR
+  #define ST_NON_FATAL_ERROR(yylloc, ...) \
+    { \
+      fprintf(stderr, "%s:%d:%d: error: ", input_filename, (yylloc).first_line, \
+              (yylloc).first_column); \
+      fprintf(stderr, __VA_ARGS__); \
+      ++semantic_errors; \
+    }
+  #endif
+
   extern StEnvironment* env;
 
   /// @brief number of semantic errors
