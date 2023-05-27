@@ -1458,12 +1458,17 @@ numeric_operation:
     if (has_error) {
       $$ = st_create_recovery_expression(ST_INT_TYPE);
     } else {
-      if ($1->expr_type == ST_COMPILE_TIME_EXPRESSION && $3->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      if ($1->expr_type == ST_COMPILE_TIME_EXPRESSION
+          && $3->expr_type == ST_COMPILE_TIME_EXPRESSION) {
         $$ = (Expression*)malloc(sizeof(CompileTimeExpression));
+        $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
         $$->data_type = ST_INT_TYPE;
-        ((CompileTimeExpression*)$$)->int_val = ((CompileTimeExpression*)$1)->int_val % ((CompileTimeExpression*)$3)->int_val;
+        ((CompileTimeExpression*)$$)->int_val
+            = ((CompileTimeExpression*)$1)->int_val
+                % ((CompileTimeExpression*)$3)->int_val;
       } else {
         $$ = (Expression*)malloc(sizeof(RunTimeExpression));
+        $$->expr_type = ST_RUN_TIME_EXPRESSION;
         $$->data_type = ST_INT_TYPE;
       }
     }
