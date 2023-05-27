@@ -138,6 +138,7 @@ decl:
     if (st_probe_environment(env, $1->name)) {
       // error recovery: skip this declaration
       ST_NON_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
+      st_free_identifier($1);
     } else {
       // (2) the identifier should be recorded under the scope
       Symbol* symbol = st_add_to_scope(env, $1->name);
@@ -169,6 +170,8 @@ stmt:
     if ($1->is_const) {
       ST_NON_FATAL_ERROR(@1, "re-assignment on constant reference (CONST02)\n");
     }
+    st_free_reference($1);
+    st_free_expression($3);
   }
 | subprog_call
   {
@@ -177,6 +180,7 @@ stmt:
       assert($1->subprogram_type == ST_FUNCTION_SUBPROGRAM);
       ST_NON_FATAL_ERROR(@1, "'function' call cannot be a statement (STMT04)\n");
     }
+    // the id of $$ is from the symbol table, so no free here
   }
 | RETURN
   {
@@ -228,11 +232,20 @@ stmt:
    */
 var_decl:
   VAR ID ASSIGN expr
-  { $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4); }
+  {
+    $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4);
+    st_free_expression($4);
+  }
 | VAR ID ':' array_type
-  { $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4); }
+  {
+    $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4);
+    st_free_data_type_info($4);
+  }
 | VAR ID ':' scalar_type
-  { $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4); }
+  {
+    $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4);
+    st_free_data_type_info($4);
+  }
 | VAR ID ':' scalar_type ASSIGN expr
   {
     // (1) the expression has the same type as scalar_type
@@ -243,6 +256,8 @@ var_decl:
     }
     // use the declared type, not the type of the expression
     $$ = ST_MAKE_VAR_IDENTIFIER($2->name, $4);
+    st_free_data_type_info($4);
+    st_free_expression($6);
   }
 ;
 
@@ -258,6 +273,7 @@ const_decl:
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
     $$ = ST_MAKE_CONST_IDENTIFIER($2->name, $4, $4);
+    st_free_expression($4);
   }
 | CONST ID ':' scalar_type ASSIGN expr
   {
@@ -282,6 +298,8 @@ const_decl:
     $$ = $6->data_type == ST_STRING_TYPE
         ? ST_MAKE_CONST_IDENTIFIER($2->name, $6, $6)
         : ST_MAKE_CONST_IDENTIFIER($2->name, $4, $6);
+    st_free_data_type_info($4);
+    st_free_expression($6);
   }
 ;
 
@@ -297,11 +315,19 @@ subprog_decl:
   }
   function_decl
   {
+    // the subprogram identifier is stored for the result statements to get the
+    // return type and for type checks on recursive calls, but we don't want
+    // it to be freed when the scope exit, so replace it with a NULL
+    st_probe_environment(env, ST_FUNCTION_SCOPE_NAME)
+        ->attribute = NULL;
+    st_add_to_scope(env, $2->name)
+        ->attribute = NULL;
     st_exit_scope(&env);
     // (1) the name of the function should not be already declared
     if (st_probe_environment(env, $2->name)) {
       // error recovery: skip this declaration
       ST_NON_FATAL_ERROR(@2, "re-declaration of identifier '%s' (DECL01)\n", $2->name);
+      st_free_identifier((Identifier*)$2);
     } else {
       Symbol* symbol = st_add_to_scope(env, $2->name);
       symbol->attribute = $2;
@@ -314,6 +340,9 @@ subprog_decl:
   }
   procedure_decl
   {
+    // the subprogram identifier is stored for type checks on recursive calls,
+    // but we don't want it to be freed when the scope exit, so replace it with a NULL
+    st_add_to_scope(env, $2->name)->attribute = NULL;
     st_exit_scope(&env);
     // (1) the name of the procedure should not be already declared
     if (st_probe_environment(env, $2->name)) {
@@ -529,6 +558,7 @@ formal_decl_:
     id->name = st_strdup($1->name);
     ST_COPY_TYPE(id, $3);
     $$ = (Identifier*)id;
+    st_free_data_type_info($3);
   }
 | VAR ID ':' formal_type
   {
@@ -538,6 +568,7 @@ formal_decl_:
     id->name = st_strdup($2->name);
     ST_COPY_TYPE(id, $4);
     $$ = (Identifier*)id;
+    st_free_data_type_info($4);
   }
 ;
 
@@ -648,18 +679,20 @@ subprog_call:
         if (!st_is_assignable_type(formal_type, &actual_type)) {
           ST_NON_FATAL_ERROR(@3, "type of the actual parameter cannot be assigned as type of the formal parameter (CALL03)\n");
         }
+        st_free_expression(actual);
         actuals = actuals->rest;
         formals = formals->rest;
       }
+      list_delete($3);
     }
   }
 ;
 
 if_stmt:
   IF bool_expr then_block END IF
-  { /* no check */ }
+  { st_free_expression($2); }
 | IF bool_expr then_block else_block END IF
-  { /* no check */ }
+  { st_free_expression($2); }
 ;
 
 then_block:
@@ -699,6 +732,7 @@ result_stmt:
     } else {
       ST_NON_FATAL_ERROR(@1, "'result' statement can only appear in the body of 'function's (STMT02)\n");
     }
+    st_free_expression($2);
   }
 ;
 
@@ -706,7 +740,7 @@ exit_stmt:
   EXIT
   { /* no check */ }
 | EXIT WHEN bool_expr
-  { /* no check */ }
+  { st_free_expression($3); }
 ;
 
 loop_stmt:
@@ -759,6 +793,8 @@ for_range:
     if ($4->data_type != ST_INT_TYPE) {
       ST_NON_FATAL_ERROR(@4, "range of a 'for' statement must have type 'int' (FOR01)\n");
     }
+    st_free_expression($1);
+    st_free_expression($4);
   }
 ;
 
@@ -781,8 +817,11 @@ get_stmt:
       if (ref->data_type == ST_ARRAY_TYPE) {
         ST_NON_FATAL_ERROR(@2, "references in 'get' statement cannot have type 'array' (STMT08)\n");
       }
+      // free at the same time since not needed later
+      st_free_reference(refs->val);
       refs = refs->rest;
     }
+    list_delete($2);
   }
 ;
 
@@ -802,8 +841,11 @@ put_stmt:
       if (((Expression*)exprs->val)->data_type == ST_ARRAY_TYPE) {
         ST_NON_FATAL_ERROR(@2, "expressions in 'put' statement cannot have type 'array' (STMT06)\n");
       }
+      // free at the same time since not needed later
+      st_free_expression(exprs->val);
       exprs = exprs->rest;
     }
+    list_delete($2);
   }
 ;
 
@@ -864,6 +906,7 @@ bool_expr:
         $$->data_type = ST_BOOL_TYPE;
       }
     }
+    st_free_reference($1);
   }
 | bool_const
   { $$ = (Expression*)$1; }
@@ -884,6 +927,7 @@ bool_expr:
     // (1) the expression should have type bool
     if ($2->data_type != ST_BOOL_TYPE) {
       ST_NON_FATAL_ERROR(@2, "'boolean' expression must have type 'bool' (EXPR08)\n");
+      st_free_expression($2);
       $2 = st_create_recovery_expression(ST_BOOL_TYPE);
     }
     $$ = $2;
@@ -932,6 +976,7 @@ scalar_type:
     if (has_error) {
       // error recovery: make expr an compile-time expression in type int,
       // and the max length of the string be 255
+      st_free_expression($3);
       $3 = (Expression*)malloc(sizeof(CompileTimeExpression));
       $3->expr_type = ST_COMPILE_TIME_EXPRESSION;
       $3->data_type = ST_INT_TYPE;
@@ -948,6 +993,7 @@ scalar_type:
     $$->data_type = ST_STRING_TYPE;
     $$->string_type_info = malloc(sizeof(StStringTypeInfo));
     $$->string_type_info->max_length = compile_time_expr->int_val;
+    st_free_expression($3);
   }
 ;
 
@@ -1005,6 +1051,8 @@ array_type:
     } else {
       ST_UNREACHABLE();
     }
+    st_free_expression($2);
+    st_free_data_type_info($7);
   }
 ;
 
@@ -1088,6 +1136,13 @@ var_ref:
         sub_array_type_info = sub_array_type_info->array_type_info;
       }
       ST_COPY_TYPE($$, sub_array_type_info);
+      // free the subscript list
+      List* curr = $2;
+      while (curr) {
+        st_free_expression(curr->val);
+        curr = curr->rest;
+      }
+      list_delete($2);
     } else {
       // (2) id can only have type string or array
       ST_FATAL_ERROR(@1, "identifier '%s' has unsubscriptable type (REF04)\n", $1->name);
@@ -1117,6 +1172,7 @@ subscript:
     // (1) the expression should have type int
     if ($2->data_type != ST_INT_TYPE) {
       ST_NON_FATAL_ERROR(@2, "subscript must have type 'int' (REF06)\n");
+      free($2);
       $2 = st_create_recovery_expression(ST_INT_TYPE);
     }
     $$ = list_create($2, NULL);
@@ -1140,8 +1196,8 @@ expr:
           if (((ConstIdentifier*)id)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
             $$ = malloc(sizeof(CompileTimeExpression));
             $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
-            ST_COPY_TYPE($$, ((IdentifierReference*)$1)->id);
-            ST_COPY_SCALAR_VALUE((CompileTimeExpression*)$$, (CompileTimeConstIdentifier*)((IdentifierReference*)$1)->id);
+            ST_COPY_TYPE($$, id);
+            ST_COPY_SCALAR_VALUE((CompileTimeExpression*)$$, (CompileTimeConstIdentifier*)id);
           } else if (((ConstIdentifier*)id)->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
             $$ = malloc(sizeof(RunTimeExpression));
             $$->expr_type = ST_RUN_TIME_EXPRESSION;
@@ -1158,10 +1214,13 @@ expr:
         default:
           ST_UNREACHABLE();
       }
+      // cannot free the id since its held by the symbol table
+      free((IdentifierReference*)$1);
     } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
       $$ = malloc(sizeof(RunTimeExpression));
       $$->expr_type = ST_RUN_TIME_EXPRESSION;
       ST_COPY_TYPE($$, $1);
+      free((ArraySubscriptReference*)$1);
     } else {
       ST_UNREACHABLE();
     }
@@ -1179,6 +1238,7 @@ expr:
     $$ = (Expression*)malloc(sizeof(RunTimeExpression));
     $$->expr_type = ST_RUN_TIME_EXPRESSION;
     ST_COPY_TYPE($$, ((FunctionSubprogram*)$1)->result_type);
+    // the id of $$ is from the symbol table, so no free here
   }
   /*
    * Here a hack on the ambiguous grammar:
@@ -1266,6 +1326,9 @@ operation:
   { $$ = $1; }
 ;
 
+  /*
+   * Returns an Expression.
+   */
 numeric_operation:
   expr '+' expr
   {
@@ -1323,6 +1386,8 @@ numeric_operation:
           ? st_create_recovery_expression(ST_INT_TYPE)
           : ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, +, $3);
     }
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr '-' expr
   {
@@ -1339,6 +1404,8 @@ numeric_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_INT_TYPE)
         : ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, -, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr '*' expr
   {
@@ -1355,6 +1422,8 @@ numeric_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_INT_TYPE)
         : ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, *, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr '/' expr
   {
@@ -1371,6 +1440,8 @@ numeric_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_INT_TYPE)
         : ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, /, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr MOD expr
   {
@@ -1396,6 +1467,8 @@ numeric_operation:
         $$->data_type = ST_INT_TYPE;
       }
     }
+    st_free_expression($1);
+    st_free_expression($3);
   }
 ;
 
@@ -1424,6 +1497,8 @@ comparison_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
         : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, <, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr '>' expr
   {
@@ -1444,6 +1519,8 @@ comparison_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
         : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, >, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr '=' expr
   {
@@ -1464,6 +1541,8 @@ comparison_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
         : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, ==, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr LE expr
   {
@@ -1484,6 +1563,8 @@ comparison_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
         : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, <=, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr GE expr
   {
@@ -1504,6 +1585,8 @@ comparison_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
         : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, >=, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr NE expr
   {
@@ -1524,6 +1607,8 @@ comparison_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
         : ST_MAKE_BINARY_COMPARISON_EXPRESSION($1, !=, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 ;
 
@@ -1548,6 +1633,8 @@ boolean_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
         : ST_MAKE_BINARY_BOOLEAN_EXPRESSION($1, &&, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr OR expr
   {
@@ -1564,6 +1651,8 @@ boolean_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_BOOL_TYPE)
         : ST_MAKE_BINARY_BOOLEAN_EXPRESSION($1, ||, $3);
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | NOT expr
   {
@@ -1586,6 +1675,7 @@ boolean_operation:
         ST_UNREACHABLE();
       }
     }
+    st_free_expression($2);
   }
 ;
 
@@ -1603,6 +1693,7 @@ sign_operation:
     } else {
       $$ = ST_MAKE_UNARY_SIGN_EXPRESSION(+, $2);
     }
+    st_free_expression($2);
   }
 | '-' expr
   {
@@ -1613,6 +1704,7 @@ sign_operation:
     } else {
       $$ = ST_MAKE_UNARY_SIGN_EXPRESSION(-, $2);
     }
+    st_free_expression($2);
   }
 ;
 
