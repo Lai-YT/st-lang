@@ -63,10 +63,6 @@ clean:
 	rm -rf $(BUILD_DIR) $(CGEN) $(COVERAGE_DIR)
 
 valgrind: BUILD_TYPE := Debug
+valgrind: export PARSER=$(BUILD_DIR)/Parser
 valgrind: parser
-	@valgrind \
-		--track-origins=yes \
-		--leak-check=full \
-		--leak-resolution=high \
-		--error-exitcode=1 \
-		$(BUILD_DIR)/Parser tests/good/msb.st
+	@./memory_test.sh
