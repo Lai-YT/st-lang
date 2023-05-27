@@ -19,6 +19,8 @@
 
 // The content of the line which the lexer is scanning on.
 char st_cur_line[MAX_LINE_LENG];
+// Whether an error occurs during lexing.
+bool has_lexical_error = false;
 
 extern SymbolTable* symtab;
 extern bool verbose;
@@ -219,7 +221,8 @@ when        TOKEN(WHEN);
   RECORD_LINE;
   printf("%d: %s", YYLINENO, line);
   puts("EOL in string");
-  exit(-1);
+  has_lexical_error = true;
+  return YYEOF;
 }
 <STRING_>[^"\n]* {
   RECORD_LINE;
@@ -267,7 +270,8 @@ when        TOKEN(WHEN);
   RECORD_LINE;
   printf("%d:%s\n", yylineno, line);
   printf("bad character:'%s'\n", yytext);
-  exit(-1);
+  has_lexical_error = true;
+  return YYEOF;
 }
 
 %%

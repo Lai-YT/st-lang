@@ -22,6 +22,8 @@ YYSTYPE yylval;
 // the location data of the token, initialize to the beginning of the file
 YYLTYPE yylloc = {1, 1, 1, 1};
 
+extern bool has_lexical_error;
+
 void dump_symbols(SymbolTable*);
 
 int main(int argc, char* argv[]) {
@@ -50,7 +52,7 @@ int main(int argc, char* argv[]) {
   fclose(yyin);
   // free resource of lexer
   yylex_destroy();
-  return 0;
+  return has_lexical_error;
 }
 
 void dump_symbols(SymbolTable* table) {
