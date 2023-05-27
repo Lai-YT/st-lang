@@ -293,6 +293,7 @@ const_decl:
     // (1) the expression is not a variable reference in type of a dynamic array
     if ($4->data_type == ST_ARRAY_TYPE
         && $4->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
+      st_free_expression($4);
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
     $$ = ST_MAKE_CONST_IDENTIFIER($2->name, $4, $4);
@@ -305,6 +306,8 @@ const_decl:
     // we'll check first to emphasize that a constant identifier cannot be a dynamic array
     if($6->data_type == ST_ARRAY_TYPE
         && $6->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
+      st_free_data_type_info($4);
+      st_free_expression($6);
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
     // (2) the expression has the same type with the scalar_type
@@ -312,6 +315,7 @@ const_decl:
     if (!st_is_assignable_type($4, &expr_type_info)) {
       ST_NON_FATAL_ERROR(@4, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
       // error recovery: make the expression a run-time expression with the expected type
+      st_free_expression($6);
       $6 = (Expression*)malloc(sizeof(RunTimeExpression));
       $6->expr_type = ST_RUN_TIME_EXPRESSION;
       ST_COPY_TYPE($6, $4);
@@ -371,6 +375,7 @@ subprog_decl:
     if (st_probe_environment(env, $2->name)) {
       // error recovery: skip this declaration
       ST_NON_FATAL_ERROR(@2, "re-declaration of identifier '%s' (DECL01)\n", $2->name);
+      st_free_identifier((Identifier*)$2);
     } else {
       Symbol* symbol = st_add_to_scope(env, $2->name);
       symbol->attribute = $2;
@@ -445,8 +450,9 @@ procedure_header:
     procedure->id_type = ST_SUBPROGRAM_IDENTIFIER;
     procedure->subprogram_type = ST_PROCEDURE_SUBPROGRAM;
     procedure->name = st_strdup($2->name);
-    $<procedure>$ = procedure;
     // the formals of the procedure will be added in the later action
+    procedure->formals = NULL;
+    $<procedure>$ = procedure;
     Symbol* symbol = st_add_to_scope(env, $2->name);
     symbol->attribute = $<procedure>$;
   }
@@ -470,8 +476,10 @@ function_header:
     function->id_type = ST_SUBPROGRAM_IDENTIFIER;
     function->subprogram_type = ST_FUNCTION_SUBPROGRAM;
     function->name = st_strdup($2->name);
-    $<function>$ = function;
     // the formals and the result type of the function will be added later
+    function->formals = NULL;
+    function->result_type = NULL;
+    $<function>$ = function;
     Symbol* symbol = st_add_to_scope(env, $2->name);
     symbol->attribute = $<function>$;
     // also add to the special identifier for result statements to retrieve the
@@ -601,6 +609,7 @@ formal_type:
     // (1) if the formal type is an array type, it cannot be a dynamic array
     if ($1->data_type == ST_ARRAY_TYPE
         && $1->array_type_info->array_type != ST_STATIC_ARRAY) {
+      st_free_data_type_info($1);
       ST_FATAL_ERROR(@1, "type of formal parameter cannot be a 'dynamic array' (SUB03)\n");
     }
     $$ = $1;
@@ -639,23 +648,31 @@ formal_star_array_nested_type:
 formal_star_array_type:
   ARRAY expr '.' '.' '*' OF formal_star_array_nested_type
   {
+    #define CLEAN_UP \
+      st_free_expression($2); \
+      st_free_data_type_info($7);
+
     // (1) the expression at the lower bound must be a compile-time expression
     if ($2->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression (ARR01)\n");
     }
     CompileTimeExpression* lower_bound = (CompileTimeExpression*)$2;
     // (2) the expression at the lower bound must have type int
     if (lower_bound->data_type != ST_INT_TYPE) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must have type 'int' (ARR02)\n");
     }
     // (3) type may also be an array, but such array type must be a static array
     // NOTE: a star array is also a static array, but is excluded syntactically
     if ($7->data_type == ST_ARRAY_TYPE
         && $7->array_type_info->array_type != ST_STATIC_ARRAY) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array' (ARR03)\n");
     }
     // (4) lower bound must have positive value
     if (lower_bound->int_val < 1) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive (ARR04)\n");
     }
     $$ = malloc(sizeof(StDataTypeInfo));
@@ -666,8 +683,8 @@ formal_star_array_type:
     $$->array_type_info->lower_bound = lower_bound->int_val;
     ((StStaticArrayTypeInfo*)$$->array_type_info)->upper_bound
         = ST_STAR_ARRAY_UPPER_BOUND;
-    st_free_expression($2);
-    st_free_data_type_info($7);
+    CLEAN_UP;
+    #undef CLEAN_UP
   }
 ;
 
@@ -677,12 +694,24 @@ formal_star_array_type:
 subprog_call:
   ID '(' opt_expr_comma_list ')'
   {
+    #define CLEAN_UP \
+      { \
+        List* actual = $3; \
+        while (actual) { \
+          st_free_expression(actual->val); \
+          actual = actual->rest; \
+        } \
+        list_delete($3); \
+      }
+
     Symbol* symbol = st_lookup_environment(env, $1->name);
     if (!symbol) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@1, "identifier '%s' is not declared (REF01)\n", $1->name);
     }
     Identifier* id = (Identifier*)symbol->attribute;
     if (id->id_type != ST_SUBPROGRAM_IDENTIFIER) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@1, "identifier '%s' is not a subprogram (CALL01)\n", $1->name);
     }
     Subprogram* subprogram = (Subprogram*)id;
@@ -704,12 +733,12 @@ subprog_call:
         if (!st_is_assignable_type(formal_type, &actual_type)) {
           ST_NON_FATAL_ERROR(@3, "type of the actual parameter cannot be assigned as type of the formal parameter (CALL03)\n");
         }
-        st_free_expression(actual);
         actuals = actuals->rest;
         formals = formals->rest;
       }
-      list_delete($3);
     }
+    CLEAN_UP;
+    #undef CLEAN_UP
   }
 ;
 
@@ -1028,16 +1057,24 @@ scalar_type:
 array_type:
   ARRAY expr '.' '.' expr OF type
   {
+    #define CLEAN_UP \
+      st_free_expression($2); \
+      st_free_expression($5); \
+      st_free_data_type_info($7);
+
     // (1) the expression of the lower bound must be a compile-time expression
     if ($2->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression (ARR01)\n");
     }
     CompileTimeExpression* lower_bound = (CompileTimeExpression*)$2;
     // (2) the expressions must both have type int
     if (lower_bound->data_type != ST_INT_TYPE) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must have type 'int' (ARR02)\n");
     }
     if ($5->data_type != ST_INT_TYPE) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@5, "upper bound of an 'array' must have type 'int' (ARR02)\n");
     }
     // (3) type may also be an array, but the upper bound of a nested array has
@@ -1045,10 +1082,12 @@ array_type:
     //     the bounds of an array type. This is also for type equality checks
     if ($7->data_type == ST_ARRAY_TYPE
         && $7->array_type_info->array_type != ST_STATIC_ARRAY) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array' (ARR03)\n");
     }
     // (4) lower bound must have positive value
     if (lower_bound->int_val < 1) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive (ARR04)\n");
     }
     $$ = malloc(sizeof(StDataTypeInfo));
@@ -1057,10 +1096,14 @@ array_type:
       CompileTimeExpression* upper_bound = (CompileTimeExpression*)$5;
       // (5) upper bound of a static array must have positive value
       if (upper_bound->int_val < 1) {
+        CLEAN_UP;
+        free($$);  // in the middle of the construction of $$, has to clean as also
         ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be positive (ARR05)\n");
       }
       // (6) the upper bound of a static array must be greater than the lower bound
       if (upper_bound->int_val <= lower_bound->int_val) {
+        CLEAN_UP;
+        free($$);  // in the middle of the construction of $$, has to clean as also
         ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be greater than its lower bound (ARR06)\n");
       }
       $$->array_type_info = malloc(sizeof(StStaticArrayTypeInfo));
@@ -1076,9 +1119,8 @@ array_type:
     } else {
       ST_UNREACHABLE();
     }
-    st_free_expression($2);
-    st_free_expression($5);
-    st_free_data_type_info($7);
+    CLEAN_UP;
+    #undef CLEAN_UP
   }
 ;
 
@@ -1123,20 +1165,33 @@ var_ref:
    */
 | ID subscript_list
   {
+    #define CLEAN_UP \
+      { \
+        List* curr = $2; \
+        while (curr) { \
+          st_free_expression(curr->val); \
+          curr = curr->rest; \
+        } \
+        list_delete($2); \
+      }
+
     Symbol* symbol = st_lookup_environment(env, $1->name);
     // (1) id can't be a subprogram
     if (!symbol) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@1, "identifier '%s' is not declared (REF01)\n", $1->name);
     }
     Identifier* id = symbol->attribute;
     // (2) id can only have type string or array
     if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@1, "identifier '%s' is a 'subprogram', cannot be used as reference (REF02)\n", $1->name);
     }
 
     if (id->data_type == ST_STRING_TYPE) {
       // (3) if id has type string, the subscript list must have length 1
       if (list_length($2) != 1) {
+        CLEAN_UP;
         ST_FATAL_ERROR(@2, "'character' is unsubscriptable, for substrings, use '%s[n .. m]' instead (REF03)\n", $1->name);
       }
       // TODO: return a character
@@ -1151,6 +1206,7 @@ var_ref:
       // (4) if id has type array, the length of the list cannot exceed the dimension of the array
       // the expression may be run-time expressions, so no range check
       if (num_of_sub > dim_of_arr) {
+        CLEAN_UP;
         ST_FATAL_ERROR(@2, "'%d'-dimensional 'array' cannot have '%d' subscripts (REF05)\n", dim_of_arr, num_of_sub);
       }
       $$ = malloc(sizeof(ArraySubscriptReference));
@@ -1163,16 +1219,13 @@ var_ref:
       }
       ST_COPY_TYPE($$, sub_array_type_info);
       // free the subscript list
-      List* curr = $2;
-      while (curr) {
-        st_free_expression(curr->val);
-        curr = curr->rest;
-      }
-      list_delete($2);
+      CLEAN_UP;
     } else {
       // (2) id can only have type string or array
+      CLEAN_UP;
       ST_FATAL_ERROR(@1, "identifier '%s' has unsubscriptable type (REF04)\n", $1->name);
     }
+    #undef CLEAN_UP
   }
 ;
 
@@ -1198,7 +1251,7 @@ subscript:
     // (1) the expression should have type int
     if ($2->data_type != ST_INT_TYPE) {
       ST_NON_FATAL_ERROR(@2, "subscript must have type 'int' (REF06)\n");
-      free($2);
+      st_free_expression($2);
       $2 = st_create_recovery_expression(ST_INT_TYPE);
     }
     $$ = list_create($2, NULL);
@@ -1358,6 +1411,9 @@ operation:
 numeric_operation:
   expr '+' expr
   {
+    #define CLEAN_UP \
+      st_free_expression($1); \
+      st_free_expression($3);
     /*
      * Handle string concatenation first, then elementary arithmetic
      */
@@ -1365,6 +1421,7 @@ numeric_operation:
     // (1) string can only concatenate with string
     if ($1->data_type != $3->data_type
         && ($1->data_type == ST_STRING_TYPE || $3->data_type == ST_STRING_TYPE)) {
+      CLEAN_UP;
       ST_FATAL_ERROR(@2, "operands of 'string' concatenation must both have type 'string' (STR04)\n");
     }
     // is string concatenation
@@ -1380,6 +1437,10 @@ numeric_operation:
         $$->string_type_info->max_length = strlen(lhs->string_val) + strlen(rhs->string_val);
         // (3) the length of the result string must not exceed 255
         if ($$->string_type_info->max_length > 255) {
+          CLEAN_UP;
+          // in the middle of the construction of $$, make it a valid expression and free as also
+          ((CompileTimeExpression*)$$)->string_val = NULL;
+          st_free_expression($$);
           ST_FATAL_ERROR(@1, "in compile-time 'string' concatenation, length of the result 'string' must not exceed 255 (STR05)\n");
         }
         ((CompileTimeExpression*)$$)->string_val = malloc(sizeof(char) * ($$->string_type_info->max_length + 1));
@@ -1412,8 +1473,8 @@ numeric_operation:
           ? st_create_recovery_expression(ST_INT_TYPE)
           : ST_MAKE_BINARY_ARITHMETIC_EXPRESSION($1, +, $3);
     }
-    st_free_expression($1);
-    st_free_expression($3);
+    CLEAN_UP;
+    #undef CLEAN_UP
   }
 | expr '-' expr
   {
