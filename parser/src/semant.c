@@ -59,6 +59,7 @@ StArrayTypeInfo* st_dup_array_type_info(StArrayTypeInfo* array_type_info) {
     } else if ((x)->data_type == ST_ARRAY_TYPE) { \
       st_free_array_type_info((x)->array_type_info); \
     } \
+    /* other scalar types have no type info to be freed */ \
   }
 #endif
 
@@ -134,9 +135,11 @@ static void st_free_formals(List* formals) {
 }
 
 void st_free_reference(Reference* ref) {
+  ST_FREE_DATA_TYPE_INFO(ref);
   if (ref->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
     free((ArraySubscriptReference*)ref);
   } else if (ref->ref_type == ST_IDENTIFIER_REFERENCE) {
+    // the data type is forwarded by deep copy, so has to be freed separately
     free((IdentifierReference*)ref);
   } else {
     ST_UNREACHABLE();
@@ -144,12 +147,7 @@ void st_free_reference(Reference* ref) {
 }
 
 void st_free_expression(Expression* expr) {
-  if (expr->data_type == ST_STRING_TYPE) {
-    free(expr->string_type_info);
-  } else if (expr->data_type == ST_ARRAY_TYPE) {
-    st_free_array_type_info(expr->array_type_info);
-  }
-  // other scalar types have no type info to be freed
+  ST_FREE_DATA_TYPE_INFO(expr);
 
   if (expr->expr_type == ST_COMPILE_TIME_EXPRESSION) {
     if (expr->data_type == ST_STRING_TYPE) {

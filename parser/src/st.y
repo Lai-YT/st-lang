@@ -643,6 +643,8 @@ formal_star_array_type:
     $$->array_type_info->lower_bound = lower_bound->int_val;
     ((StStaticArrayTypeInfo*)$$->array_type_info)->upper_bound
         = ST_STAR_ARRAY_UPPER_BOUND;
+    st_free_expression($2);
+    st_free_data_type_info($7);
   }
 ;
 
@@ -1052,6 +1054,7 @@ array_type:
       ST_UNREACHABLE();
     }
     st_free_expression($2);
+    st_free_expression($5);
     st_free_data_type_info($7);
   }
 ;
@@ -1215,12 +1218,12 @@ expr:
           ST_UNREACHABLE();
       }
       // cannot free the id since its held by the symbol table
-      free((IdentifierReference*)$1);
+      st_free_reference($1);
     } else if ($1->ref_type == ST_ARRAY_SUBSCRIPT_REFERENCE) {
       $$ = malloc(sizeof(RunTimeExpression));
       $$->expr_type = ST_RUN_TIME_EXPRESSION;
       ST_COPY_TYPE($$, $1);
-      free((ArraySubscriptReference*)$1);
+      st_free_reference($1);
     } else {
       ST_UNREACHABLE();
     }
