@@ -6,12 +6,16 @@
 %
 
 % scalar type
-var i := 0
-var s := "0"
-s :=  i
+begin
+  var i := 0
+  var s := "0"
+  s :=  i
+end
 
 % array type
-var arr1: array 1..2 of array 1..3 of int
-var arr2: array 1..2 of array 2..3 of int
-%                             ^ mismatch
-arr2 := arr1
+begin
+  var arr1: array 1..2 of array 1..3 of int
+  var arr2: array 1..2 of array 2..3 of int
+  %                             ^ mismatch
+  arr2 := arr1
+end

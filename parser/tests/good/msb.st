@@ -1,8 +1,8 @@
 
 var n: int
-get n
 var msb: int
 var m := n
+get n
 loop
   msb := m mod 10
   m := m / 10
