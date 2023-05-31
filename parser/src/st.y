@@ -347,7 +347,7 @@ subprog_decl:
     // it to be freed when the scope exit, so replace it with a NULL
     st_probe_environment(env, ST_FUNCTION_SCOPE_NAME)
         ->attribute = NULL;
-    st_add_to_scope(env, $2->name)
+    st_probe_environment(env, $2->name)
         ->attribute = NULL;
     st_exit_scope(&env);
     // (1) the name of the function should not be already declared
@@ -369,7 +369,7 @@ subprog_decl:
   {
     // the subprogram identifier is stored for type checks on recursive calls,
     // but we don't want it to be freed when the scope exit, so replace it with a NULL
-    st_add_to_scope(env, $2->name)->attribute = NULL;
+    st_probe_environment(env, $2->name)->attribute = NULL;
     st_exit_scope(&env);
     // (1) the name of the procedure should not be already declared
     if (st_probe_environment(env, $2->name)) {
