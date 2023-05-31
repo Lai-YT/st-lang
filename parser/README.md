@@ -47,6 +47,8 @@ usage: ./build/Parser [-d] FILE
 
 Options:
   -d, --debug     Prints the shifts and reduces
+  --dump          Prints the name of the identifiers when adding to
+                  and exiting from scope
   --allow-semantic-errors
                   Exits with 0 even has semantic errors
                   (for collecting test coverage)
