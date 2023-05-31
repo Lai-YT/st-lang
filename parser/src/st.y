@@ -80,7 +80,7 @@
 %token AND 292 OR 293 MOD 294 LE 295 GE 296 NOT 297 ASSIGN 298 NE 299
 
 /* non-terminals without semantic value */
-%type program decl_or_stmt_in_main_program_list decl_or_stmt_in_main_program
+%type program opt_decl_in_main_program_list opt_stmt_list stmt_list decl_in_main_program_list decl_in_main_program
 %type opt_decl_or_stmt_list decl_or_stmt_list decl_or_stmt decl stmt
 %type subprog_decl if_stmt then_block else_block result_stmt exit_stmt
 %type loop_stmt for_stmt for_header for_range block get_stmt put_stmt opt_dot_dot
@@ -125,30 +125,50 @@ program:
     st_enter_scope(&env);
     st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
   }
-  decl_or_stmt_in_main_program_list
+  opt_decl_in_main_program_list
+  opt_stmt_list
   {
     st_exit_scope(&env);
     if (semantic_errors && !allow_semantic_errors) {
       YYABORT;
     }
   }
+;
+
+opt_decl_in_main_program_list:
+  decl_in_main_program_list
+  { /* no check */ }
 | /* empty */
   { /* no check */ }
 ;
 
-decl_or_stmt_in_main_program_list:
-  decl_or_stmt_in_main_program_list decl_or_stmt_in_main_program
+opt_stmt_list:
+  stmt_list
   { /* no check */ }
-| decl_or_stmt_in_main_program
+| /* empty */
+  { /* no check */ }
+;
+
+stmt_list:
+  stmt_list stmt
+  { /* no check */ }
+| stmt
+  { /* no check */ }
+;
+
+decl_in_main_program_list:
+  decl_in_main_program_list decl_in_main_program
+  { /* no check */ }
+| decl_in_main_program
   { /* no check */ }
 ;
 
   /*
    * NOTE: subprog_decl can only appear in the main program level.
-   * Separate it from normal decl_or_stmt.
+   * Separate it from normal decl.
    */
-decl_or_stmt_in_main_program:
-  decl_or_stmt
+decl_in_main_program:
+  decl
   { /* no check */ }
 | subprog_decl
   { /* no check */ }
