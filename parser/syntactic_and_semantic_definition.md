@@ -40,11 +40,14 @@ Terminals are given in **boldface**. Non-terminals are given in _italics_.
 
 A _program_ consists of a sequence of declarations and statements.
 
-- { [ _[declaration](#declarations)_ ] [ _[statement](#statements)_ ] [ *[subprogram_decl](#subprogram-declarations)* ] }
+- { [ _[declaration](#declarations)_ ] [ *[subprogram_decl](#subprogram-declarations)* ] } { _[statement](#statements)_ }
+
+All global *declaration*s, including *subprogram_decl*s, have to appear before the *statement*s.
 
 > **Note**
 > 1. An empty program is a valid program.
 > 2. Subprograms can only be declared on the program level. This is why it's not one of the _declaration_.
+> 3. Consider using local *declaration*s inside a *[block](#blocks)* if you want to mix *declaration*s and *statement*s.
 
 ### Subprogram Declarations
 
