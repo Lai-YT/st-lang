@@ -1035,7 +1035,7 @@ var_ref_comma_list:
 ;
 
 put_stmt:
-  PUT expr_comma_list opt_dot_dot
+  PUT expr_comma_list
   {
     List* exprs = $2;
     // (1) no expression can be in type array
@@ -1049,13 +1049,21 @@ put_stmt:
     }
     list_delete($2);
   }
+  opt_dot_dot
+  { /* no check */ }
 ;
 
 opt_dot_dot:
   '.' '.'
-  { /* no check */ }
+  {
+    ST_CODE_GEN("/* .., no newline */\n");
+  }
 | /* empty */
-  { /* no check */ }
+  {
+    ST_CODE_GEN("/* newline */\n");
+    ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
+    ST_CODE_GEN("invokevirtual void java.io.PrintStream.println()\n");
+  }
 ;
 
  /*
@@ -1074,10 +1082,55 @@ opt_expr_comma_list:
   * Returns a List of Expression.
   */
 expr_comma_list:
-  expr_comma_list ',' expr
-  { $$ = list_create($3, $1); }
-| expr
-  { $$ = list_create($1, NULL); }
+  expr_comma_list ','
+  {
+    ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
+  }
+  expr
+  {
+    $$ = list_create($4, $1);
+    if (gen_code) {
+      ST_CODE_GEN("invokevirtual void java.io.PrintStream.print(");
+      switch ($4->data_type) {
+        case ST_INT_TYPE:
+          ST_CODE_GEN("int");
+          break;
+        case ST_BOOL_TYPE:
+          ST_CODE_GEN("boolean");
+          break;
+        case ST_STRING_TYPE:
+          ST_CODE_GEN("java.lang.String");
+          break;
+        default:
+          ST_UNIMPLEMENTED_ERROR();
+      }
+      ST_CODE_GEN(")\n");
+    }
+  }
+| {
+    ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
+  }
+  expr
+  {
+    $$ = list_create($2, NULL);
+    if (gen_code) {
+      ST_CODE_GEN("invokevirtual void java.io.PrintStream.print(");
+      switch ($2->data_type) {
+        case ST_INT_TYPE:
+          ST_CODE_GEN("int");
+          break;
+        case ST_BOOL_TYPE:
+          ST_CODE_GEN("boolean");
+          break;
+        case ST_STRING_TYPE:
+          ST_CODE_GEN("java.lang.String");
+          break;
+        default:
+          ST_UNIMPLEMENTED_ERROR();
+      }
+      ST_CODE_GEN(")\n");
+    }
+  }
 ;
 
   /*
