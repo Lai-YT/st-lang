@@ -62,6 +62,7 @@ You will then be taken into the container. Here you have all the tools you need,
 | function | may have side effects | may NOT have side effects |
 | `skip` | use solely to print a newline | use with `get` & `put` to detect eof & print newlines |
 | subprogram declaration & call | always parenthesis | no parenthesis when on parameter |
+| `put` *bool_expr* | syntax error, unprintable | print "true" for `true` and "false" for `false` |
 
 ## Resources
 
