@@ -92,9 +92,9 @@ void st_free_data_type_info(StDataTypeInfo* data_type_info) {
 static void st_free_formals(List* formals);
 
 void st_free_identifier(Identifier* id) {
-  ST_FREE_DATA_TYPE_INFO(id);
   free(id->name);
   if (id->id_type == ST_CONST_IDENTIFIER) {
+    ST_FREE_DATA_TYPE_INFO(id);
     ConstIdentifier* const_id = (ConstIdentifier*)id;
     if (const_id->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
       if (const_id->data_type == ST_STRING_TYPE) {
@@ -107,8 +107,10 @@ void st_free_identifier(Identifier* id) {
       ST_UNREACHABLE();
     }
   } else if (id->id_type == ST_VAR_IDENTIFIER) {
+    ST_FREE_DATA_TYPE_INFO(id);
     free((VarIdentifier*)id);
   } else if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
+    // a subprogram does not have a data type info to delete
     Subprogram* subprogram = (Subprogram*)id;
     if (subprogram->subprogram_type == ST_PROCEDURE_SUBPROGRAM) {
       st_free_formals(subprogram->formals);
