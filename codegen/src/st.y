@@ -319,12 +319,28 @@ var_decl:
   VAR ID ASSIGN expr
   {
     $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
-    st_free_expression($4);
-    if (is_in_global_scope) {
-      // TODO
-    } else {
-      ST_CODE_GEN("iload %d\n", $$->local_number);
+    if (gen_code) {
+      if ($4->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+        ST_UNIMPLEMENTED_ERROR();
+      }
+      CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$4;
+      if (is_in_global_scope) {
+        switch ($4->data_type) {
+          case ST_INT_TYPE:
+            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->int_val);
+            break;
+          case ST_BOOL_TYPE:
+            // booleans are treated as int, with true = 1, false = 0
+            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
+            break;
+          default:
+            ST_UNIMPLEMENTED_ERROR();
+        }
+      } else {
+        ST_CODE_GEN("istore %d\n", $$->local_number);
+      }
     }
+    st_free_expression($4);
   }
 | VAR ID ':' array_type
   {
@@ -355,12 +371,28 @@ var_decl:
     // use the declared type, not the type of the expression
     $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
     st_free_data_type_info($4);
-    st_free_expression($6);
-    if (is_in_global_scope) {
-      // TODO
-    } else {
-      ST_CODE_GEN("iload %d\n", $$->local_number);
+    if (gen_code) {
+      if ($6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+        ST_UNIMPLEMENTED_ERROR();
+      }
+      CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$6;
+      if (is_in_global_scope) {
+        switch ($4->data_type) {
+          case ST_INT_TYPE:
+            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->int_val);
+            break;
+          case ST_BOOL_TYPE:
+            // booleans are treated as int, with true = 1, false = 0
+            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
+            break;
+          default:
+            ST_UNIMPLEMENTED_ERROR();
+        }
+      } else {
+        ST_CODE_GEN("istore %d\n", $$->local_number);
+      }
     }
+    st_free_expression($6);
   }
 ;
 
@@ -384,7 +416,7 @@ const_decl:
       /* kept by the symbol table, no code gen */
     } else {
       // the value of the expression is on the top of the stack, store to the identifier
-      ST_CODE_GEN("iload %d\n", $$->local_number);
+      ST_CODE_GEN("istore %d\n", $$->local_number);
     }
   }
 | CONST ID ':' scalar_type ASSIGN expr
@@ -419,7 +451,7 @@ const_decl:
       /* kept by the symbol table, no code gen */
     } else {
       // the value of the expression is on the top of the stack, store to the identifier
-      ST_CODE_GEN("iload %d\n", $$->local_number);
+      ST_CODE_GEN("istore %d\n", $$->local_number);
     }
   }
 ;
