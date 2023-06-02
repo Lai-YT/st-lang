@@ -320,16 +320,18 @@ stmt:
    * Returns a VarIdentifier.
    */
 var_decl:
-  VAR ID ASSIGN expr
+  VAR ID ASSIGN
+  { ST_CODE_GEN_SOURCE_COMMENT(@1); }
+  expr
   {
-    $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
+    $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $5);
     if (gen_code) {
-      if ($4->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+      if ($5->expr_type != ST_COMPILE_TIME_EXPRESSION) {
         ST_UNIMPLEMENTED_ERROR();
       }
-      CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$4;
+      CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$5;
       if (is_in_global_scope) {
-        switch ($4->data_type) {
+        switch ($5->data_type) {
           case ST_INT_TYPE:
             ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->int_val);
             break;
@@ -344,7 +346,7 @@ var_decl:
         ST_CODE_GEN("istore %d\n", $$->local_number);
       }
     }
-    st_free_expression($4);
+    st_free_expression($5);
   }
 | VAR ID ':' array_type
   {
@@ -358,28 +360,31 @@ var_decl:
   {
     $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
     st_free_data_type_info($4);
+    ST_CODE_GEN_SOURCE_COMMENT(@1);
     if (is_in_global_scope) {
       ST_CODE_GEN("field static int %s\n", $2->name);
     } else {
       /* the location of the variable is kept by the symbol table */
     }
   }
-| VAR ID ':' scalar_type ASSIGN expr
+| VAR ID ':' scalar_type ASSIGN
+  { ST_CODE_GEN_SOURCE_COMMENT(@1); }
+  expr
   {
     // (1) the expression has the same type as scalar_type
-    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($6);
+    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($7);
     if (!st_is_assignable_type($4, &expr_type_info)) {
       // error recovery: since we respect the declared type, error on expression does not cascade
-      ST_NON_FATAL_ERROR(@6, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
+      ST_NON_FATAL_ERROR(@7, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
     }
     // use the declared type, not the type of the expression
     $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
     st_free_data_type_info($4);
     if (gen_code) {
-      if ($6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+      if ($7->expr_type != ST_COMPILE_TIME_EXPRESSION) {
         ST_UNIMPLEMENTED_ERROR();
       }
-      CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$6;
+      CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$7;
       if (is_in_global_scope) {
         switch ($4->data_type) {
           case ST_INT_TYPE:
@@ -396,7 +401,7 @@ var_decl:
         ST_CODE_GEN("istore %d\n", $$->local_number);
       }
     }
-    st_free_expression($6);
+    st_free_expression($7);
   }
 ;
 
@@ -409,6 +414,7 @@ const_decl:
   CONST ID ASSIGN
   {
     is_in_const_decl = true;
+    ST_CODE_GEN_SOURCE_COMMENT(@1);
   }
   expr
   {
@@ -430,6 +436,7 @@ const_decl:
   }
 | CONST ID ':' scalar_type ASSIGN
   {
+    ST_CODE_GEN_SOURCE_COMMENT(@1);
     is_in_const_decl = true;
   }
   expr
@@ -1015,8 +1022,10 @@ for_range:
 ;
 
 block:
-  BEGIN_ opt_decl_or_stmt_list END
-  { /* no check */ }
+  BEGIN_
+  { ST_CODE_GEN_SOURCE_COMMENT(@1); }
+  opt_decl_or_stmt_list END
+  { ST_CODE_GEN_SOURCE_COMMENT(@4); }
 ;
 
 get_stmt:
