@@ -326,7 +326,7 @@ var_decl:
   {
     $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $5);
     if (gen_code) {
-      if ($5->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+      if (is_in_global_scope && $5->expr_type != ST_COMPILE_TIME_EXPRESSION) {
         ST_UNIMPLEMENTED_ERROR();
       }
       CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$5;
@@ -379,7 +379,7 @@ var_decl:
       $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
       st_free_data_type_info($4);
       if (gen_code) {
-        if ($6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+        if (is_in_global_scope && $6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
           ST_UNIMPLEMENTED_ERROR();
         }
         CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$6;
