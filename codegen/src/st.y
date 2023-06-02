@@ -1058,19 +1058,21 @@ var_ref_comma_list:
 ;
 
 put_stmt:
-  PUT expr_comma_list
+  PUT
+  { ST_CODE_GEN_SOURCE_COMMENT(@1); }
+  expr_comma_list
   {
-    List* exprs = $2;
+    List* exprs = $3;
     // (1) no expression can be in type array
     while (exprs) {
       if (((Expression*)exprs->val)->data_type == ST_ARRAY_TYPE) {
-        ST_NON_FATAL_ERROR(@2, "expressions in 'put' statement cannot have type 'array' (STMT06)\n");
+        ST_NON_FATAL_ERROR(@3, "expressions in 'put' statement cannot have type 'array' (STMT06)\n");
       }
       // free at the same time since not needed later
       st_free_expression(exprs->val);
       exprs = exprs->rest;
     }
-    list_delete($2);
+    list_delete($3);
   }
   opt_dot_dot
   { /* no check */ }
@@ -1078,12 +1080,10 @@ put_stmt:
 
 opt_dot_dot:
   '.' '.'
-  {
-    ST_CODE_GEN("/* .., no newline */\n");
-  }
+  { ST_CODE_GEN_COMMENT(".., no newline"); }
 | /* empty */
   {
-    ST_CODE_GEN("/* newline */\n");
+    ST_CODE_GEN_COMMENT("newline");
     ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
     ST_CODE_GEN("invokevirtual void java.io.PrintStream.println()\n");
   }
@@ -1106,9 +1106,7 @@ opt_expr_comma_list:
   */
 expr_comma_list:
   expr_comma_list ','
-  {
-    ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
-  }
+  { ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n"); }
   expr
   {
     $$ = list_create($4, $1);
@@ -1130,9 +1128,7 @@ expr_comma_list:
       ST_CODE_GEN(")\n");
     }
   }
-| {
-    ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
-  }
+| { ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n"); }
   expr
   {
     $$ = list_create($2, NULL);
