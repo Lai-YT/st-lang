@@ -1,18 +1,22 @@
 #!/usr/bin/env sh
 
+# Exits 2 when there are memory errors.
 run_valgrind() {
+  # the lexer exit with 1 when there are lexical errors,
+  # so we'll use another error code to distinguish them
   valgrind \
     --track-origins=yes \
     --leak-check=full \
     --leak-resolution=high \
-    --error-exitcode=1 \
+    --error-exitcode=2 \
     "$LEXER" "$1"
   return $?
 }
 
 for file in tests/*.st; do
   echo "---"
-  if ! run_valgrind "$file" >/dev/null 2>&1; then
+  run_valgrind "$file" >/dev/null 2>&1
+  if [ $? -eq 2 ]; then
     # rerun un-silently
     run_valgrind "$file"
     echo "Failed $file"
