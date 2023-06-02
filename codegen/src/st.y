@@ -235,13 +235,15 @@ decl_:
 ;
 
 stmt:
-  var_ref ASSIGN expr
+  var_ref ASSIGN
+  { ST_CODE_GEN_SOURCE_COMMENT(@1); }
+  expr
   {
     // (1) the type of the variable reference has to be the same as the expression
     StDataTypeInfo var_ref_type_info = ST_MAKE_DATA_TYPE_INFO($1);
-    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($3);
+    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($4);
     if (!st_is_assignable_type(&var_ref_type_info, &expr_type_info)) {
-      ST_NON_FATAL_ERROR(@3, "type of the expression cannot be assigned to the reference (TYPE01)\n");
+      ST_NON_FATAL_ERROR(@4, "type of the expression cannot be assigned to the reference (TYPE01)\n");
     }
     // (2) the reference must be a mutable variable
     if ($1->is_const) {
@@ -257,7 +259,7 @@ stmt:
       ST_CODE_GEN("istore %d\n", id_ref->local_number);
     }
     st_free_reference($1);
-    st_free_expression($3);
+    st_free_expression($4);
   }
 | subprog_call
   {
