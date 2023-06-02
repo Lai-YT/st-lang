@@ -26,9 +26,6 @@ FILE* st_codegen_out;
 /// @brief The name of the generated jasm code.
 char* output_filename;
 char* input_filename_stem;
-/// @brief Tells the parser that we should now generate code along with the
-/// parsing.
-bool gen_code = true;
 
 extern FILE* yyin;
 extern int yyparse();
@@ -51,13 +48,10 @@ int main(int argc, char* argv[]) {
       = malloc(sizeof(char) * (strlen(input_filename) + strlen(jasm_ext) + 1));
   strcpy(output_filename, input_filename_stem);
   strcat(output_filename, jasm_ext);
-  if (gen_code) {
-    st_codegen_out = fopen(output_filename, "w");
-    if (!st_codegen_out) {
-      fprintf(stderr, "error: could not open output file %s\n",
-              output_filename);
-      return 1;
-    }
+  st_codegen_out = fopen(output_filename, "w");
+  if (!st_codegen_out) {
+    fprintf(stderr, "error: could not open output file %s\n", output_filename);
+    return 1;
   }
 
   symtab = symtab_create();
@@ -69,9 +63,7 @@ int main(int argc, char* argv[]) {
   st_delete_environment(env);
   symtab_delete(symtab);
   fclose(yyin);
-  if (gen_code) {
-    fclose(st_codegen_out);
-  }
+  fclose(st_codegen_out);
   free(output_filename);
   free(input_filename_stem);
 

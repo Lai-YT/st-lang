@@ -38,7 +38,6 @@
 
   extern StEnvironment* env;
   extern char* input_filename_stem;
-  extern bool gen_code;
 
   char* code_gen_class_name;
 
@@ -248,16 +247,14 @@ stmt:
     if ($1->is_const) {
       ST_NON_FATAL_ERROR(@1, "re-assignment on constant reference (CONST02)\n");
     }
-    if (gen_code) {
-      if ($1->ref_type != ST_IDENTIFIER_REFERENCE || $1->data_type != ST_INT_TYPE) {
-        ST_UNIMPLEMENTED_ERROR();
-      }
-      Identifier* id_ref = ((IdentifierReference*)$1)->id;
-      if (st_is_global(id_ref)) {
-        ST_CODE_GEN("putstatic int %s.%s\n", code_gen_class_name, id_ref->name);
-      } else {
-        ST_CODE_GEN("istore %d\n", id_ref->local_number);
-      }
+    if ($1->ref_type != ST_IDENTIFIER_REFERENCE || $1->data_type != ST_INT_TYPE) {
+      ST_UNIMPLEMENTED_ERROR();
+    }
+    Identifier* id_ref = ((IdentifierReference*)$1)->id;
+    if (st_is_global(id_ref)) {
+      ST_CODE_GEN("putstatic int %s.%s\n", code_gen_class_name, id_ref->name);
+    } else {
+      ST_CODE_GEN("istore %d\n", id_ref->local_number);
     }
     st_free_reference($1);
     st_free_expression($3);
@@ -325,26 +322,24 @@ var_decl:
   expr
   {
     $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $5);
-    if (gen_code) {
-      if (is_in_global_scope && $5->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-        ST_UNIMPLEMENTED_ERROR();
+    if (is_in_global_scope && $5->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+      ST_UNIMPLEMENTED_ERROR();
+    }
+    CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$5;
+    if (is_in_global_scope) {
+      switch ($5->data_type) {
+        case ST_INT_TYPE:
+          ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->int_val);
+          break;
+        case ST_BOOL_TYPE:
+          // booleans are treated as int, with true = 1, false = 0
+          ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
+          break;
+        default:
+          ST_UNIMPLEMENTED_ERROR();
       }
-      CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$5;
-      if (is_in_global_scope) {
-        switch ($5->data_type) {
-          case ST_INT_TYPE:
-            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->int_val);
-            break;
-          case ST_BOOL_TYPE:
-            // booleans are treated as int, with true = 1, false = 0
-            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
-            break;
-          default:
-            ST_UNIMPLEMENTED_ERROR();
-        }
-      } else {
-        ST_CODE_GEN("istore %d\n", $$->local_number);
-      }
+    } else {
+      ST_CODE_GEN("istore %d\n", $$->local_number);
     }
     st_free_expression($5);
   }
@@ -352,9 +347,7 @@ var_decl:
   {
     $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
     st_free_data_type_info($4);
-    if (gen_code) {
-      ST_UNIMPLEMENTED_ERROR();
-    }
+    ST_UNIMPLEMENTED_ERROR();
   }
 | VAR ID ':' scalar_type
   { ST_CODE_GEN_SOURCE_COMMENT(@1); }
@@ -378,26 +371,24 @@ var_decl:
       // use the declared type, not the type of the expression
       $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
       st_free_data_type_info($4);
-      if (gen_code) {
-        if (is_in_global_scope && $6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-          ST_UNIMPLEMENTED_ERROR();
+      if (is_in_global_scope && $6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+        ST_UNIMPLEMENTED_ERROR();
+      }
+      CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$6;
+      if (is_in_global_scope) {
+        switch ($4->data_type) {
+          case ST_INT_TYPE:
+            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->int_val);
+            break;
+          case ST_BOOL_TYPE:
+            // booleans are treated as int, with true = 1, false = 0
+            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
+            break;
+          default:
+            ST_UNIMPLEMENTED_ERROR();
         }
-        CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$6;
-        if (is_in_global_scope) {
-          switch ($4->data_type) {
-            case ST_INT_TYPE:
-              ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->int_val);
-              break;
-            case ST_BOOL_TYPE:
-              // booleans are treated as int, with true = 1, false = 0
-              ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
-              break;
-            default:
-              ST_UNIMPLEMENTED_ERROR();
-          }
-        } else {
-          ST_CODE_GEN("istore %d\n", $$->local_number);
-        }
+      } else {
+        ST_CODE_GEN("istore %d\n", $$->local_number);
       }
       st_free_expression($6);
     }
@@ -1120,45 +1111,41 @@ expr_comma_list:
   expr
   {
     $$ = list_create($4, $1);
-    if (gen_code) {
-      ST_CODE_GEN("invokevirtual void java.io.PrintStream.print(");
-      switch ($4->data_type) {
-        case ST_INT_TYPE:
-          ST_CODE_GEN("int");
-          break;
-        case ST_BOOL_TYPE:
-          ST_CODE_GEN("boolean");
-          break;
-        case ST_STRING_TYPE:
-          ST_CODE_GEN("java.lang.String");
-          break;
-        default:
-          ST_UNIMPLEMENTED_ERROR();
-      }
-      ST_CODE_GEN(")\n");
+    ST_CODE_GEN("invokevirtual void java.io.PrintStream.print(");
+    switch ($4->data_type) {
+      case ST_INT_TYPE:
+        ST_CODE_GEN("int");
+        break;
+      case ST_BOOL_TYPE:
+        ST_CODE_GEN("boolean");
+        break;
+      case ST_STRING_TYPE:
+        ST_CODE_GEN("java.lang.String");
+        break;
+      default:
+        ST_UNIMPLEMENTED_ERROR();
     }
+    ST_CODE_GEN(")\n");
   }
 | { ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n"); }
   expr
   {
     $$ = list_create($2, NULL);
-    if (gen_code) {
-      ST_CODE_GEN("invokevirtual void java.io.PrintStream.print(");
-      switch ($2->data_type) {
-        case ST_INT_TYPE:
-          ST_CODE_GEN("int");
-          break;
-        case ST_BOOL_TYPE:
-          ST_CODE_GEN("boolean");
-          break;
-        case ST_STRING_TYPE:
-          ST_CODE_GEN("java.lang.String");
-          break;
-        default:
-          ST_UNIMPLEMENTED_ERROR();
-      }
-      ST_CODE_GEN(")\n");
+    ST_CODE_GEN("invokevirtual void java.io.PrintStream.print(");
+    switch ($2->data_type) {
+      case ST_INT_TYPE:
+        ST_CODE_GEN("int");
+        break;
+      case ST_BOOL_TYPE:
+        ST_CODE_GEN("boolean");
+        break;
+      case ST_STRING_TYPE:
+        ST_CODE_GEN("java.lang.String");
+        break;
+      default:
+        ST_UNIMPLEMENTED_ERROR();
     }
+    ST_CODE_GEN(")\n");
   }
 ;
 
@@ -1578,9 +1565,7 @@ expr:
       $$->expr_type = ST_RUN_TIME_EXPRESSION;
       ST_COPY_TYPE($$, $1);
       st_free_reference($1);
-      if (gen_code) {
-        ST_UNIMPLEMENTED_ERROR();
-      }
+      ST_UNIMPLEMENTED_ERROR();
     } else {
       ST_UNREACHABLE();
     }
@@ -1648,9 +1633,7 @@ explicit_const:
     $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
     $$->data_type = ST_REAL_TYPE;
     $$->real_val = $1;
-    if (gen_code) {
-      ST_UNIMPLEMENTED_ERROR();
-    }
+    ST_UNIMPLEMENTED_ERROR();
   }
 | STR_CONST
   {
