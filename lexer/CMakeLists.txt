@@ -9,7 +9,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../lib Lib)
 
 # Add the lexer executable and link against library
 file(GLOB C_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
-list(REMOVE_ITEM C_SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+# list(REMOVE_ITEM C_SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.c")
 
 add_executable(Lexer ${C_SRC_FILES})
 target_include_directories(Lexer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
