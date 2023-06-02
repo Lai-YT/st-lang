@@ -104,7 +104,7 @@
 %type opt_decl_or_stmt_list_end_with_result_list decl_or_stmt_list_end_with_result_list decl_or_stmt_or_result
 
 /* non-terminals with semantic value */
-%type <expr> expr operation sign_operation numeric_operation comparison_operation boolean_operation bool_expr
+%type <expr> expr operation sign_operation numeric_operation comparison_operation boolean_operation bool_expr opt_init_expr
 %type <compile_time_expr> bool_const explicit_const
 %type <id> decl_ formal_decl_
 %type <var_id> var_decl
@@ -357,52 +357,62 @@ var_decl:
     }
   }
 | VAR ID ':' scalar_type
-  {
-    $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
-    st_free_data_type_info($4);
-    ST_CODE_GEN_SOURCE_COMMENT(@1);
-    if (is_in_global_scope) {
-      ST_CODE_GEN("field static int %s\n", $2->name);
-    } else {
-      /* the location of the variable is kept by the symbol table */
-    }
-  }
-| VAR ID ':' scalar_type ASSIGN
   { ST_CODE_GEN_SOURCE_COMMENT(@1); }
-  expr
+  opt_init_expr
   {
-    // (1) the expression has the same type as scalar_type
-    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($7);
-    if (!st_is_assignable_type($4, &expr_type_info)) {
-      // error recovery: since we respect the declared type, error on expression does not cascade
-      ST_NON_FATAL_ERROR(@7, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
-    }
-    // use the declared type, not the type of the expression
-    $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
-    st_free_data_type_info($4);
-    if (gen_code) {
-      if ($7->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-        ST_UNIMPLEMENTED_ERROR();
-      }
-      CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$7;
+    if (!$6 /* no init */ ) {
+      $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
+      st_free_data_type_info($4);
       if (is_in_global_scope) {
-        switch ($4->data_type) {
-          case ST_INT_TYPE:
-            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->int_val);
-            break;
-          case ST_BOOL_TYPE:
-            // booleans are treated as int, with true = 1, false = 0
-            ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
-            break;
-          default:
-            ST_UNIMPLEMENTED_ERROR();
-        }
+        ST_CODE_GEN("field static int %s\n", $2->name);
       } else {
-        ST_CODE_GEN("istore %d\n", $$->local_number);
+        /* the location of the variable is kept by the symbol table */
       }
+    } else /* has init expr */ {
+      // (1) the expression has the same type as scalar_type
+      StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($6);
+      if (!st_is_assignable_type($4, &expr_type_info)) {
+        // error recovery: since we respect the declared type, error on expression does not cascade
+        ST_NON_FATAL_ERROR(@6, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
+      }
+      // use the declared type, not the type of the expression
+      $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
+      st_free_data_type_info($4);
+      if (gen_code) {
+        if ($6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
+          ST_UNIMPLEMENTED_ERROR();
+        }
+        CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$6;
+        if (is_in_global_scope) {
+          switch ($4->data_type) {
+            case ST_INT_TYPE:
+              ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->int_val);
+              break;
+            case ST_BOOL_TYPE:
+              // booleans are treated as int, with true = 1, false = 0
+              ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
+              break;
+            default:
+              ST_UNIMPLEMENTED_ERROR();
+          }
+        } else {
+          ST_CODE_GEN("istore %d\n", $$->local_number);
+        }
+      }
+      st_free_expression($6);
     }
-    st_free_expression($7);
   }
+;
+
+  /*
+   * Since the source line has to be generate in the mid-rule, which causes
+   * ambiguity, we have to left-factor them.
+   */
+opt_init_expr:
+  ASSIGN expr
+  { $$ = $2; }
+| /* empty */
+  { $$ = NULL; }
 ;
 
   /*
