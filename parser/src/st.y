@@ -435,7 +435,7 @@ opt_decl_or_stmt_list_end_with_result_list:
   decl_or_stmt_list_end_with_result_list
   { /* no check */ }
 | /* empty */
-  { /* no check */ }
+  { ST_NON_FATAL_ERROR(@0, "'function' must ends with a 'result' statement (SUB02)\n"); }
 ;
 
 decl_or_stmt_list_end_with_result_list:

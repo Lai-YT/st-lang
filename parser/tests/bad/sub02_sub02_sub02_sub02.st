@@ -1,5 +1,5 @@
 %
-% 3 errors of SUB02:
+% 4 errors of SUB02:
 %   'function' must ends with a 'result' statement
 %
 % This is to make sure our test case covers all branches
@@ -21,3 +21,7 @@ end f2
 function f3(var n: int) : int
   n := 0
 end f3
+
+% empty
+function f4(var n: int) : int
+end f4
