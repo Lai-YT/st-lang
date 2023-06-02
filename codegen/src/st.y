@@ -1507,11 +1507,43 @@ expr:
             $$ = malloc(sizeof(CompileTimeExpression));
             $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
             ST_COPY_TYPE($$, id);
-            ST_COPY_SCALAR_VALUE((CompileTimeExpression*)$$, (CompileTimeConstIdentifier*)id);
+            CompileTimeConstIdentifier* compile_time_const_id = (CompileTimeConstIdentifier*)id;
+            ST_COPY_SCALAR_VALUE((CompileTimeExpression*)$$, compile_time_const_id);
+            // constant propagation
+            if (!is_in_const_decl && !is_in_global_scope) {
+              switch (id->data_type) {
+                case ST_INT_TYPE:
+                  ST_CODE_GEN("sipush %d\n", compile_time_const_id->int_val);
+                  break;
+                case ST_BOOL_TYPE:
+                  ST_CODE_GEN("iconst_%d\n", compile_time_const_id->bool_val);
+                  break;
+                case ST_STRING_TYPE:
+                  ST_CODE_GEN("ldc %s\n", compile_time_const_id->string_val);
+                  break;
+                default:
+                  ST_UNIMPLEMENTED_ERROR();
+              }
+            }
           } else if (((ConstIdentifier*)id)->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
             $$ = malloc(sizeof(RunTimeExpression));
             $$->expr_type = ST_RUN_TIME_EXPRESSION;
             ST_COPY_TYPE($$, $1);
+            switch (id->data_type) {
+              case ST_INT_TYPE:
+                // since boolean uses int as also, can fallthrough
+              case ST_BOOL_TYPE:
+                if (st_is_global(id)) {
+                  ST_CODE_GEN("iload %s.%s\n", code_gen_class_name, id->name);
+                } else {
+                  ST_CODE_GEN("iload %d\n", id->local_number);
+                }
+                break;
+              case ST_STRING_TYPE:
+                // variable strings are not allowed
+              default:
+                ST_UNIMPLEMENTED_ERROR();
+            }
           } else {
             ST_UNREACHABLE();
           }
@@ -1520,6 +1552,21 @@ expr:
           $$ = malloc(sizeof(RunTimeExpression));
           $$->expr_type = ST_RUN_TIME_EXPRESSION;
           ST_COPY_TYPE($$, $1);
+          switch (id->data_type) {
+            case ST_INT_TYPE:
+              // since boolean uses int as also, can fallthrough
+            case ST_BOOL_TYPE:
+              if (st_is_global(id)) {
+                ST_CODE_GEN("iload %s.%s\n", code_gen_class_name, id->name);
+              } else {
+                ST_CODE_GEN("iload %d\n", id->local_number);
+              }
+              break;
+            case ST_STRING_TYPE:
+              // variable strings are not allowed
+            default:
+              ST_UNIMPLEMENTED_ERROR();
+          }
           break;
         default:
           ST_UNREACHABLE();
@@ -1531,6 +1578,9 @@ expr:
       $$->expr_type = ST_RUN_TIME_EXPRESSION;
       ST_COPY_TYPE($$, $1);
       st_free_reference($1);
+      if (gen_code) {
+        ST_UNIMPLEMENTED_ERROR();
+      }
     } else {
       ST_UNREACHABLE();
     }
@@ -1584,7 +1634,7 @@ explicit_const:
     $$->data_type = ST_INT_TYPE;
     $$->int_val = $1;
     if (is_in_global_scope) {
-      // TODO: push onto our global stack
+      // will be generated with the declaration
     } else if (is_in_const_decl) {
       // compile-time constant identifiers are record by the symbol table, no code
     } else {
@@ -1612,7 +1662,7 @@ explicit_const:
     $$->string_type_info->max_length = strlen($1);
     $$->string_val = st_strdup($1);
     if (is_in_global_scope) {
-      // TODO: push onto our global stack
+      // will be generated with the declaration
     } else if (is_in_const_decl) {
       // compile-time constant identifiers are record by the symbol table, no code
     } else {
@@ -1634,7 +1684,7 @@ bool_const:
     $$->data_type = ST_BOOL_TYPE;
     $$->bool_val = true;
     if (is_in_global_scope) {
-      // TODO: push onto our global stack
+      // will be generated with the declaration
     } else if (is_in_const_decl) {
       // compile-time constant identifiers are record by the symbol table, no code
     } else {
@@ -1649,7 +1699,7 @@ bool_const:
     $$->data_type = ST_BOOL_TYPE;
     $$->bool_val = false;
     if (is_in_global_scope) {
-      // TODO: push onto our global stack
+      // will be generated with the declaration
     } else if (is_in_const_decl) {
       // compile-time constant identifiers are record by the symbol table, no code
     } else {
