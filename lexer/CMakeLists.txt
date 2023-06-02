@@ -12,7 +12,7 @@ file(GLOB C_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
 list(REMOVE_ITEM C_SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
 add_executable(Lexer ${C_SRC_FILES})
-
+target_include_directories(Lexer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(Lexer PRIVATE
     # Particularly resolving the implicit declaration warning on "fileno" used in
     # Flex generated scanner.

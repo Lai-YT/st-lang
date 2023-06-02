@@ -12,13 +12,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "lex_macros.h"
 #include "st-parse.h"
 #include "symtab.h"
 
-#define MAX_LINE_LENG 256
-
 // The content of the line which the lexer is scanning on.
-char st_cur_line[MAX_LINE_LENG];
+char st_cur_line[ST_MAX_LINE_LENGTH + 1];
 // Whether an error occurs during lexing.
 bool has_lexical_error = false;
 
@@ -59,7 +58,7 @@ static int yycolumn = 1;
   }
 
 // records the line content along with the recognition
-char line[MAX_LINE_LENG];
+char line[ST_MAX_LINE_LENGTH + 1];
 #define RECORD_LINE strcat(line, yytext)
 #define CLEAR_LINE line[0] = '\0'
 #define VERBOSE_PRINTF(...) { if (verbose) printf(__VA_ARGS__); }
@@ -70,7 +69,7 @@ char line[MAX_LINE_LENG];
 #define TOKEN_IDENTIFIER() { RECORD_LINE; VERBOSE_PRINTF("<identifier:%s>\n", yylval.symbol->name); return ID; }
 
 // no longer than a single line
-char string[MAX_LINE_LENG];
+char string[ST_MAX_LINE_LENGTH + 1];
 
 %}
 
@@ -212,7 +211,7 @@ when        TOKEN(WHEN);
   strcat(string, "\"");
 }
 <STRING_>\" {
-  strncpy(yylval.str_const, string, MAX_LINE_LENG);
+  strncpy(yylval.str_const, string, ST_MAX_LINE_LENGTH + 1);
   string[0] = '\0';
   BEGIN(INITIAL);
   TOKEN_STRING();

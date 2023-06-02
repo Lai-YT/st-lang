@@ -1,0 +1,3 @@
+#ifndef ST_MAX_LINE_LENGTH
+#define ST_MAX_LINE_LENGTH 255
+#endif
