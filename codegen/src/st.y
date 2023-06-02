@@ -54,6 +54,10 @@
 
   /// @brief called for each syntax error
   void yyerror(const char *s);
+
+  /// @brief Compile-time constant identifiers don't generate code, so we need
+  /// this flag to tell the expression not the do so.
+  static bool is_in_const_decl = false;
 %}
 %locations
 %define parse.error detailed
@@ -402,57 +406,67 @@ var_decl:
    * constant propagation when encountering them in the program.
    */
 const_decl:
-  CONST ID ASSIGN expr
+  CONST ID ASSIGN
+  {
+    is_in_const_decl = true;
+  }
+  expr
   {
     // (1) the expression is not a variable reference in type of a dynamic array
-    if ($4->data_type == ST_ARRAY_TYPE
-        && $4->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
-      st_free_expression($4);
-      ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
+    if ($5->data_type == ST_ARRAY_TYPE
+        && $5->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
+      st_free_expression($5);
+      ST_FATAL_ERROR(@5, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
-    $$ = ST_CREATE_CONST_IDENTIFIER($2->name, $4, $4);
-    st_free_expression($4);
-    if (is_in_global_scope) {
+    $$ = ST_CREATE_CONST_IDENTIFIER($2->name, $5, $5);
+    if (is_in_global_scope || $5->expr_type == ST_COMPILE_TIME_EXPRESSION) {
       /* kept by the symbol table, no code gen */
     } else {
       // the value of the expression is on the top of the stack, store to the identifier
       ST_CODE_GEN("istore %d\n", $$->local_number);
     }
+    st_free_expression($5);
+    is_in_const_decl = false;
   }
-| CONST ID ':' scalar_type ASSIGN expr
+| CONST ID ':' scalar_type ASSIGN
+  {
+    is_in_const_decl = true;
+  }
+  expr
   {
     // (1) the expression is not a variable reference in type of a dynamic array
     // although an expression with dynamic array type will never be assignable to a scalar type,
     // we'll check first to emphasize that a constant identifier cannot be a dynamic array
-    if($6->data_type == ST_ARRAY_TYPE
-        && $6->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
+    if($7->data_type == ST_ARRAY_TYPE
+        && $7->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
       st_free_data_type_info($4);
-      st_free_expression($6);
+      st_free_expression($7);
       ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
     }
     // (2) the expression has the same type with the scalar_type
-    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($6);
+    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($7);
     if (!st_is_assignable_type($4, &expr_type_info)) {
-      ST_NON_FATAL_ERROR(@4, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
+      ST_NON_FATAL_ERROR(@7, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
       // error recovery: make the expression a run-time expression with the expected type
-      st_free_expression($6);
-      $6 = (Expression*)malloc(sizeof(RunTimeExpression));
-      $6->expr_type = ST_RUN_TIME_EXPRESSION;
-      ST_COPY_TYPE($6, $4);
+      st_free_expression($7);
+      $7 = (Expression*)malloc(sizeof(RunTimeExpression));
+      $7->expr_type = ST_RUN_TIME_EXPRESSION;
+      ST_COPY_TYPE($7, $4);
     }
     // Use the declared type, not the type of the expression.
     // The exception is string constant, respect the true length.
-    $$ = $6->data_type == ST_STRING_TYPE
-        ? ST_CREATE_CONST_IDENTIFIER($2->name, $6, $6)
-        : ST_CREATE_CONST_IDENTIFIER($2->name, $4, $6);
+    $$ = $7->data_type == ST_STRING_TYPE
+        ? ST_CREATE_CONST_IDENTIFIER($2->name, $7, $7)
+        : ST_CREATE_CONST_IDENTIFIER($2->name, $4, $7);
     st_free_data_type_info($4);
-    st_free_expression($6);
-    if (is_in_global_scope) {
+    if (is_in_global_scope || $7->expr_type == ST_COMPILE_TIME_EXPRESSION) {
       /* kept by the symbol table, no code gen */
     } else {
       // the value of the expression is on the top of the stack, store to the identifier
       ST_CODE_GEN("istore %d\n", $$->local_number);
     }
+    st_free_expression($7);
+    is_in_const_decl = false;
   }
 ;
 
@@ -1556,6 +1570,8 @@ explicit_const:
     $$->int_val = $1;
     if (is_in_global_scope) {
       // TODO: push onto our global stack
+    } else if (is_in_const_decl) {
+      // compile-time constant identifiers are record by the symbol table, no code
     } else {
       // push onto the operand stack
       ST_CODE_GEN("sipush %d\n", $1);
@@ -1582,6 +1598,8 @@ explicit_const:
     $$->string_val = st_strdup($1);
     if (is_in_global_scope) {
       // TODO: push onto our global stack
+    } else if (is_in_const_decl) {
+      // compile-time constant identifiers are record by the symbol table, no code
     } else {
       ST_CODE_GEN("ldc \"%s\"\n", $1);
     }
@@ -1602,6 +1620,8 @@ bool_const:
     $$->bool_val = true;
     if (is_in_global_scope) {
       // TODO: push onto our global stack
+    } else if (is_in_const_decl) {
+      // compile-time constant identifiers are record by the symbol table, no code
     } else {
       // push onto the operand stack
       ST_CODE_GEN("iconst_1\n");
@@ -1615,6 +1635,8 @@ bool_const:
     $$->bool_val = false;
     if (is_in_global_scope) {
       // TODO: push onto our global stack
+    } else if (is_in_const_decl) {
+      // compile-time constant identifiers are record by the symbol table, no code
     } else {
       // push onto the operand stack
       ST_CODE_GEN("iconst_0\n");
