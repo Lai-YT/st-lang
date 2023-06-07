@@ -1,3 +1,3 @@
-% lower bound of an 'array' must be positive
+% lower bound of an 'array' cannot be negative
 
-var arr: array 0..2 of int
+var arr1: array -1..2 of int

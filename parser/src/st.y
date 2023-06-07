@@ -690,8 +690,8 @@ formal_star_array_type:
       CLEAN_UP;
       ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array' (ARR03)\n");
     }
-    // (4) lower bound must have positive value
-    if (lower_bound->int_val < 1) {
+    // (4) lower bound must have non-negative value
+    if (lower_bound->int_val < 0) {
       CLEAN_UP;
       ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive (ARR04)\n");
     }
@@ -1105,26 +1105,26 @@ array_type:
       CLEAN_UP;
       ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array' (ARR03)\n");
     }
-    // (4) lower bound must have positive value
-    if (lower_bound->int_val < 1) {
+    // (4) lower bound must have non-negative value
+    if (lower_bound->int_val < 0) {
       CLEAN_UP;
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive (ARR04)\n");
+      ST_FATAL_ERROR(@2, "lower bound of an 'array' cannot be negative (ARR04)\n");
     }
     $$ = malloc(sizeof(StDataTypeInfo));
     $$->data_type = ST_ARRAY_TYPE;
     if ($5->expr_type == ST_COMPILE_TIME_EXPRESSION) {
       CompileTimeExpression* upper_bound = (CompileTimeExpression*)$5;
-      // (5) upper bound of a static array must have positive value
-      if (upper_bound->int_val < 1) {
+      // (5) upper bound of a static array must have non-negative value
+      if (upper_bound->int_val < 0) {
         CLEAN_UP;
         free($$);  // in the middle of the construction of $$, has to clean as also
-        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be positive (ARR05)\n");
+        ST_FATAL_ERROR(@5, "upper bound of a 'static array' cannot be negative (ARR05)\n");
       }
-      // (6) the upper bound of a static array must be greater than the lower bound
-      if (upper_bound->int_val <= lower_bound->int_val) {
+      // (6) the upper bound of a static array must be greater than of equal to the lower bound
+      if (upper_bound->int_val < lower_bound->int_val) {
         CLEAN_UP;
         free($$);  // in the middle of the construction of $$, has to clean as also
-        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be greater than its lower bound (ARR06)\n");
+        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be greater than or equal to its lower bound (ARR06)\n");
       }
       $$->array_type_info = malloc(sizeof(StStaticArrayTypeInfo));
       $$->array_type_info->array_type = ST_STATIC_ARRAY;

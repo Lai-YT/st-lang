@@ -1,6 +1,6 @@
 % all of the elements in an array is true
-function all(arr: array 1..* of bool, size: int): bool
-  for i: 1..size
+function all(arr: array 0..* of bool, size: int): bool
+  for i: 0..size
     if not arr[i] then
       result false
     end if
@@ -9,8 +9,8 @@ function all(arr: array 1..* of bool, size: int): bool
 end all
 
 % none of the elements in an array is true
-function none(arr: array 1..* of bool, size: int): bool
-  for i: 1..size
+function none(arr: array 0..* of bool, size: int): bool
+  for i: 0..size
     if arr[i] then
       result false
     end if

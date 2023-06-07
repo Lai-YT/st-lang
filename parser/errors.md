@@ -7,9 +7,9 @@
 | ARR01 | lower bound of an 'array' must be determined at compile-time | fatal | [arr01-1.st](tests/bad/arr01-1.st), [arr01-2.st](tests/bad/arr01-2.st) |
 | ARR02 | lower/upper bound of an 'array' must have type 'int' | fatal | [arr02-1.st](tests/bad/arr02-1.st), [arr02-2.st](tests/bad/arr02-2.st), [arr02-3.st](tests/bad/arr02-3.st) |
 | ARR03 | type of an 'array' must be a 'static array' | fatal | [arr03-1.st](tests/bad/arr03-1.st), [arr03-2.st](tests/bad/arr03-2.st) |
-| ARR04 | lower bound of an 'array' must be positive | fatal | [arr04-1.st](tests/bad/arr04-1.st), [arr04-2.st](tests/bad/arr04-2.st) |
-| ARR05 | upper bound of a 'static array' must be positive | fatal | [arr05.st](tests/bad/arr05.st) |
-| ARR06 | upper bound of a 'static array' must be greater than its lower bound | fatal | [arr06.st](tests/bad/arr06.st) |
+| ARR04 | lower bound of an 'array' cannot be negative | fatal | [arr04-1.st](tests/bad/arr04-1.st), [arr04-2.st](tests/bad/arr04-2.st) |
+| ARR05 | upper bound of a 'static array' cannot be negative | fatal | [arr05.st](tests/bad/arr05.st) |
+| ARR06 | upper bound of a 'static array' must be greater than or equal to its lower bound | fatal | [arr06.st](tests/bad/arr06.st) |
 
 ## Call of Subprograms
 
