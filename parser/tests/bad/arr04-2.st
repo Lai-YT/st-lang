@@ -1,6 +1,6 @@
-% lower bound of an 'array' must be positive
+% lower bound of an 'array' cannot be negative
 %   dynamic formal
 
-procedure p(arr: array 0..* of int)
+procedure p(arr: array -1..* of int)
   % empty
 end procedure

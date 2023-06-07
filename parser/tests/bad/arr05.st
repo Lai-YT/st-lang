@@ -1,3 +1,3 @@
-% upper bound of a 'static array' must be positive
+% upper bound of a 'static array' cannot be negative
 
-var arr: array 1..0 of int
+var arr: array 1..-1 of int
