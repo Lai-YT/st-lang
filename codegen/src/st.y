@@ -2066,6 +2066,7 @@ sign_operation:
     } else {
       $$ = ST_CREATE_UNARY_SIGN_EXPRESSION(+, $2);
     }
+    // no code gen since has no effect
     st_free_expression($2);
   }
 | '-' expr
@@ -2077,6 +2078,7 @@ sign_operation:
     } else {
       $$ = ST_CREATE_UNARY_SIGN_EXPRESSION(-, $2);
     }
+    ST_CODE_GEN("ineg\n");
     st_free_expression($2);
   }
 ;
