@@ -1511,7 +1511,7 @@ expr:
                 // since boolean uses int as also, can fallthrough
               case ST_BOOL_TYPE:
                 if (st_is_global(id)) {
-                  ST_CODE_GEN("iload %s.%s\n", code_gen_class_name, id->name);
+                  ST_CODE_GEN("getstatic int %s.%s\n", code_gen_class_name, id->name);
                 } else {
                   ST_CODE_GEN("iload %d\n", id->local_number);
                 }
@@ -1534,7 +1534,7 @@ expr:
               // since boolean uses int as also, can fallthrough
             case ST_BOOL_TYPE:
               if (st_is_global(id)) {
-                ST_CODE_GEN("iload %s.%s\n", code_gen_class_name, id->name);
+                ST_CODE_GEN("getstatic int %s.%s\n", code_gen_class_name, id->name);
               } else {
                 ST_CODE_GEN("iload %d\n", id->local_number);
               }
