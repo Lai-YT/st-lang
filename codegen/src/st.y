@@ -1721,6 +1721,7 @@ numeric_operation:
           $$->string_type_info->max_length = 255;
         }
       }
+      ST_UNIMPLEMENTED_ERROR();
     } else { // is arithmetic
       // (4) expressions can't have type other than int and real
       bool has_error = false;
@@ -1735,6 +1736,11 @@ numeric_operation:
       $$ = has_error
           ? st_create_recovery_expression(ST_INT_TYPE)
           : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, +, $3);
+      if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
+        ST_UNIMPLEMENTED_ERROR();
+      }
+      // the two operands are already push onto the operand stack
+      ST_CODE_GEN("iadd\n");
     }
     CLEAN_UP;
     #undef CLEAN_UP
@@ -1754,6 +1760,10 @@ numeric_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_INT_TYPE)
         : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, -, $3);
+    if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
+      ST_UNIMPLEMENTED_ERROR();
+    }
+    ST_CODE_GEN("isub\n");
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1772,6 +1782,10 @@ numeric_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_INT_TYPE)
         : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, *, $3);
+    if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
+      ST_UNIMPLEMENTED_ERROR();
+    }
+    ST_CODE_GEN("imul\n");
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1790,6 +1804,12 @@ numeric_operation:
     $$ = has_error
         ? st_create_recovery_expression(ST_INT_TYPE)
         : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, /, $3);
+    // FIXME: javaa reports syntax error on comments with '/' in it, which
+    // disallows us to generate source code of division operations
+    if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
+      ST_UNIMPLEMENTED_ERROR();
+    }
+    ST_CODE_GEN("idiv\n");
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1822,6 +1842,7 @@ numeric_operation:
         $$->data_type = ST_INT_TYPE;
       }
     }
+    ST_CODE_GEN("irem\n");
     st_free_expression($1);
     st_free_expression($3);
   }
