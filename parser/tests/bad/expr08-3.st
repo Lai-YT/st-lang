@@ -1,6 +1,6 @@
 % 'boolean' expression must have type 'bool'
-%   if-then
+%   exit
 
-if 1 then
-  % empty
-end if
+loop
+  exit when 1
+end loop
