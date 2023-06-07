@@ -193,7 +193,7 @@ An *array_type* is:
 Variables and parameters can be declared to be dynamic arrays, with runtime upper bounds.
 
 The two *expr*s give the lower and upper bounds of the range of values of the type. The two *expr*s must be both `int`s.
-The lower bound must be less than or equal to the upper bound. The first _expr_ must be a [compile-time expression](#compile-time-expressions). The second _expr_ must be a compile-time expression as also except when it gives the upper bound of a dynamic array being defined in a *[variable_declaration](#variable-declarations)*.
+The lower bound must be less than or equal to the upper bound, and not be negative. The first _expr_ must be a [compile-time expression](#compile-time-expressions). The second _expr_ must be a compile-time expression as also except when it gives the upper bound of a dynamic array being defined in a *[variable_declaration](#variable-declarations)*.
 
 To have a multi-dimensional array, declare an array with *array_type*, but only the upper bound of the first dimension may be a run-time expression. \
 Examples:
@@ -201,8 +201,8 @@ Examples:
 ```turing
 var j: int
 get j
-var validArr: array 1..j of array 1..4 of int    % ok
-var invalidArr: array 1..4 of array 1..j of int  % error
+var validArr: array 0..j of array 0..4 of int    % ok
+var invalidArr: array 0..4 of array 0..j of int  % error
 ```
 
 ## Statements
