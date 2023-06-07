@@ -43,12 +43,12 @@ extern FILE* st_codegen_out;
 /// @param end_branch The label number of the end branch.
 #define ST_CODE_GEN_COMPARISON_EXPRESSION(ifcond, true_branch, end_branch) \
   ST_CODE_GEN("isub\n"); \
-  ST_CODE_GEN("%s L%d\n", (ifcond), (true_branch)); \
+  ST_CODE_GEN("%s Ltrue%d\n", (ifcond), (true_branch)); \
   ST_CODE_GEN("iconst_0\n"); \
-  ST_CODE_GEN("goto L%d\n", (end_branch)); \
-  ST_CODE_GEN("L%d:\n", (true_branch)); \
+  ST_CODE_GEN("goto Lend%d\n", (end_branch)); \
+  ST_CODE_GEN("Ltrue%d:\n", (true_branch)); \
   ST_CODE_GEN("iconst_1\n"); \
-  ST_CODE_GEN("L%d:\n", (end_branch));
+  ST_CODE_GEN("Lend%d:\n", (end_branch));
 #endif
 
 void gen_identifier_code(Identifier*);

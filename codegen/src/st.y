@@ -931,13 +931,13 @@ if_stmt:
     }
     st_free_expression($2);
     ST_CODE_GEN_SOURCE_COMMENT(@4);
-    ST_CODE_GEN("L%d:\n", $<label_number>3);
+    ST_CODE_GEN("Lfalse%d:\n", $<label_number>3);
   }
 | IF expr then_block
   {
     int end_branch = label_number++;
-    ST_CODE_GEN("goto L%d\n", end_branch);
-    ST_CODE_GEN("L%d:\n", $<label_number>3);
+    ST_CODE_GEN("goto Lend%d\n", end_branch);
+    ST_CODE_GEN("Lfalse%d:\n", $<label_number>3);
     $<label_number>$ = end_branch;
   }
   else_block END IF
@@ -947,7 +947,7 @@ if_stmt:
     }
     st_free_expression($2);
     ST_CODE_GEN_SOURCE_COMMENT(@6);
-    ST_CODE_GEN("L%d:\n", $<label_number>4);
+    ST_CODE_GEN("Lend%d:\n", $<label_number>4);
   }
 ;
 
@@ -959,7 +959,7 @@ then_block:
     st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
 
     int false_branch = label_number++;
-    ST_CODE_GEN("ifeq L%d\n", false_branch);
+    ST_CODE_GEN("ifeq Lfalse%d\n", false_branch);
     $<label_number>$ = false_branch;
   }
   opt_decl_or_stmt_list
@@ -1005,7 +1005,7 @@ exit_stmt:
   {
     ST_CODE_GEN_SOURCE_COMMENT(@1);
     int* end_branch = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
-    ST_CODE_GEN("goto L%d\n", *end_branch);
+    ST_CODE_GEN("goto Lend%d\n", *end_branch);
   }
 | EXIT
   { ST_CODE_GEN_SOURCE_COMMENT(@1); }
@@ -1016,7 +1016,7 @@ exit_stmt:
     }
     st_free_expression($4);
     int* end_branch = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
-    ST_CODE_GEN("ifne L%d\n", *end_branch);
+    ST_CODE_GEN("ifne Lend%d\n", *end_branch);
   }
 ;
 
@@ -1025,7 +1025,7 @@ loop_stmt:
   {
     ST_CODE_GEN_SOURCE_COMMENT(@1);
     int begin_branch = label_number++;
-    ST_CODE_GEN("L%d:\n", begin_branch);
+    ST_CODE_GEN("Lbegin%d:\n", begin_branch);
     $<label_number>$ = begin_branch;
     // Also we create a end_branch and store it into the symbol table,
     // so that the exit statement knows where to jump out of the loop.
@@ -1036,13 +1036,13 @@ loop_stmt:
     symbol->attribute = end_branch;
   }
   opt_decl_or_stmt_list
-  { ST_CODE_GEN("goto L%d\n", $<label_number>2); }
+  { ST_CODE_GEN("goto Lbegin%d\n", $<label_number>2); }
   END LOOP
   {
     ST_CODE_GEN_SOURCE_COMMENT(@5);
     Symbol* symbol = st_probe_environment(env, ST_LOOP_SCOPE_NAME);
     int* end_branch = symbol->attribute;
-    ST_CODE_GEN("L%d:\n", *end_branch);
+    ST_CODE_GEN("Lend%d:\n", *end_branch);
     free(end_branch);
     symbol->attribute = NULL;
   }
