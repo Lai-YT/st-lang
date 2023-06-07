@@ -84,6 +84,7 @@
   List* formals;
   List* actuals;
   List* references;
+  int label_number;
 }
 
 /* tokens */
@@ -280,7 +281,8 @@ stmt:
       ST_NON_FATAL_ERROR(@1, "'return' statement can only appear in the body of 'procedure's (STMT01)\n");
     }
   }
-| if_stmt
+| { ST_CODE_GEN_SOURCE_COMMENT(@0); }
+  if_stmt
   { /* no check */ }
 | exit_stmt
   {
@@ -928,13 +930,24 @@ if_stmt:
       ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
     }
     st_free_expression($2);
+    ST_CODE_GEN_SOURCE_COMMENT(@4);
+    ST_CODE_GEN("L%d:\n", $<label_number>3);
   }
-| IF expr then_block else_block END IF
+| IF expr then_block
+  {
+    int end_branch = label_number++;
+    ST_CODE_GEN("goto L%d\n", end_branch);
+    ST_CODE_GEN("L%d:\n", $<label_number>3);
+    $<label_number>$ = end_branch;
+  }
+  else_block END IF
   {
     if ($2->data_type != ST_BOOL_TYPE) {
       ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
     }
     st_free_expression($2);
+    ST_CODE_GEN_SOURCE_COMMENT(@6);
+    ST_CODE_GEN("L%d:\n", $<label_number>4);
   }
 ;
 
@@ -944,9 +957,16 @@ then_block:
     // mid-rule
     st_enter_scope(&env);
     st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
+
+    int false_branch = label_number++;
+    ST_CODE_GEN("ifeq L%d\n", false_branch);
+    $<label_number>$ = false_branch;
   }
   opt_decl_or_stmt_list
-  { st_exit_scope(&env); }
+  {
+    $<label_number>$ = $<label_number>2;
+    st_exit_scope(&env);
+  }
 ;
 
 else_block:
@@ -955,6 +975,7 @@ else_block:
     // mid-rule
     st_enter_scope(&env);
     st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
+    ST_CODE_GEN_SOURCE_COMMENT(@1);
   }
   opt_decl_or_stmt_list
   { st_exit_scope(&env); }
@@ -1072,6 +1093,7 @@ get_stmt:
       refs = refs->rest;
     }
     list_delete($2);
+    ST_UNIMPLEMENTED_ERROR();
   }
 ;
 
