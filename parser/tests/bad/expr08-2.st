@@ -1,6 +1,8 @@
 % 'boolean' expression must have type 'bool'
-%   parenthesized expression
+%   if-then-else
 
-if (1) then
+if 1 then
+  % empty
+else
   % empty
 end if

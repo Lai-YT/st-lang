@@ -88,7 +88,7 @@
 %type opt_decl_or_stmt_list_end_with_result_list decl_or_stmt_list_end_with_result_list decl_or_stmt_or_result
 
 /* non-terminals with semantic value */
-%type <expr> expr operation sign_operation numeric_operation comparison_operation boolean_operation bool_expr
+%type <expr> expr operation sign_operation numeric_operation comparison_operation boolean_operation
 %type <compile_time_expr> bool_const explicit_const
 %type <id> decl_ formal_decl_
 %type <var_id> var_decl
@@ -763,10 +763,20 @@ subprog_call:
 ;
 
 if_stmt:
-  IF bool_expr then_block END IF
-  { st_free_expression($2); }
-| IF bool_expr then_block else_block END IF
-  { st_free_expression($2); }
+  IF expr then_block END IF
+  {
+    if ($2->data_type != ST_BOOL_TYPE) {
+      ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
+    }
+    st_free_expression($2);
+  }
+| IF expr then_block else_block END IF
+  {
+    if ($2->data_type != ST_BOOL_TYPE) {
+      ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
+    }
+    st_free_expression($2);
+  }
 ;
 
 then_block:
@@ -813,8 +823,13 @@ result_stmt:
 exit_stmt:
   EXIT
   { /* no check */ }
-| EXIT WHEN bool_expr
-  { st_free_expression($3); }
+| EXIT WHEN expr
+  {
+    if ($3->data_type != ST_BOOL_TYPE) {
+      ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
+    }
+    st_free_expression($3);
+  }
 ;
 
 loop_stmt:
@@ -950,62 +965,6 @@ expr_comma_list:
   { $$ = list_create($3, $1); }
 | expr
   { $$ = list_create($1, NULL); }
-;
-
-  /*
-   * Returns an Expression.
-   */
-bool_expr:
-  var_ref
-  {
-    // (1) the reference must be of a variable in type bool
-    if ($1->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
-      $$ = st_create_recovery_expression(ST_BOOL_TYPE);
-    } else {
-      // only a id reference may be a compile-time expression
-      if ($1->ref_type == ST_IDENTIFIER_REFERENCE
-            && ((IdentifierReference*)$1)->id->id_type
-                == ST_CONST_IDENTIFIER
-            && ((ConstIdentifier*)((IdentifierReference*)$1)->id)->const_id_type
-                == ST_COMPILE_TIME_CONST_IDENTIFIER) {
-          $$ = (Expression*)malloc(sizeof(CompileTimeExpression));
-          $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
-          $$->data_type = ST_BOOL_TYPE;
-          ((CompileTimeExpression*)$$)->bool_val
-              = ((CompileTimeConstIdentifier*)((IdentifierReference*)$1)->id)->bool_val;
-      } else {
-        $$ = (Expression*)malloc(sizeof(RunTimeExpression));
-        $$->expr_type = ST_RUN_TIME_EXPRESSION;
-        $$->data_type = ST_BOOL_TYPE;
-      }
-    }
-    st_free_reference($1);
-  }
-| bool_const
-  { $$ = (Expression*)$1; }
-| comparison_operation %prec COMPARISON_OP
-  { $$ = $1; }
-| boolean_operation %prec BOOLEAN_OP
-  { $$ = $1; }
-  /*
-   * NOTE: using '(' bool_expr ')' makes the grammar not LALR(1):
-   *  If there's another operator after ')', the expression is an expr,
-   *  otherwise a bool_expr.
-   * However, that requires 2 lookahead.
-   * Non-LALR(1) causes reduce/reduce conflicts.
-   * Make it also a '(' expr ')' to resolve the conflicts.
-   */
-| '(' expr ')'
-  {
-    // (1) the expression should have type bool
-    if ($2->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@2, "'boolean' expression must have type 'bool' (EXPR08)\n");
-      st_free_expression($2);
-      $2 = st_create_recovery_expression(ST_BOOL_TYPE);
-    }
-    $$ = $2;
-  }
 ;
 
   /*
@@ -1724,11 +1683,6 @@ comparison_operation:
   }
 ;
 
-  /*
-   * NOTE: enforcing semantic here with bool_expr instead of expr causes
-   * reduce/reduce error, since bool_expr is a subset of expr, and
-   * boolean_operation belongs to both of them.
-   */
 boolean_operation:
   expr AND expr
   {

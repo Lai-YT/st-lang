@@ -43,7 +43,7 @@
 | EXPR05 | operands of 'comparison' operation must have the same type | non-fatal | [expr05.st](tests/bad/expr05_expr05_expr05_expr05_expr05_expr05.st) |
 | EXPR06 | operand of 'arithmetic' operation must have type 'int' or 'real' | non-fatal | [expr06.st](tests/bad/expr06_expr06_expr06_expr06_expr06_expr06_expr06_expr06.st) |
 | EXPR07 | operand of 'mod' operation must have type 'int' | non-fatal | [expr07.st](tests/bad/expr07_expr07.st) |
-| EXPR08 | 'boolean' expression must have type 'bool' | non-fatal | [expr08-1.st](tests/bad/expr08-1.st), [expr08-2.st](tests/bad/expr08-2.st) |
+| EXPR08 | 'boolean' expression must have type 'bool' | non-fatal | [expr08-1.st](tests/bad/expr08-1.st), [expr08-2.st](tests/bad/expr08-2.st), [expr08-3.st](tests/bad/expr08-3.st) |
 
 ## For Statements
 
