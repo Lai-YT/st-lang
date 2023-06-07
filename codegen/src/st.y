@@ -311,8 +311,12 @@ stmt:
   { /* no check */ }
 | put_stmt
   { /* no check */ }
-| SKIP
-  { /* no check */ }
+| { ST_CODE_GEN_SOURCE_COMMENT(@0); }
+  SKIP
+  {
+    ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
+    ST_CODE_GEN("invokevirtual void java.io.PrintStream.println()\n");
+  }
 ;
 
   /*
