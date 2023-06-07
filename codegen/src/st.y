@@ -57,6 +57,9 @@
   /// @brief Compile-time constant identifiers don't generate code, so we need
   /// this flag to tell the expression not the do so.
   static bool is_in_const_decl = false;
+
+  /// @brief To make sure every generated labels are unique.
+  static int label_number = 0;
 %}
 %locations
 %define parse.error detailed
@@ -1875,6 +1878,10 @@ comparison_operation:
         : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, <, $3);
     st_free_expression($1);
     st_free_expression($3);
+
+    const int true_branch = label_number++;
+    const int end_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("iflt", true_branch, end_branch);
   }
 | expr '>' expr
   {
@@ -1897,6 +1904,10 @@ comparison_operation:
         : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, >, $3);
     st_free_expression($1);
     st_free_expression($3);
+
+    const int true_branch = label_number++;
+    const int end_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("ifgt", true_branch, end_branch);
   }
 | expr '=' expr
   {
@@ -1919,6 +1930,10 @@ comparison_operation:
         : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, ==, $3);
     st_free_expression($1);
     st_free_expression($3);
+
+    const int true_branch = label_number++;
+    const int end_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("ifeq", true_branch, end_branch);
   }
 | expr LE expr
   {
@@ -1941,6 +1956,10 @@ comparison_operation:
         : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, <=, $3);
     st_free_expression($1);
     st_free_expression($3);
+
+    const int true_branch = label_number++;
+    const int end_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("ifle", true_branch, end_branch);
   }
 | expr GE expr
   {
@@ -1963,6 +1982,10 @@ comparison_operation:
         : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, >=, $3);
     st_free_expression($1);
     st_free_expression($3);
+
+    const int true_branch = label_number++;
+    const int end_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("ifge", true_branch, end_branch);
   }
 | expr NE expr
   {
@@ -1985,6 +2008,10 @@ comparison_operation:
         : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, !=, $3);
     st_free_expression($1);
     st_free_expression($3);
+
+    const int true_branch = label_number++;
+    const int end_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("ifne", true_branch, end_branch);
   }
 ;
 
