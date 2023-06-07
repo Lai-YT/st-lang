@@ -101,7 +101,7 @@
 /* non-terminals without semantic value */
 %type program opt_decl_in_main_program_list opt_stmt_list stmt_list decl_in_main_program_list decl_in_main_program
 %type opt_decl_or_stmt_list decl_or_stmt_list decl_or_stmt decl stmt
-%type subprog_decl if_stmt then_block else_block result_stmt exit_stmt
+%type subprog_decl if_stmt then_block result_stmt exit_stmt
 %type loop_stmt for_stmt for_header for_range block get_stmt put_stmt opt_dot_dot
   /* to enforce ending with result statement in a function syntactically */
 %type opt_decl_or_stmt_list_end_with_result_list decl_or_stmt_list_end_with_result_list decl_or_stmt_or_result
@@ -937,16 +937,24 @@ if_stmt:
   {
     int end_branch = label_number++;
     ST_CODE_GEN("goto Lend%d\n", end_branch);
-    ST_CODE_GEN("Lfalse%d:\n", $<label_number>3);
     $<label_number>$ = end_branch;
   }
-  else_block END IF
+  ELSE
   {
+    // mid-rule
+    st_enter_scope(&env);
+    st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
+    ST_CODE_GEN_SOURCE_COMMENT(@5);
+    ST_CODE_GEN("Lfalse%d:\n", $<label_number>3);
+  }
+  opt_decl_or_stmt_list END IF
+  {
+    st_exit_scope(&env);
     if ($2->data_type != ST_BOOL_TYPE) {
       ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
     }
     st_free_expression($2);
-    ST_CODE_GEN_SOURCE_COMMENT(@6);
+    ST_CODE_GEN_SOURCE_COMMENT(@8);
     ST_CODE_GEN("Lend%d:\n", $<label_number>4);
   }
 ;
@@ -967,18 +975,6 @@ then_block:
     $<label_number>$ = $<label_number>2;
     st_exit_scope(&env);
   }
-;
-
-else_block:
-  ELSE
-  {
-    // mid-rule
-    st_enter_scope(&env);
-    st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
-    ST_CODE_GEN_SOURCE_COMMENT(@1);
-  }
-  opt_decl_or_stmt_list
-  { st_exit_scope(&env); }
 ;
 
 result_stmt:
