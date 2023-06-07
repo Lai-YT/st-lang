@@ -2006,6 +2006,7 @@ boolean_operation:
         : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, &&, $3);
     st_free_expression($1);
     st_free_expression($3);
+    ST_CODE_GEN("iand\n");
   }
 | expr OR expr
   {
@@ -2024,6 +2025,7 @@ boolean_operation:
         : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, ||, $3);
     st_free_expression($1);
     st_free_expression($3);
+    ST_CODE_GEN("ior\n");
   }
 | NOT expr
   {
