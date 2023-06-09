@@ -122,6 +122,7 @@
 %type <actuals> opt_expr_comma_list expr_comma_list
 %type <subprogram> subprog_call
 %type <references> var_ref_comma_list
+%type <label_number> then_block for_header for_range
 
   /* lowest to highest */
 %left OR
@@ -959,6 +960,9 @@ if_stmt:
   }
 ;
 
+  /*
+   * Returns the label number of the false branch.
+   */
 then_block:
   THEN
   {
@@ -972,7 +976,7 @@ then_block:
   }
   opt_decl_or_stmt_list
   {
-    $<label_number>$ = $<label_number>2;
+    $$ = $<label_number>2;
     st_exit_scope(&env);
   }
 ;
@@ -1023,7 +1027,7 @@ loop_stmt:
     int begin_branch = label_number++;
     ST_CODE_GEN("Lbegin%d:\n", begin_branch);
     $<label_number>$ = begin_branch;
-    // Also we create a end_branch and store it into the symbol table,
+    // Also we create an end_branch and store it into the symbol table,
     // so that the exit statement knows where to jump out of the loop.
     // Note that the label might not be used, but that's ok.
     int* end_branch = malloc(sizeof(int));
@@ -1044,17 +1048,107 @@ loop_stmt:
   }
 ;
 
+  /*
+   * A for loop with code
+   *
+   *  for i : 0 .. 2
+   *    % do something
+   *  end for
+   *
+   * is effectively as the following
+   *
+   *  const i := 0
+   *  loop
+   *    exit when 2 < i
+   *    % do something
+   *    i := i + 1
+   *  end loop
+   *
+   * Notice that while i is a constant to the user,
+   * it's increased in each loop.
+   */
 for_stmt:
-  for_header opt_decl_or_stmt_list END FOR
-  { /* no check */ }
+  FOR
+  {
+    ST_CODE_GEN_SOURCE_COMMENT(@1);
+    // Just as the loop statement, we'll create an end_branch, so that the exit
+    // statement knows where to jump out of the for loop.
+    int* end_branch = malloc(sizeof(int));
+    *end_branch = label_number++;
+    Symbol* symbol = st_probe_environment(env, ST_LOOP_SCOPE_NAME);
+    symbol->attribute = end_branch;
+  }
+  for_header opt_decl_or_stmt_list
+  {
+    // Generate code for `__i := __i + 1`.
+    ST_CODE_GEN_COMMENT("__i := __i + 1");
+    VarIdentifier* counter = st_probe_environment(env, "__i")->attribute;
+    ST_CODE_GEN("iload %d\n", counter->local_number);
+    ST_CODE_GEN("sipush 1\n");
+    ST_CODE_GEN("iadd\n");
+    ST_CODE_GEN("istore %d\n", counter->local_number);
+    // Back to the beginning of the loop.
+    ST_CODE_GEN("goto Lbegin%d\n", $<label_number>3);
+  }
+  END FOR
+  {
+    ST_CODE_GEN_SOURCE_COMMENT(@4);
+    Symbol* symbol = st_probe_environment(env, ST_LOOP_SCOPE_NAME);
+    int* end_branch = symbol->attribute;
+    ST_CODE_GEN("Lend%d:\n", *end_branch);
+    free(end_branch);
+    symbol->attribute = NULL;
+  }
 ;
 
+  /*
+   * Returns the number of the begin label.
+   */
 for_header:
-  FOR ':' for_range
+  ':'
+  {
+    // Create a counting identifier.
+    ST_CODE_GEN_COMMENT("__i: int");
+    StDataTypeInfo type_info = { .data_type = ST_INT_TYPE };
+    VarIdentifier* counter = ST_CREATE_VAR_IDENTIFIER("__i", &type_info);
+    st_add_to_scope(env, counter->name)->attribute = counter;
+  }
+  for_range
+  {
+    // NOTE: if we initialize here, the begin and end value of the range are
+    // already push onto the operand stack, but then we can no longer retrieve
+    // the begin value since it's now not on the top. So we'll move the work
+    // on the begin value to the for_range.
+    // On the other hand, the end value can be handled here. We'll generate
+    // the proper exit condition.
+
+    // Generate code for `exit when end < __i`.
+    // 1. end < __i
+    // end is already on the top of the stack
+    VarIdentifier* counter = st_probe_environment(env, "__i")->attribute;
+    ST_CODE_GEN("iload %d\n", counter->local_number);
+    const int true_branch = label_number++;
+    const int false_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("iflt", true_branch, false_branch);
+    // 2. exit when expr
+    int* end_branch = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
+    ST_CODE_GEN("ifne Lend%d\n", *end_branch);
+    $$ = $<label_number>3;
+  }
+| DECREASING ':' for_range
   { /* no check */ }
-| FOR DECREASING ':' for_range
-  { /* no check */ }
-| FOR ID ':' for_range
+| ID ':' for_range
+  {
+    // (1) add id into the scope and marked as constant
+    RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
+    id->id_type = ST_CONST_IDENTIFIER;
+    id->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
+    id->name = st_strdup($1->name);
+    id->data_type = ST_INT_TYPE;
+    Symbol* symbol = st_add_to_scope(env, $1->name);
+    symbol->attribute = id;
+  }
+| DECREASING ID ':' for_range
   {
     // (1) add id into the scope and marked as constant
     RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
@@ -1065,32 +1159,41 @@ for_header:
     Symbol* symbol = st_add_to_scope(env, $2->name);
     symbol->attribute = id;
   }
-
-| FOR DECREASING ID ':' for_range
-  {
-    // (1) add id into the scope and marked as constant
-    RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
-    id->id_type = ST_CONST_IDENTIFIER;
-    id->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
-    id->name = st_strdup($3->name);
-    id->data_type = ST_INT_TYPE;
-    Symbol* symbol = st_add_to_scope(env, $3->name);
-    symbol->attribute = id;
-  }
 ;
 
+  /*
+   * Returns the number of the begin label.
+   */
 for_range:
-  expr '.' '.' expr
+  { ST_CODE_GEN_COMMENT("__i := begin"); }
+  expr
   {
     // (1) the expressions must be both of type int
-    if ($1->data_type != ST_INT_TYPE) {
-      ST_NON_FATAL_ERROR(@1, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    if ($2->data_type != ST_INT_TYPE) {
+      ST_NON_FATAL_ERROR(@2, "range of a 'for' statement must have type 'int' (FOR01)\n");
     }
-    if ($4->data_type != ST_INT_TYPE) {
-      ST_NON_FATAL_ERROR(@4, "range of a 'for' statement must have type 'int' (FOR01)\n");
+    st_free_expression($2);
+    VarIdentifier* counter = st_probe_environment(env, "__i")->attribute;
+    ST_CODE_GEN("istore %d\n", counter->local_number);
+  }
+  '.' '.'
+  {
+    // At this point, the counter is already initialized to the begin value,
+    // so we can generate the label for begin.
+    int begin_branch = label_number++;
+    ST_CODE_GEN("Lbegin%d:\n", begin_branch);
+    $<label_number>$ = begin_branch;
+
+    ST_CODE_GEN_COMMENT("exit when end < __i");
+  }
+  expr
+  {
+    // (1) the expressions must be both of type int
+    if ($7->data_type != ST_INT_TYPE) {
+      ST_NON_FATAL_ERROR(@7, "range of a 'for' statement must have type 'int' (FOR01)\n");
     }
-    st_free_expression($1);
-    st_free_expression($4);
+    st_free_expression($7);
+    $$ = $<label_number>6;
   }
 ;
 
