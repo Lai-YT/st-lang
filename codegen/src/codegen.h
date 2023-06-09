@@ -51,7 +51,4 @@ extern FILE* st_codegen_out;
   ST_CODE_GEN("Lend%d:\n", (end_branch));
 #endif
 
-void gen_identifier_code(Identifier*);
-void gen_expression_code(Expression*);
-
 #endif /* end of include guard: CODEGEN_CODEGEN_H */
