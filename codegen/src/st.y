@@ -1152,7 +1152,7 @@ for_header:
     StDataTypeInfo type_info = { .data_type = ST_INT_TYPE };
     VarIdentifier* counter = ST_CREATE_VAR_IDENTIFIER("__i", &type_info);
     st_add_to_scope(env, counter->name)->attribute = counter;
-    // Record the name of the counter, so that we can increase or decrease it later.
+    // Record the name nad kind of the counter, so that we can increase it later.
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
     loop_info->name_of_counter = counter->name;
     loop_info->for_loop_kind = INCREASING_LOOP;
@@ -1186,7 +1186,7 @@ for_header:
     StDataTypeInfo type_info = { .data_type = ST_INT_TYPE };
     VarIdentifier* counter = ST_CREATE_VAR_IDENTIFIER("__i", &type_info);
     st_add_to_scope(env, counter->name)->attribute = counter;
-    // Record the name of the counter, so that we can increase or decrease it later.
+    // Record the name and kind of the counter, so that we can decrease it later.
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
     loop_info->name_of_counter = counter->name;
     loop_info->for_loop_kind = DECREASING_LOOP;
@@ -1206,7 +1206,7 @@ for_header:
     // 2. exit when expr
     ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
   }
-| ID ':' for_range
+| ID
   {
     // (1) add id into the scope and marked as constant
     RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
@@ -1216,8 +1216,27 @@ for_header:
     id->data_type = ST_INT_TYPE;
     Symbol* symbol = st_add_to_scope(env, $1->name);
     symbol->attribute = id;
+    // Record the name and kind of the counter, so that we can increase it later.
+    LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
+    loop_info->name_of_counter = id->name;
+    loop_info->for_loop_kind = INCREASING_LOOP;
   }
-| DECREASING ID ':' for_range
+  ':' for_range
+  {
+    // Generate code for `exit when end < counter`.
+    LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
+    // 1. end < counter
+    // `end` is already on the top of the stack
+    VarIdentifier* counter
+        = st_probe_environment(env, loop_info->name_of_counter)->attribute;
+    ST_CODE_GEN("iload %d\n", counter->local_number);
+    const int true_branch = label_number++;
+    const int false_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("iflt", true_branch, false_branch);
+    // 2. exit when expr
+    ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
+  }
+| DECREASING ID
   {
     // (1) add id into the scope and marked as constant
     RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
@@ -1227,6 +1246,25 @@ for_header:
     id->data_type = ST_INT_TYPE;
     Symbol* symbol = st_add_to_scope(env, $2->name);
     symbol->attribute = id;
+    // Record the name and kind of the counter, so that we can decrease it later.
+    LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
+    loop_info->name_of_counter = id->name;
+    loop_info->for_loop_kind = DECREASING_LOOP;
+  }
+  ':' for_range
+  {
+    // Generate code for `exit when end > counter`.
+    LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
+    // 1. end > counter
+    // `end` is already on the top of the stack
+    VarIdentifier* counter
+        = st_probe_environment(env, loop_info->name_of_counter)->attribute;
+    ST_CODE_GEN("iload %d\n", counter->local_number);
+    const int true_branch = label_number++;
+    const int false_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("ifgt", true_branch, false_branch);
+    // 2. exit when expr
+    ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
   }
 ;
 
