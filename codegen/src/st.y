@@ -61,6 +61,11 @@
   /// @brief To make sure every generated labels are unique.
   static int label_number = 0;
 
+  typedef enum ForLoopKind {
+    INCREASING_LOOP,
+    DECREASING_LOOP,
+  } ForLoopKind;
+
   /// @brief Since the construct of for_stmt is split into several non-terminals,
   /// we create a structure and store it into the symbol table to share across the non-terminals.
   typedef struct LoopInfo {
@@ -72,6 +77,8 @@
     /// @note We'll have the name be a shallow copy from the Identifier,
     /// so do not free this.
     char* name_of_counter;
+    /// @note ONLY used by the for-loops.
+    ForLoopKind for_loop_kind;
   } LoopInfo;
 %}
 %locations
@@ -1096,14 +1103,32 @@ for_stmt:
   }
   for_header opt_decl_or_stmt_list
   {
-    // Generate code for `counter := counter + 1`.
+    // Generate code for `counter := counter +/- 1`.
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
-    ST_CODE_GEN_COMMENT("%s := %s + 1", loop_info->name_of_counter, loop_info->name_of_counter);
+    switch (loop_info->for_loop_kind) {
+      case INCREASING_LOOP:
+        ST_CODE_GEN_COMMENT("%s := %s + 1", loop_info->name_of_counter, loop_info->name_of_counter);
+        break;
+      case DECREASING_LOOP:
+        ST_CODE_GEN_COMMENT("%s := %s - 1", loop_info->name_of_counter, loop_info->name_of_counter);
+        break;
+      default:
+        ST_UNREACHABLE();
+    }
     VarIdentifier* counter
         = st_probe_environment(env, loop_info->name_of_counter)->attribute;
     ST_CODE_GEN("iload %d\n", counter->local_number);
     ST_CODE_GEN("sipush 1\n");
-    ST_CODE_GEN("iadd\n");
+    switch (loop_info->for_loop_kind) {
+      case INCREASING_LOOP:
+        ST_CODE_GEN("iadd\n");
+        break;
+      case DECREASING_LOOP:
+        ST_CODE_GEN("isub\n");
+        break;
+      default:
+        ST_UNREACHABLE();
+    }
     ST_CODE_GEN("istore %d\n", counter->local_number);
     // Back to the beginning of the loop.
     ST_CODE_GEN("goto Lbegin%d\n", loop_info->begin_branch);
@@ -1130,6 +1155,7 @@ for_header:
     // Record the name of the counter, so that we can increase or decrease it later.
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
     loop_info->name_of_counter = counter->name;
+    loop_info->for_loop_kind = INCREASING_LOOP;
   }
   for_range
   {
@@ -1153,8 +1179,33 @@ for_header:
     // 2. exit when expr
     ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
   }
-| DECREASING ':' for_range
-  { /* no check */ }
+| DECREASING
+  {
+    // Create a counting identifier.
+    ST_CODE_GEN_COMMENT("__i: int");
+    StDataTypeInfo type_info = { .data_type = ST_INT_TYPE };
+    VarIdentifier* counter = ST_CREATE_VAR_IDENTIFIER("__i", &type_info);
+    st_add_to_scope(env, counter->name)->attribute = counter;
+    // Record the name of the counter, so that we can increase or decrease it later.
+    LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
+    loop_info->name_of_counter = counter->name;
+    loop_info->for_loop_kind = DECREASING_LOOP;
+  }
+  ':' for_range
+  {
+    // Generate code for `exit when end > counter`.
+    LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
+    // 1. end > counter
+    // `end` is already on the top of the stack
+    VarIdentifier* counter
+        = st_probe_environment(env, loop_info->name_of_counter)->attribute;
+    ST_CODE_GEN("iload %d\n", counter->local_number);
+    const int true_branch = label_number++;
+    const int false_branch = label_number++;
+    ST_CODE_GEN_COMPARISON_EXPRESSION("ifgt", true_branch, false_branch);
+    // 2. exit when expr
+    ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
+  }
 | ID ':' for_range
   {
     // (1) add id into the scope and marked as constant
@@ -1203,7 +1254,16 @@ for_range:
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
     loop_info->begin_branch = label_number++;
     ST_CODE_GEN("Lbegin%d:\n", loop_info->begin_branch);
-    ST_CODE_GEN_COMMENT("exit when end < %s", loop_info->name_of_counter);
+    switch (loop_info->for_loop_kind) {
+      case INCREASING_LOOP:
+        ST_CODE_GEN_COMMENT("exit when end < %s", loop_info->name_of_counter);
+        break;
+      case DECREASING_LOOP:
+        ST_CODE_GEN_COMMENT("exit when end > %s", loop_info->name_of_counter);
+        break;
+      default:
+        ST_UNREACHABLE();
+    }
   }
   expr
   {
