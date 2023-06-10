@@ -403,7 +403,6 @@ var_decl:
       }
       // use the declared type, not the type of the expression
       $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
-      st_free_data_type_info($4);
       if (is_in_global_scope && $6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
         ST_UNIMPLEMENTED_ERROR();
       }
@@ -423,6 +422,7 @@ var_decl:
       } else {
         ST_CODE_GEN("istore %d\n", $$->local_number);
       }
+      st_free_data_type_info($4);
       st_free_expression($6);
     }
   }
