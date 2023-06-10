@@ -1,0 +1,14 @@
+# generated files
+*.o
+newlex.l
+javaa.l
+gram.h
+gram.c
+javaa.tab.h
+javaa.tab.c
+lex.yy.c
+lex.c
+javaa
+
+# compilation output
+*.class
