@@ -1742,7 +1742,7 @@ expr:
                   ST_CODE_GEN("iconst_%d\n", compile_time_const_id->bool_val);
                   break;
                 case ST_STRING_TYPE:
-                  ST_CODE_GEN("ldc %s\n", compile_time_const_id->string_val);
+                  ST_CODE_GEN("ldc \"%s\"\n", compile_time_const_id->string_val);
                   break;
                 default:
                   ST_UNIMPLEMENTED_ERROR();
