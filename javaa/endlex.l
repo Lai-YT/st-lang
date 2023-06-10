@@ -1,7 +1,7 @@
 {blanks}+				{echo(yytext);}
 {newline}				{ NewLine(1); }
 ^#.*$					{echo(yytext);}
-"/*"(\\.|[^\\*/]|"*"[^/])*"*/"		{echo(yytext);}
+"/*"(\\.|[^\\*/]|"*"[^/]|[^*]"/")*"*/"		{echo(yytext);}
 {L}({L}|{D})*":"	{ 
 			  if (yyleng >= 99) oops("String too long");
 			  else {
