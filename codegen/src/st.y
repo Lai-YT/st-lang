@@ -841,6 +841,11 @@ formal_star_array_type:
 subprog_call:
   ID '(' opt_expr_comma_list ')'
   {
+    Symbol* symbol = st_lookup_environment(env, $1->name);
+    Identifier* id = (Identifier*)symbol->attribute;
+    Subprogram* subprogram = (Subprogram*)id;
+    $$ = subprogram;
+
     List* actual = $3;
     while (actual) {
       st_free_expression(actual->val);
