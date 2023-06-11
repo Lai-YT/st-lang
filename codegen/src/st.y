@@ -240,7 +240,10 @@ stmt:
 | subprog_call
   { /* the id of $$ is from the symbol table, so no free here */ }
 | RETURN
-  { /* no code gen */ }
+  {
+    ST_CODE_GEN_SOURCE_COMMENT(@1);
+    ST_CODE_GEN("return\n");
+  }
 | { ST_CODE_GEN_SOURCE_COMMENT(@0); }
   if_stmt
   { /* no code gen */ }
@@ -422,6 +425,7 @@ subprog_decl:
     // mid-rule: enter a function scope
     st_enter_scope(&env);
     st_add_to_scope(env, ST_FUNCTION_SCOPE_NAME);
+    is_in_global_scope = false;
   }
   function_decl
   {
@@ -433,6 +437,7 @@ subprog_decl:
     st_probe_environment(env, $2->name)
         ->attribute = NULL;
     st_exit_scope(&env);
+    is_in_global_scope = true;
     Symbol* symbol = st_add_to_scope(env, $2->name);
     symbol->attribute = $2;
   }
@@ -440,6 +445,7 @@ subprog_decl:
     // mid-rule: enter a procedure scope
     st_enter_scope(&env);
     st_add_to_scope(env, ST_PROCEDURE_SCOPE_NAME);
+    is_in_global_scope = false;
   }
   procedure_decl
   {
@@ -447,16 +453,62 @@ subprog_decl:
     // but we don't want it to be freed when the scope exit, so replace it with a NULL
     st_probe_environment(env, $2->name)->attribute = NULL;
     st_exit_scope(&env);
+    is_in_global_scope = true;
     Symbol* symbol = st_add_to_scope(env, $2->name);
     symbol->attribute = $2;
   }
 ;
 
 procedure_decl:
-  procedure_header opt_decl_or_stmt_list END ID
+  procedure_header
   {
+    ST_CODE_GEN("method public static void %s(", $1->name);
+    // Since the formals are stored in the reverse order, we'll have to reverse it again.
+    List* stack = NULL;
+    List* formals = $1->formals;
+    while (formals) {
+      StDataTypeInfo* formal = formals->val;
+      stack = list_create(&formal->data_type, stack);
+      formals = formals->rest;
+    }
+    List* formal_types = stack;
+    while (formal_types) {
+      StDataType* formal_type = formal_types->val;
+      switch (*formal_type) {
+        case ST_INT_TYPE:
+          /* fallthrough since int and bool are both represented by int */
+        case ST_BOOL_TYPE:
+          ST_CODE_GEN("int");
+          break;
+        default:
+          ST_UNIMPLEMENTED_ERROR();
+      }
+      formal_types = formal_types->rest;
+      if (formal_types) {
+        ST_CODE_GEN(", ");
+      }
+    }
+    list_delete(stack);
+    ST_CODE_GEN(")\n");
+    ST_CODE_GEN(
+      "max_stack 15\n"
+      "max_locals 15\n"
+      "{\n"
+    );
+  }
+  opt_decl_or_stmt_list END
+  {
+    ST_CODE_GEN("return\n");
+    ST_CODE_GEN_SOURCE_COMMENT(@4); }
+  ID
+  {
+    ST_CODE_GEN(
+      "}\n"
+      "\n"
+    );
     // Reset the location number since the stack frame of the procedure is popped.
-    // NOTE: there isn't any local identifiers yet (excluding those inside
+    // NOTE: since the statements can only appear after the global declarations,
+    // there isn't any local identifiers yet (excluding those inside
     // subprogram declarations, which use a difference stack frame), it is ok
     // that we reset the number to 0 instead of restore the number before the
     // subprogram declaration.
@@ -524,6 +576,8 @@ procedure_header:
     $<procedure>$ = procedure;
     Symbol* symbol = st_add_to_scope(env, $2->name);
     symbol->attribute = $<procedure>$;
+    ST_CODE_GEN("\n");
+    ST_CODE_GEN_SOURCE_COMMENT(@1);
   }
   '(' opt_formal_decl_list ')'
   {
@@ -644,7 +698,8 @@ formal_decl_:
     id->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
     id->name = st_strdup($1->name);
     if (is_in_global_scope) {
-      id->local_number = -1;
+      // subprograms should start a new local scope
+      ST_UNREACHABLE();
     } else {
       id->local_number = local_number++;
     }
@@ -659,7 +714,7 @@ formal_decl_:
     id->id_type = ST_VAR_IDENTIFIER;
     id->name = st_strdup($2->name);
     if (is_in_global_scope) {
-      id->local_number = -1;
+      ST_UNREACHABLE();
     } else {
       id->local_number = local_number++;
     }
