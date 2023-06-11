@@ -975,12 +975,10 @@ for_header:
   }
 | ID
   {
-    // (1) add id into the scope and marked as constant
-    RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
-    id->id_type = ST_CONST_IDENTIFIER;
-    id->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
-    id->name = st_strdup($1->name);
-    id->data_type = ST_INT_TYPE;
+    // Add id into the scope and marked as constant
+    RunTimeExpression expr = { .expr_type = ST_RUN_TIME_EXPRESSION, .data_type = ST_INT_TYPE };
+    RunTimeExpression* expr_p = &expr;  // resolve -Wstrict-aliasing
+    ConstIdentifier* id = ST_CREATE_CONST_IDENTIFIER($1->name, expr_p, expr_p);
     Symbol* symbol = st_add_to_scope(env, $1->name);
     symbol->attribute = id;
     // Record the name and kind of the counter, so that we can increase it later.
@@ -1005,12 +1003,10 @@ for_header:
   }
 | DECREASING ID
   {
-    // (1) add id into the scope and marked as constant
-    RunTimeConstIdentifier* id = malloc(sizeof(RunTimeConstIdentifier));
-    id->id_type = ST_CONST_IDENTIFIER;
-    id->const_id_type = ST_RUN_TIME_CONST_IDENTIFIER;
-    id->name = st_strdup($2->name);
-    id->data_type = ST_INT_TYPE;
+    // Add id into the scope and marked as constant
+    RunTimeExpression expr = { .expr_type = ST_RUN_TIME_EXPRESSION, .data_type = ST_INT_TYPE };
+    RunTimeExpression* expr_p = &expr;  // resolve -Wstrict-aliasing
+    ConstIdentifier* id = ST_CREATE_CONST_IDENTIFIER($2->name, expr_p, expr_p);
     Symbol* symbol = st_add_to_scope(env, $2->name);
     symbol->attribute = id;
     // Record the name and kind of the counter, so that we can decrease it later.
