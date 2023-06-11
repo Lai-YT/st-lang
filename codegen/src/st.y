@@ -1553,7 +1553,9 @@ expr:
                 // since boolean uses int as also, can fallthrough
               case ST_BOOL_TYPE:
                 if (st_is_global(id)) {
-                  ST_CODE_GEN("getstatic int %s.%s\n", code_gen_class_name, id->name);
+                  // run-time constant has its init expr a run-time expression,
+                  // while we only support compile-time expressions
+                  ST_UNIMPLEMENTED_ERROR();
                 } else {
                   ST_CODE_GEN("iload %d\n", id->local_number);
                 }
