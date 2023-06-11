@@ -1,4 +1,4 @@
-.PHONY: codegen fmt tidy clean tests coverage
+.PHONY: codegen fmt tidy clean tests coverage valgrind
 
 CC := gcc
 YSRC := src/st.y
@@ -61,3 +61,8 @@ coverage: $(CGEN)
     # copy reports out from build directory
 	@rm -rf $(COVERAGE_DIR) && cp -r $(BUILD_DIR)/coverage/ $(COVERAGE_DIR)
 	@echo "Open $(COVERAGE_DIR)/index.html in your browser to view the coverage report."
+
+valgrind: BUILD_TYPE := Debug
+valgrind: export CODEGEN=$(BUILD_DIR)/CodeGen
+valgrind: codegen
+	@./memory_test.sh
