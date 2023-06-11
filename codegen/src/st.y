@@ -521,8 +521,60 @@ procedure_decl:
    * Enforce a function to end with a result statement syntactically.
    */
 function_decl:
-  function_header opt_decl_or_stmt_list_end_with_result_list END ID
+  function_header
   {
+    ST_CODE_GEN("method public static ");
+    switch ($1->result_type->data_type) {
+      case ST_INT_TYPE:
+        /* fallthrough */
+      case ST_BOOL_TYPE:
+        ST_CODE_GEN("int");
+        break;
+      default:
+        ST_UNIMPLEMENTED_ERROR();
+    }
+    ST_CODE_GEN(" %s(", $1->name);
+    // Since the formals are stored in the reverse order, we'll have to reverse it again.
+    List* stack = NULL;
+    List* formals = $1->formals;
+    while (formals) {
+      StDataTypeInfo* formal = formals->val;
+      stack = list_create(&formal->data_type, stack);
+      formals = formals->rest;
+    }
+    List* formal_types = stack;
+    while (formal_types) {
+      StDataType* formal_type = formal_types->val;
+      switch (*formal_type) {
+        case ST_INT_TYPE:
+          /* fallthrough since int and bool are both represented by int */
+        case ST_BOOL_TYPE:
+          ST_CODE_GEN("int");
+          break;
+        default:
+          ST_UNIMPLEMENTED_ERROR();
+      }
+      formal_types = formal_types->rest;
+      if (formal_types) {
+        ST_CODE_GEN(", ");
+      }
+    }
+    list_delete(stack);
+    ST_CODE_GEN(")\n");
+    ST_CODE_GEN(
+      "max_stack 15\n"
+      "max_locals 15\n"
+      "{\n"
+    );
+  }
+  opt_decl_or_stmt_list_end_with_result_list END
+  { ST_CODE_GEN_SOURCE_COMMENT(@4); }
+  ID
+  {
+    ST_CODE_GEN(
+      "}\n"
+      "\n"
+    );
     // Reset the location number since the stack frame of the function is popped.
     // NOTE: there isn't any local identifiers yet (excluding those inside
     // subprogram declarations, which use a difference stack frame), it is ok
@@ -576,7 +628,7 @@ procedure_header:
     $<procedure>$ = procedure;
     Symbol* symbol = st_add_to_scope(env, $2->name);
     symbol->attribute = $<procedure>$;
-    ST_CODE_GEN("\n");
+    ST_CODE_GEN("\n");  // vertical space between fields and methods
     ST_CODE_GEN_SOURCE_COMMENT(@1);
   }
   '(' opt_formal_decl_list ')'
@@ -609,6 +661,8 @@ function_header:
     // result type of the function
     Symbol* special_symbol = st_lookup_environment(env, ST_FUNCTION_SCOPE_NAME);
     special_symbol->attribute = $<function>$;
+    ST_CODE_GEN("\n");  // vertical space between fields and methods
+    ST_CODE_GEN_SOURCE_COMMENT(@1);
   }
   '(' opt_formal_decl_list ')' ':' type
   {
@@ -842,8 +896,13 @@ then_block:
 ;
 
 result_stmt:
-  RESULT expr
-  { st_free_expression($2); }
+  RESULT
+  { ST_CODE_GEN_SOURCE_COMMENT(@1); }
+  expr
+  {
+    ST_CODE_GEN("ireturn\n");
+    st_free_expression($3);
+  }
 ;
 
 exit_stmt:
