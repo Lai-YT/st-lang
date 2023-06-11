@@ -87,9 +87,9 @@ ASSIGN :=
 
 ID [a-zA-Z][a-zA-Z0-9]*
 
-INT [0-9][0-9]*
+INT [-+]?[0-9][0-9]*
   /* not supporting optional integer / fractional part */
-REAL  [0-9]+\.[0-9]+
+REAL  [-+]?[0-9]+\.[0-9]+
 
 ESCAPED_QUOTE \"\"
 

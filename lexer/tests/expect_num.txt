@@ -4,12 +4,22 @@
 <integer:1>
 1: const oneBit := 1
 <CONST>
+<identifier:negativeBit>
+<ASSIGN>
+<integer:-1>
+2: const negativeBit := -1
+<CONST>
 <identifier:multiBits>
 <ASSIGN>
 <integer:12345678>
-2: const multiBits := 12345678
+3: const multiBits := 12345678
 <CONST>
 <identifier:someReal>
 <ASSIGN>
 <real:0.010000>
-3: const someReal := 0.01
+4: const someReal := 0.01
+<CONST>
+<identifier:negativeReal>
+<ASSIGN>
+<real:-0.010000>
+5: const negativeReal := -0.01
