@@ -244,7 +244,10 @@ stmt:
     ST_CODE_GEN_SOURCE_COMMENT(@1);
     ST_CODE_GEN("return\n");
   }
-| { ST_CODE_GEN_SOURCE_COMMENT(@0); }
+| {
+    // FIXME: line number may be inaccurate
+    ST_CODE_GEN_SOURCE_COMMENT(@0);
+  }
   if_stmt
   { /* no code gen */ }
 | exit_stmt
@@ -274,7 +277,10 @@ stmt:
   { /* no code gen */ }
 | put_stmt
   { /* no code gen */ }
-| { ST_CODE_GEN_SOURCE_COMMENT(@0); }
+| {
+    // FIXME: line number may be inaccurate
+    ST_CODE_GEN_SOURCE_COMMENT(@0);
+  }
   SKIP
   {
     ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
