@@ -114,7 +114,7 @@
 %type <procedure> procedure_decl procedure_header
 %type <function> function_decl function_header
 %type <formals> opt_formal_decl_list formal_decl_list
-%type <actuals> opt_expr_comma_list expr_comma_list
+%type <actuals> opt_expr_comma_list expr_comma_list put_expr_comma_list
 %type <subprogram> subprog_call
 %type <references> var_ref_comma_list
 %type <label_number> then_block
@@ -845,7 +845,58 @@ subprog_call:
     Identifier* id = (Identifier*)symbol->attribute;
     Subprogram* subprogram = (Subprogram*)id;
     $$ = subprogram;
+    // actuals are already pushed onto the operand stack
+    ST_CODE_GEN("invokestatic ");
+    // 1. the return type
+    switch (subprogram->subprogram_type) {
+      case ST_PROCEDURE_SUBPROGRAM:
+        ST_CODE_GEN("void");
+        break;
+      case ST_FUNCTION_SUBPROGRAM:
+        switch (((FunctionSubprogram*)subprogram)->result_type->data_type) {
+          case ST_INT_TYPE:
+            /* fallthrough */
+          case ST_BOOL_TYPE:
+            ST_CODE_GEN("int");
+            break;
+          default:
+            ST_UNIMPLEMENTED_ERROR();
+        }
+        break;
+      default:
+        ST_UNREACHABLE();
+    }
+    ST_CODE_GEN(" %s.%s(", input_filename_stem, subprogram->name);
+    // 2. the formal types
+    // Since the formals are stored in the reverse order, we'll have to reverse it again.
+    List* stack = NULL;
+    List* formals = subprogram->formals;
+    while (formals) {
+      StDataTypeInfo* formal = formals->val;
+      stack = list_create(&formal->data_type, stack);
+      formals = formals->rest;
+    }
+    List* formal_types = stack;
+    while (formal_types) {
+      StDataType* formal_type = formal_types->val;
+      switch (*formal_type) {
+        case ST_INT_TYPE:
+          /* fallthrough */
+        case ST_BOOL_TYPE:
+          ST_CODE_GEN("int");
+          break;
+        default:
+          ST_UNIMPLEMENTED_ERROR();
+      }
+      formal_types = formal_types->rest;
+      if (formal_types) {
+        ST_CODE_GEN(", ");
+      }
+    }
+    list_delete(stack);
+    ST_CODE_GEN(")\n");
 
+    // free the actuals
     List* actual = $3;
     while (actual) {
       st_free_expression(actual->val);
@@ -853,6 +904,25 @@ subprog_call:
     }
     list_delete($3);
   }
+;
+
+ /*
+  * Returns a List of Expression.
+  * NOTE: due to the rightmost parsing technique,
+  * the last expression is the first value of the list.
+  */
+opt_expr_comma_list:
+  expr_comma_list
+  { $$ = $1; }
+| /* empty */
+  { $$ = NULL; }
+;
+
+expr_comma_list:
+  expr_comma_list ',' expr
+  { $$ = list_create($3, $1); }
+| expr
+  { $$ = list_create($1, NULL); }
 ;
 
 if_stmt:
@@ -1221,7 +1291,7 @@ var_ref_comma_list:
 put_stmt:
   PUT
   { ST_CODE_GEN_SOURCE_COMMENT(@1); }
-  expr_comma_list
+  put_expr_comma_list
   {
     List* exprs = $3;
     while (exprs) {
@@ -1247,21 +1317,10 @@ opt_dot_dot:
 
  /*
   * Returns a List of Expression.
-  * NOTE: due to the rightmost parsing technique,
-  * the last expression is the first value of the list.
+  * NOTE: same syntax as expr_comma_list, but separated for code gen purpose
   */
-opt_expr_comma_list:
-  expr_comma_list
-  { $$ = $1; }
-| /* empty */
-  { $$ = NULL; }
-;
-
- /*
-  * Returns a List of Expression.
-  */
-expr_comma_list:
-  expr_comma_list ','
+put_expr_comma_list:
+  put_expr_comma_list ','
   { ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n"); }
   expr
   {
