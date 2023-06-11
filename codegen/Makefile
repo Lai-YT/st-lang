@@ -45,6 +45,8 @@ clean:
 
 tests: export CODEGEN=$(BUILD_DIR)/CodeGen
 tests: codegen
+    # ignore enormous warnings
+	@make -C ../javaa 2>/dev/null
 	@./test.sh
 
 # use gcc for gcov (clang needs some more setups)
