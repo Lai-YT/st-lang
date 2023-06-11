@@ -15,10 +15,7 @@ SymbolTable* symtab;
 /// @brief The scoping environment used in the parser.
 StEnvironment* env;
 
-/*
- * These flags are used by the parser, disable when generating code.
- */
-int allow_semantic_errors = 0;
+// Disable when generating code.
 int scope_dump = 0;
 
 /// @brief Where the generated jasm code goes to.

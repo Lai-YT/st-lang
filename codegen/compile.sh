@@ -7,4 +7,4 @@ if ! command -v "$CODEGEN" >/dev/null 2>&1; then
 fi
 
 filename=$(basename "$1")
-"$CODEGEN" "$1" && ../javaa/javaa "${filename%.*}.jasm"
+../parser/build/Parser "$1" && "$CODEGEN" "$1" && ../javaa/javaa "${filename%.*}.jasm"

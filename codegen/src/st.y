@@ -13,29 +13,6 @@
   #include "semant_macros.h"
   #include "st-lex.h"
 
-  #ifndef ST_FATAL_ERROR
-  /// @brief Prints the format message to stderr and exits as failure.
-  /// @note If allow_semantic_errors is a non-zero value, exits as success.
-  #define ST_FATAL_ERROR(yylloc, ...) \
-    { \
-      ST_NON_FATAL_ERROR(yyloc, __VA_ARGS__); \
-      if (allow_semantic_errors) { \
-        YYACCEPT; \
-      } \
-      YYABORT; \
-    }
-  #endif
-
-  #ifndef ST_NON_FATAL_ERROR
-  #define ST_NON_FATAL_ERROR(yylloc, ...) \
-    { \
-      fprintf(stderr, "%s:%d:%d: error: ", input_filename, (yylloc).first_line, \
-              (yylloc).first_column); \
-      fprintf(stderr, __VA_ARGS__); \
-      ++semantic_errors; \
-    }
-  #endif
-
   extern StEnvironment* env;
   extern char* input_filename_stem;
 
@@ -47,9 +24,6 @@
   /// @brief the location number of a local variable.
   /// @details After time a new subprogram is entered, the number is reset to 0.
   int local_number = 0;
-
-  /// @brief number of semantic errors
-  int semantic_errors = 0;
 
   /// @brief called for each syntax error
   void yyerror(const char *s);
@@ -189,38 +163,35 @@ program:
     );
     free(code_gen_class_name);
     st_exit_scope(&env);
-    if (semantic_errors && !allow_semantic_errors) {
-      YYABORT;
-    }
   }
 ;
 
 opt_decl_in_main_program_list:
   decl_in_main_program_list
-  { /* no check */ }
+  { /* no code gen */ }
 | /* empty */
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
 opt_stmt_list:
   stmt_list
-  { /* no check */ }
+  { /* no code gen */ }
 | /* empty */
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
 stmt_list:
   stmt_list stmt
-  { /* no check */ }
+  { /* no code gen */ }
 | stmt
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
 decl_in_main_program_list:
   decl_in_main_program_list decl_in_main_program
-  { /* no check */ }
+  { /* no code gen */ }
 | decl_in_main_program
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
   /*
@@ -229,24 +200,16 @@ decl_in_main_program_list:
    */
 decl_in_main_program:
   decl
-  { /* no check */ }
+  { /* no code gen */ }
 | subprog_decl
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
 decl:
   decl_
   {
-    // (1) re-declaration error if name exists in the current scope
-    if (st_probe_environment(env, $1->name)) {
-      // error recovery: skip this declaration
-      ST_NON_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
-      st_free_identifier($1);
-    } else {
-      // (2) the identifier should be recorded under the scope
-      Symbol* symbol = st_add_to_scope(env, $1->name);
-      symbol->attribute = $1;
-    }
+    Symbol* symbol = st_add_to_scope(env, $1->name);
+    symbol->attribute = $1;
   }
 ;
 
@@ -265,19 +228,6 @@ stmt:
   { ST_CODE_GEN_SOURCE_COMMENT(@1); }
   expr
   {
-    // (1) the type of the variable reference has to be the same as the expression
-    StDataTypeInfo var_ref_type_info = ST_MAKE_DATA_TYPE_INFO($1);
-    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($4);
-    if (!st_is_assignable_type(&var_ref_type_info, &expr_type_info)) {
-      ST_NON_FATAL_ERROR(@4, "type of the expression cannot be assigned to the reference (TYPE01)\n");
-    }
-    // (2) the reference must be a mutable variable
-    if ($1->is_const) {
-      ST_NON_FATAL_ERROR(@1, "re-assignment on constant reference (CONST02)\n");
-    }
-    if ($1->ref_type != ST_IDENTIFIER_REFERENCE || $1->data_type != ST_INT_TYPE) {
-      ST_UNIMPLEMENTED_ERROR();
-    }
     Identifier* id_ref = ((IdentifierReference*)$1)->id;
     if (st_is_global(id_ref)) {
       ST_CODE_GEN("putstatic int %s.%s\n", code_gen_class_name, id_ref->name);
@@ -288,31 +238,14 @@ stmt:
     st_free_expression($4);
   }
 | subprog_call
-  {
-    // (1) the subprogram must be a procedure
-    if ($1->subprogram_type != ST_PROCEDURE_SUBPROGRAM) {
-      assert($1->subprogram_type == ST_FUNCTION_SUBPROGRAM);
-      ST_NON_FATAL_ERROR(@1, "'function' call cannot be a statement (STMT04)\n");
-    }
-    // the id of $$ is from the symbol table, so no free here
-  }
+  { /* the id of $$ is from the symbol table, so no free here */ }
 | RETURN
-  {
-    // (1) has to be inside the scope of a procedure
-    if (!st_lookup_environment(env, ST_PROCEDURE_SCOPE_NAME)) {
-      ST_NON_FATAL_ERROR(@1, "'return' statement can only appear in the body of 'procedure's (STMT01)\n");
-    }
-  }
+  { /* no code gen */ }
 | { ST_CODE_GEN_SOURCE_COMMENT(@0); }
   if_stmt
-  { /* no check */ }
+  { /* no code gen */ }
 | exit_stmt
-  {
-    // (1) has to be inside a loop or a for statement
-    if (!st_lookup_environment(env, ST_LOOP_SCOPE_NAME)) {
-      ST_NON_FATAL_ERROR(@1, "'exit' statement can only appear in 'for' and 'loop' statements (STMT03)\n");
-    }
-  }
+  { /* no code gen */ }
 | {
     // mid-rule: new loop scope
     st_enter_scope(&env);
@@ -335,9 +268,9 @@ stmt:
   block
   { st_exit_scope(&env); }
 | get_stmt
-  { /* no check */ }
+  { /* no code gen */ }
 | put_stmt
-  { /* no check */ }
+  { /* no code gen */ }
 | { ST_CODE_GEN_SOURCE_COMMENT(@0); }
   SKIP
   {
@@ -395,12 +328,6 @@ var_decl:
         /* the location of the variable is kept by the symbol table */
       }
     } else /* has init expr */ {
-      // (1) the expression has the same type as scalar_type
-      StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($6);
-      if (!st_is_assignable_type($4, &expr_type_info)) {
-        // error recovery: since we respect the declared type, error on expression does not cascade
-        ST_NON_FATAL_ERROR(@6, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
-      }
       // use the declared type, not the type of the expression
       $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
       if (is_in_global_scope && $6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
@@ -452,12 +379,6 @@ const_decl:
   }
   expr
   {
-    // (1) the expression is not a variable reference in type of a dynamic array
-    if ($5->data_type == ST_ARRAY_TYPE
-        && $5->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
-      st_free_expression($5);
-      ST_FATAL_ERROR(@5, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
-    }
     $$ = ST_CREATE_CONST_IDENTIFIER($2->name, $5, $5);
     if (is_in_global_scope || $5->expr_type == ST_COMPILE_TIME_EXPRESSION) {
       /* kept by the symbol table, no code gen */
@@ -475,25 +396,6 @@ const_decl:
   }
   expr
   {
-    // (1) the expression is not a variable reference in type of a dynamic array
-    // although an expression with dynamic array type will never be assignable to a scalar type,
-    // we'll check first to emphasize that a constant identifier cannot be a dynamic array
-    if($7->data_type == ST_ARRAY_TYPE
-        && $7->array_type_info->array_type == ST_DYNAMIC_ARRAY) {
-      st_free_data_type_info($4);
-      st_free_expression($7);
-      ST_FATAL_ERROR(@4, "a constant identifier cannot be a 'dynamic array' (CONST01)\n");
-    }
-    // (2) the expression has the same type with the scalar_type
-    StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($7);
-    if (!st_is_assignable_type($4, &expr_type_info)) {
-      ST_NON_FATAL_ERROR(@7, "type of the expression cannot be assigned as the declared type (TYPE02)\n");
-      // error recovery: make the expression a run-time expression with the expected type
-      st_free_expression($7);
-      $7 = (Expression*)malloc(sizeof(RunTimeExpression));
-      $7->expr_type = ST_RUN_TIME_EXPRESSION;
-      ST_COPY_TYPE($7, $4);
-    }
     // Use the declared type, not the type of the expression.
     // The exception is string constant, respect the true length.
     $$ = $7->data_type == ST_STRING_TYPE
@@ -531,15 +433,8 @@ subprog_decl:
     st_probe_environment(env, $2->name)
         ->attribute = NULL;
     st_exit_scope(&env);
-    // (1) the name of the function should not be already declared
-    if (st_probe_environment(env, $2->name)) {
-      // error recovery: skip this declaration
-      ST_NON_FATAL_ERROR(@2, "re-declaration of identifier '%s' (DECL01)\n", $2->name);
-      st_free_identifier((Identifier*)$2);
-    } else {
-      Symbol* symbol = st_add_to_scope(env, $2->name);
-      symbol->attribute = $2;
-    }
+    Symbol* symbol = st_add_to_scope(env, $2->name);
+    symbol->attribute = $2;
   }
 | {
     // mid-rule: enter a procedure scope
@@ -552,15 +447,8 @@ subprog_decl:
     // but we don't want it to be freed when the scope exit, so replace it with a NULL
     st_probe_environment(env, $2->name)->attribute = NULL;
     st_exit_scope(&env);
-    // (1) the name of the procedure should not be already declared
-    if (st_probe_environment(env, $2->name)) {
-      // error recovery: skip this declaration
-      ST_NON_FATAL_ERROR(@2, "re-declaration of identifier '%s' (DECL01)\n", $2->name);
-      st_free_identifier((Identifier*)$2);
-    } else {
-      Symbol* symbol = st_add_to_scope(env, $2->name);
-      symbol->attribute = $2;
-    }
+    Symbol* symbol = st_add_to_scope(env, $2->name);
+    symbol->attribute = $2;
   }
 ;
 
@@ -573,10 +461,6 @@ procedure_decl:
     // that we reset the number to 0 instead of restore the number before the
     // subprogram declaration.
     local_number = 0;
-    // (1) id is the same name as the one in the header
-    if (strcmp($1->name, $4->name) != 0) {
-      ST_NON_FATAL_ERROR(@4, "the name after 'end' should be the name of the 'subprogram' (SUB01)\n");
-    }
     $$ = $1;
   }
 ;
@@ -593,10 +477,6 @@ function_decl:
     // that we reset the number to 0 instead of restore the number before the
     // subprogram declaration.
     local_number = 0;
-    // (1) id is the same name as the one in the header
-    if (strcmp($1->name, $4->name) != 0) {
-      ST_NON_FATAL_ERROR(@4, "the name after 'end' should be the name of the 'subprogram' (SUB01)\n");
-    }
     $$ = $1;
   }
 ;
@@ -606,29 +486,25 @@ function_decl:
    */
 opt_decl_or_stmt_list_end_with_result_list:
   decl_or_stmt_list_end_with_result_list
-  { /* no check */ }
+  { /* no code gen */ }
 | /* empty */
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
 decl_or_stmt_list_end_with_result_list:
   decl_or_stmt_or_result decl_or_stmt_list_end_with_result_list
-  { /* no check */ }
+  { /* no code gen */ }
 | result_stmt
-  { /* no check */ }
-| decl
-  { ST_NON_FATAL_ERROR(@1, "'function' must ends with a 'result' statement (SUB02)\n"); }
-| stmt
-  { ST_NON_FATAL_ERROR(@1, "'function' must ends with a 'result' statement (SUB02)\n"); }
+  { /* no code gen */ }
 ;
 
 decl_or_stmt_or_result:
   decl
-  { /* no check */ }
+  { /* no code gen */ }
 | stmt
-  { /* no check */ }
+  { /* no code gen */ }
 | result_stmt
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
   /*
@@ -691,29 +567,29 @@ function_header:
 
 opt_decl_or_stmt_list:
   decl_or_stmt_list
-  { /* no check */ }
+  { /* no code gen */ }
 | /* empty */
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
 decl_or_stmt_list:
   decl_or_stmt_list decl_or_stmt
-  { /* no check */ }
+  { /* no code gen */ }
 | decl_or_stmt
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
 decl_or_stmt:
   decl
-  { /* no check */ }
+  { /* no code gen */ }
 | stmt
-  { /* no check */ }
+  { /* no code gen */ }
   /*
    * NOTE: to make decl_or_stmt_list distinguishable from decl_or_stmt_list_end_with_result_list,
    * the result_stmt is handled separately instead of being put inside stmt
    */
 | result_stmt
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
   /*
@@ -745,19 +621,6 @@ formal_decl_list:
 formal_decl:
   formal_decl_
   {
-    // (1) re-declaration error if name exists in the current scope
-    if (st_probe_environment(env, $1->name)) {
-      ST_NON_FATAL_ERROR(@1, "re-declaration of identifier '%s' (DECL01)\n", $1->name);
-      // error recovery: postfix a underscore to the name until no more collision
-      // (in case it's re-declared several times).
-      do {
-        char* mangled_name = malloc(sizeof(char) * (strlen($1->name) + 1 + 1));
-        strcpy(mangled_name, $1->name);
-        strcat(mangled_name, "_");
-        free($1->name);
-        $1->name = mangled_name;
-      } while (st_probe_environment(env, $1->name));
-    }
     // add the identifier to the scope
     Symbol* symbol = st_add_to_scope(env, $1->name);
     symbol->attribute = $1;
@@ -808,15 +671,7 @@ formal_decl_:
 
 formal_type:
   type
-  {
-    // (1) if the formal type is an array type, it cannot be a dynamic array
-    if ($1->data_type == ST_ARRAY_TYPE
-        && $1->array_type_info->array_type != ST_STATIC_ARRAY) {
-      st_free_data_type_info($1);
-      ST_FATAL_ERROR(@1, "type of formal parameter cannot be a 'dynamic array' (SUB03)\n");
-    }
-    $$ = $1;
-  }
+  { $$ = $1; }
 | formal_star_string_type
   { $$ = $1; }
 | formal_star_array_type
@@ -851,33 +706,7 @@ formal_star_array_nested_type:
 formal_star_array_type:
   ARRAY expr '.' '.' '*' OF formal_star_array_nested_type
   {
-    #define CLEAN_UP \
-      st_free_expression($2); \
-      st_free_data_type_info($7);
-
-    // (1) the expression at the lower bound must be a compile-time expression
-    if ($2->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression (ARR01)\n");
-    }
     CompileTimeExpression* lower_bound = (CompileTimeExpression*)$2;
-    // (2) the expression at the lower bound must have type int
-    if (lower_bound->data_type != ST_INT_TYPE) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must have type 'int' (ARR02)\n");
-    }
-    // (3) type may also be an array, but such array type must be a static array
-    // NOTE: a star array is also a static array, but is excluded syntactically
-    if ($7->data_type == ST_ARRAY_TYPE
-        && $7->array_type_info->array_type != ST_STATIC_ARRAY) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array' (ARR03)\n");
-    }
-    // (4) lower bound must have positive value
-    if (lower_bound->int_val < 1) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive (ARR04)\n");
-    }
     $$ = malloc(sizeof(StDataTypeInfo));
     $$->data_type = ST_ARRAY_TYPE;
     $$->array_type_info = malloc(sizeof(StStaticArrayTypeInfo));
@@ -886,8 +715,8 @@ formal_star_array_type:
     $$->array_type_info->lower_bound = lower_bound->int_val;
     ((StStaticArrayTypeInfo*)$$->array_type_info)->upper_bound
         = ST_STAR_ARRAY_UPPER_BOUND;
-    CLEAN_UP;
-    #undef CLEAN_UP
+    st_free_expression($2);
+    st_free_data_type_info($7);
   }
 ;
 
@@ -897,60 +726,18 @@ formal_star_array_type:
 subprog_call:
   ID '(' opt_expr_comma_list ')'
   {
-    #define CLEAN_UP \
-      { \
-        List* actual = $3; \
-        while (actual) { \
-          st_free_expression(actual->val); \
-          actual = actual->rest; \
-        } \
-        list_delete($3); \
-      }
-
-    Symbol* symbol = st_lookup_environment(env, $1->name);
-    if (!symbol) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@1, "identifier '%s' is not declared (REF01)\n", $1->name);
+    List* actual = $3;
+    while (actual) {
+      st_free_expression(actual->val);
+      actual = actual->rest;
     }
-    Identifier* id = (Identifier*)symbol->attribute;
-    if (id->id_type != ST_SUBPROGRAM_IDENTIFIER) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@1, "identifier '%s' is not a subprogram (CALL01)\n", $1->name);
-    }
-    Subprogram* subprogram = (Subprogram*)id;
-    $$ = subprogram;
-    // (1) the number of the expression should match the number of the declared formals
-    const int num_of_formals = list_length(subprogram->formals);
-    const int num_of_actuals = list_length($3);
-    if (num_of_actuals != num_of_formals) {
-      // error recovery: skip type check of parameters
-      ST_NON_FATAL_ERROR(@3, "mismatch number of formals, expect '%d' but get '%d' (CALL02)\n", num_of_formals, num_of_actuals);
-    } else {
-      // (2) each expressions in the list should have their types match the declared formal types
-      List* formals = subprogram->formals;
-      List* actuals = $3;
-      while (actuals) {
-        StDataTypeInfo* formal_type = (StDataTypeInfo*)formals->val;
-        Expression* actual = (Expression*)actuals->val;
-        StDataTypeInfo actual_type = ST_MAKE_DATA_TYPE_INFO(actual);
-        if (!st_is_assignable_type(formal_type, &actual_type)) {
-          ST_NON_FATAL_ERROR(@3, "type of the actual parameter cannot be assigned as type of the formal parameter (CALL03)\n");
-        }
-        actuals = actuals->rest;
-        formals = formals->rest;
-      }
-    }
-    CLEAN_UP;
-    #undef CLEAN_UP
+    list_delete($3);
   }
 ;
 
 if_stmt:
   IF expr then_block END IF
   {
-    if ($2->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
-    }
     st_free_expression($2);
     ST_CODE_GEN_SOURCE_COMMENT(@4);
     ST_CODE_GEN("Lfalse%d:\n", $<label_number>3);
@@ -972,9 +759,6 @@ if_stmt:
   opt_decl_or_stmt_list END IF
   {
     st_exit_scope(&env);
-    if ($2->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
-    }
     st_free_expression($2);
     ST_CODE_GEN_SOURCE_COMMENT(@8);
     ST_CODE_GEN("Lend%d:\n", $<label_number>4);
@@ -1004,21 +788,7 @@ then_block:
 
 result_stmt:
   RESULT expr
-  {
-    // (1) expr must have the same type as the declared result type
-    // get the current function through the special identifier name
-    Symbol* symbol = st_lookup_environment(env, ST_FUNCTION_SCOPE_NAME);
-    if (symbol) {
-      FunctionSubprogram* function = (FunctionSubprogram*)symbol->attribute;
-      StDataTypeInfo expr_type_info = ST_MAKE_DATA_TYPE_INFO($2);
-      if (!st_is_assignable_type(function->result_type, &expr_type_info)) {
-        ST_NON_FATAL_ERROR(@2, "type of the 'result' expression cannot be assigned as the result type of the 'function' (STMT05)\n");
-      }
-    } else {
-      ST_NON_FATAL_ERROR(@1, "'result' statement can only appear in the body of 'function's (STMT02)\n");
-    }
-    st_free_expression($2);
-  }
+  { st_free_expression($2); }
 ;
 
 exit_stmt:
@@ -1032,9 +802,6 @@ exit_stmt:
   { ST_CODE_GEN_SOURCE_COMMENT(@1); }
   WHEN expr
   {
-    if ($4->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@1, "'boolean' expression must have type 'bool' (EXPR08)\n");
-    }
     st_free_expression($4);
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
     ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
@@ -1275,10 +1042,6 @@ for_range:
   }
   expr
   {
-    // (1) the expressions must be both of type int
-    if ($2->data_type != ST_INT_TYPE) {
-      ST_NON_FATAL_ERROR(@2, "range of a 'for' statement must have type 'int' (FOR01)\n");
-    }
     st_free_expression($2);
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
     VarIdentifier* counter
@@ -1304,13 +1067,7 @@ for_range:
     }
   }
   expr
-  {
-    // (1) the expressions must be both of type int
-    if ($7->data_type != ST_INT_TYPE) {
-      ST_NON_FATAL_ERROR(@7, "range of a 'for' statement must have type 'int' (FOR01)\n");
-    }
-    st_free_expression($7);
-  }
+  { st_free_expression($7); }
 ;
 
 block:
@@ -1325,16 +1082,6 @@ get_stmt:
   {
     List* refs = $2;
     while (refs) {
-      Reference* ref = (Reference*)refs->val;
-      // (1) all variable references should be mutable
-      if (ref->is_const) {
-        ST_NON_FATAL_ERROR(@2, "references in 'get' statement cannot be constant (STMT07)\n");
-      }
-      // (2) no variable reference can be in type array
-      if (ref->data_type == ST_ARRAY_TYPE) {
-        ST_NON_FATAL_ERROR(@2, "references in 'get' statement cannot have type 'array' (STMT08)\n");
-      }
-      // free at the same time since not needed later
       st_free_reference(refs->val);
       refs = refs->rest;
     }
@@ -1356,19 +1103,14 @@ put_stmt:
   expr_comma_list
   {
     List* exprs = $3;
-    // (1) no expression can be in type array
     while (exprs) {
-      if (((Expression*)exprs->val)->data_type == ST_ARRAY_TYPE) {
-        ST_NON_FATAL_ERROR(@3, "expressions in 'put' statement cannot have type 'array' (STMT06)\n");
-      }
-      // free at the same time since not needed later
       st_free_expression(exprs->val);
       exprs = exprs->rest;
     }
     list_delete($3);
   }
   opt_dot_dot
-  { /* no check */ }
+  { /* no code gen */ }
 ;
 
 opt_dot_dot:
@@ -1470,32 +1212,7 @@ scalar_type:
   }
 | STRING '(' expr ')'
   {
-    bool has_error = false;
-    // (1) the expression must have type int
-    if ($3->data_type != ST_INT_TYPE) {
-      ST_NON_FATAL_ERROR(@3, "max length of a 'string' must have type 'int' (STR01)\n");
-      has_error = true;
-    } else if ($3->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-      // (2) the expression must be a compile-time expression
-      ST_NON_FATAL_ERROR(@3, "max length of a 'string' must be a compile-time expression (STR02)\n");
-      has_error = true;
-    }
-    if (has_error) {
-      // error recovery: make expr an compile-time expression in type int,
-      // and the max length of the string be 255
-      st_free_expression($3);
-      $3 = (Expression*)malloc(sizeof(CompileTimeExpression));
-      $3->expr_type = ST_COMPILE_TIME_EXPRESSION;
-      $3->data_type = ST_INT_TYPE;
-      ((CompileTimeExpression*)$3)->int_val = 255;
-    }
     CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$3;
-    // (3) the expression must be positive and cannot be greater than 255
-    if (compile_time_expr->int_val < 1 || compile_time_expr->int_val > 255) {
-      ST_NON_FATAL_ERROR(@3, "max length of a 'string' must be in range 1 ~ 255 (STR03)\n");
-      // error recovery: fix the length to 255
-      compile_time_expr->int_val = 255;
-    }
     $$ = malloc(sizeof(StDataTypeInfo));
     $$->data_type = ST_STRING_TYPE;
     $$->string_type_info = malloc(sizeof(StStringTypeInfo));
@@ -1510,55 +1227,11 @@ scalar_type:
 array_type:
   ARRAY expr '.' '.' expr OF type
   {
-    #define CLEAN_UP \
-      st_free_expression($2); \
-      st_free_expression($5); \
-      st_free_data_type_info($7);
-
-    // (1) the expression of the lower bound must be a compile-time expression
-    if ($2->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be a compile-time expression (ARR01)\n");
-    }
     CompileTimeExpression* lower_bound = (CompileTimeExpression*)$2;
-    // (2) the expressions must both have type int
-    if (lower_bound->data_type != ST_INT_TYPE) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must have type 'int' (ARR02)\n");
-    }
-    if ($5->data_type != ST_INT_TYPE) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@5, "upper bound of an 'array' must have type 'int' (ARR02)\n");
-    }
-    // (3) type may also be an array, but the upper bound of a nested array has
-    //     to be a compile-time expression as also, which means we have to record
-    //     the bounds of an array type. This is also for type equality checks
-    if ($7->data_type == ST_ARRAY_TYPE
-        && $7->array_type_info->array_type != ST_STATIC_ARRAY) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@7, "type of an 'array' must be a 'static array' (ARR03)\n");
-    }
-    // (4) lower bound must have positive value
-    if (lower_bound->int_val < 1) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@2, "lower bound of an 'array' must be positive (ARR04)\n");
-    }
     $$ = malloc(sizeof(StDataTypeInfo));
     $$->data_type = ST_ARRAY_TYPE;
     if ($5->expr_type == ST_COMPILE_TIME_EXPRESSION) {
       CompileTimeExpression* upper_bound = (CompileTimeExpression*)$5;
-      // (5) upper bound of a static array must have positive value
-      if (upper_bound->int_val < 1) {
-        CLEAN_UP;
-        free($$);  // in the middle of the construction of $$, has to clean as also
-        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be positive (ARR05)\n");
-      }
-      // (6) the upper bound of a static array must be greater than the lower bound
-      if (upper_bound->int_val <= lower_bound->int_val) {
-        CLEAN_UP;
-        free($$);  // in the middle of the construction of $$, has to clean as also
-        ST_FATAL_ERROR(@5, "upper bound of a 'static array' must be greater than its lower bound (ARR06)\n");
-      }
       $$->array_type_info = malloc(sizeof(StStaticArrayTypeInfo));
       $$->array_type_info->array_type = ST_STATIC_ARRAY;
       ST_COPY_TYPE($$->array_type_info, $7);
@@ -1572,8 +1245,9 @@ array_type:
     } else {
       ST_UNREACHABLE();
     }
-    CLEAN_UP;
-    #undef CLEAN_UP
+    st_free_expression($2);
+    st_free_expression($5);
+    st_free_data_type_info($7);
   }
 ;
 
@@ -1591,15 +1265,7 @@ var_ref:
   ID
   {
     Symbol* symbol = st_lookup_environment(env, $1->name);
-    // (1) the id has to be declared
-    if (!symbol) {
-      ST_FATAL_ERROR(@1, "identifier '%s' is not declared (REF01)\n", $1->name);
-    }
     Identifier* id = symbol->attribute;
-    // (2) the id can't be a subprogram
-    if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
-      ST_FATAL_ERROR(@1, "identifier '%s' is a 'subprogram', cannot be used as reference (REF02)\n", $1->name);
-    }
     $$ = malloc(sizeof(IdentifierReference));
     $$->ref_type = ST_IDENTIFIER_REFERENCE;
     ((IdentifierReference*)$$)->id = id;
@@ -1618,67 +1284,25 @@ var_ref:
    */
 | ID subscript_list
   {
-    #define CLEAN_UP \
-      { \
-        List* curr = $2; \
-        while (curr) { \
-          st_free_expression(curr->val); \
-          curr = curr->rest; \
-        } \
-        list_delete($2); \
-      }
-
     Symbol* symbol = st_lookup_environment(env, $1->name);
-    // (1) id can't be a subprogram
-    if (!symbol) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@1, "identifier '%s' is not declared (REF01)\n", $1->name);
-    }
     Identifier* id = symbol->attribute;
-    // (2) id can only have type string or array
-    if (id->id_type == ST_SUBPROGRAM_IDENTIFIER) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@1, "identifier '%s' is a 'subprogram', cannot be used as reference (REF02)\n", $1->name);
+    const int num_of_sub = list_length($2);
+    $$ = malloc(sizeof(ArraySubscriptReference));
+    $$->ref_type = ST_ARRAY_SUBSCRIPT_REFERENCE;
+    $$->is_const = id->id_type == ST_CONST_IDENTIFIER;
+    StArrayTypeInfo* sub_array_type_info = (StArrayTypeInfo*)id->array_type_info;
+    // find the correct dimension of the array
+    for (int i = 0; i < num_of_sub - 1; ++i) {
+      sub_array_type_info = sub_array_type_info->array_type_info;
     }
-
-    if (id->data_type == ST_STRING_TYPE) {
-      // (3) if id has type string, the subscript list must have length 1
-      if (list_length($2) != 1) {
-        CLEAN_UP;
-        ST_FATAL_ERROR(@2, "'character' is unsubscriptable, for substrings, use '%s[n .. m]' instead (REF03)\n", $1->name);
-      }
-      // TODO: return a character
-    } else if (id->data_type == ST_ARRAY_TYPE) {
-      if (id->id_type == ST_CONST_IDENTIFIER
-          && ((ConstIdentifier*)id)->const_id_type == ST_COMPILE_TIME_CONST_IDENTIFIER) {
-        // a compile-time identifier should not have an array type
-        ST_UNREACHABLE();
-      }
-      const int num_of_sub = list_length($2);
-      const int dim_of_arr = st_dimension_of_array(id->array_type_info);
-      // (4) if id has type array, the length of the list cannot exceed the dimension of the array
-      // the expression may be run-time expressions, so no range check
-      if (num_of_sub > dim_of_arr) {
-        CLEAN_UP;
-        ST_FATAL_ERROR(@2, "'%d'-dimensional 'array' cannot have '%d' subscripts (REF05)\n", dim_of_arr, num_of_sub);
-      }
-      $$ = malloc(sizeof(ArraySubscriptReference));
-      $$->ref_type = ST_ARRAY_SUBSCRIPT_REFERENCE;
-      $$->is_const = id->id_type == ST_CONST_IDENTIFIER;
-      StArrayTypeInfo* sub_array_type_info = (StArrayTypeInfo*)id->array_type_info;
-      // find the correct dimension of the array
-      for (int i = 0; i < num_of_sub - 1; ++i) {
-        sub_array_type_info = sub_array_type_info->array_type_info;
-      }
-      ST_COPY_TYPE($$, sub_array_type_info);
-      // free the subscript list
-      CLEAN_UP;
-    } else {
-      // (2) id can only have type string or array
-      CLEAN_UP;
-      ST_FATAL_ERROR(@1, "identifier '%s' has unsubscriptable type (REF04)\n", $1->name);
+    ST_COPY_TYPE($$, sub_array_type_info);
+    // free the subscript list
+    List* curr = $2;
+    while (curr) {
+      st_free_expression(curr->val);
+      curr = curr->rest;
     }
-    #undef CLEAN_UP
+    list_delete($2);
   }
 ;
 
@@ -1700,15 +1324,7 @@ subscript_list:
    */
 subscript:
   '[' expr ']'
-  {
-    // (1) the expression should have type int
-    if ($2->data_type != ST_INT_TYPE) {
-      ST_NON_FATAL_ERROR(@2, "subscript must have type 'int' (REF06)\n");
-      st_free_expression($2);
-      $2 = st_create_recovery_expression(ST_INT_TYPE);
-    }
-    $$ = list_create($2, NULL);
-  }
+  { $$ = list_create($2, NULL); }
 ;
 
   /*
@@ -1810,12 +1426,6 @@ expr:
   { $$ = (Expression*)$1; }
 | subprog_call
   {
-    // (1) always a run-time expression
-    if ($1->subprogram_type != ST_FUNCTION_SUBPROGRAM) {
-      assert($1->subprogram_type == ST_PROCEDURE_SUBPROGRAM);
-      ST_FATAL_ERROR(@1, "'procedure' call cannot be an expression (EXPR01)\n");
-    }
-    // (2) the subprogram has to be a function
     $$ = (Expression*)malloc(sizeof(RunTimeExpression));
     $$->expr_type = ST_RUN_TIME_EXPRESSION;
     ST_COPY_TYPE($$, ((FunctionSubprogram*)$1)->result_type);
@@ -1945,19 +1555,6 @@ operation:
 numeric_operation:
   expr '+' expr
   {
-    #define CLEAN_UP \
-      st_free_expression($1); \
-      st_free_expression($3);
-    /*
-     * Handle string concatenation first, then elementary arithmetic
-     */
-    // TODO: support STR04 and STR05 as non-fatal errors by resulting a run-time string expression
-    // (1) string can only concatenate with string
-    if ($1->data_type != $3->data_type
-        && ($1->data_type == ST_STRING_TYPE || $3->data_type == ST_STRING_TYPE)) {
-      CLEAN_UP;
-      ST_FATAL_ERROR(@2, "operands of 'string' concatenation must both have type 'string' (STR04)\n");
-    }
     // is string concatenation
     if ($1->data_type == ST_STRING_TYPE && $3->data_type == ST_STRING_TYPE) {
       // (2) if both expressions are compile-time expressions, the operation is also a compile-time operation
@@ -1969,14 +1566,6 @@ numeric_operation:
         $$->data_type = ST_STRING_TYPE;
         $$->string_type_info = malloc(sizeof(StStringTypeInfo));
         $$->string_type_info->max_length = strlen(lhs->string_val) + strlen(rhs->string_val);
-        // (3) the length of the result string must not exceed 255
-        if ($$->string_type_info->max_length > 255) {
-          CLEAN_UP;
-          // in the middle of the construction of $$, make it a valid expression and free as also
-          ((CompileTimeExpression*)$$)->string_val = NULL;
-          st_free_expression($$);
-          ST_FATAL_ERROR(@1, "in compile-time 'string' concatenation, length of the result 'string' must not exceed 255 (STR05)\n");
-        }
         ((CompileTimeExpression*)$$)->string_val = malloc(sizeof(char) * ($$->string_type_info->max_length + 1));
         strcpy(((CompileTimeExpression*)$$)->string_val, lhs->string_val);
         strcat(((CompileTimeExpression*)$$)->string_val, rhs->string_val);
@@ -1994,43 +1583,19 @@ numeric_operation:
       }
       ST_UNIMPLEMENTED_ERROR();
     } else { // is arithmetic
-      // (4) expressions can't have type other than int and real
-      bool has_error = false;
-      if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE)) {
-        ST_NON_FATAL_ERROR(@1, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
-        has_error = true;
-      }
-      if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE)) {
-        ST_NON_FATAL_ERROR(@3, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
-        has_error = true;
-      }
-      $$ = has_error
-          ? st_create_recovery_expression(ST_INT_TYPE)
-          : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, +, $3);
+      $$ = ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, +, $3);
       if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
         ST_UNIMPLEMENTED_ERROR();
       }
       // the two operands are already push onto the operand stack
       ST_CODE_GEN("iadd\n");
     }
-    CLEAN_UP;
-    #undef CLEAN_UP
+    st_free_expression($1);
+    st_free_expression($3);
   }
 | expr '-' expr
   {
-    // (1) expressions can't have type other than int and real
-    bool has_error = false;
-    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE)) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
-      has_error = true;
-    }
-    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE)) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_INT_TYPE)
-        : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, -, $3);
+    $$ = ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, -, $3);
     if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
       ST_UNIMPLEMENTED_ERROR();
     }
@@ -2040,19 +1605,7 @@ numeric_operation:
   }
 | expr '*' expr
   {
-    // (1) expressions can't have type other than int and real
-    bool has_error = false;
-    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE)) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
-      has_error = true;
-    }
-    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE)) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_INT_TYPE)
-        : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, *, $3);
+    $$ = ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, *, $3);
     if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
       ST_UNIMPLEMENTED_ERROR();
     }
@@ -2062,21 +1615,7 @@ numeric_operation:
   }
 | expr '/' expr
   {
-    // (1) expressions can't have type other than int and real
-    bool has_error = false;
-    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE)) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
-      has_error = true;
-    }
-    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE)) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'arithmetic' operation must have type 'int' or 'real' (EXPR06)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_INT_TYPE)
-        : ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, /, $3);
-    // FIXME: javaa reports syntax error on comments with '/' in it, which
-    // disallows us to generate source code of division operations
+    $$ = ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, /, $3);
     if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
       ST_UNIMPLEMENTED_ERROR();
     }
@@ -2086,32 +1625,18 @@ numeric_operation:
   }
 | expr MOD expr
   {
-    // (1) both of the expressions must have type int
-    bool has_error = false;
-    if ($1->data_type != ST_INT_TYPE) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'mod' operation must have type 'int' (EXPR07)\n");
-      has_error = true;
-    }
-    if ($3->data_type != ST_INT_TYPE) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'mod' operation must have type 'int' (EXPR07)\n");
-      has_error = true;
-    }
-    if (has_error) {
-      $$ = st_create_recovery_expression(ST_INT_TYPE);
+    if ($1->expr_type == ST_COMPILE_TIME_EXPRESSION
+        && $3->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      $$ = (Expression*)malloc(sizeof(CompileTimeExpression));
+      $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
+      $$->data_type = ST_INT_TYPE;
+      ((CompileTimeExpression*)$$)->int_val
+          = ((CompileTimeExpression*)$1)->int_val
+              % ((CompileTimeExpression*)$3)->int_val;
     } else {
-      if ($1->expr_type == ST_COMPILE_TIME_EXPRESSION
-          && $3->expr_type == ST_COMPILE_TIME_EXPRESSION) {
-        $$ = (Expression*)malloc(sizeof(CompileTimeExpression));
-        $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
-        $$->data_type = ST_INT_TYPE;
-        ((CompileTimeExpression*)$$)->int_val
-            = ((CompileTimeExpression*)$1)->int_val
-                % ((CompileTimeExpression*)$3)->int_val;
-      } else {
-        $$ = (Expression*)malloc(sizeof(RunTimeExpression));
-        $$->expr_type = ST_RUN_TIME_EXPRESSION;
-        $$->data_type = ST_INT_TYPE;
-      }
+      $$ = (Expression*)malloc(sizeof(RunTimeExpression));
+      $$->expr_type = ST_RUN_TIME_EXPRESSION;
+      $$->data_type = ST_INT_TYPE;
     }
     ST_CODE_GEN("irem\n");
     st_free_expression($1);
@@ -2127,23 +1652,7 @@ comparison_operation:
   */
   expr '<' expr
   {
-    bool has_error = false;
-    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    // skip if operands already has type errors
-    if (!has_error && $1->data_type != $3->data_type) {
-      ST_NON_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, <, $3);
+    $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, <, $3);
     st_free_expression($1);
     st_free_expression($3);
 
@@ -2153,23 +1662,7 @@ comparison_operation:
   }
 | expr '>' expr
   {
-    bool has_error = false;
-    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    // skip if operands already has type errors
-    if (!has_error && $1->data_type != $3->data_type) {
-      ST_NON_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, >, $3);
+    $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, >, $3);
     st_free_expression($1);
     st_free_expression($3);
 
@@ -2179,23 +1672,7 @@ comparison_operation:
   }
 | expr '=' expr
   {
-    bool has_error = false;
-    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    // skip if operands already has type errors
-    if (!has_error && $1->data_type != $3->data_type) {
-      ST_NON_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, ==, $3);
+    $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, ==, $3);
     st_free_expression($1);
     st_free_expression($3);
 
@@ -2205,23 +1682,7 @@ comparison_operation:
   }
 | expr LE expr
   {
-    bool has_error = false;
-    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    // skip if operands already has type errors
-    if (!has_error && $1->data_type != $3->data_type) {
-      ST_NON_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, <=, $3);
+    $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, <=, $3);
     st_free_expression($1);
     st_free_expression($3);
 
@@ -2231,23 +1692,7 @@ comparison_operation:
   }
 | expr GE expr
   {
-    bool has_error = false;
-    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    // skip if operands already has type errors
-    if (!has_error && $1->data_type != $3->data_type) {
-      ST_NON_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, >=, $3);
+    $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, >=, $3);
     st_free_expression($1);
     st_free_expression($3);
 
@@ -2257,23 +1702,7 @@ comparison_operation:
   }
 | expr NE expr
   {
-    bool has_error = false;
-    if (!ST_HAS_ONE_OF_DATA_TYPES($1, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    if (!ST_HAS_ONE_OF_DATA_TYPES($3, ST_INT_TYPE, ST_REAL_TYPE, ST_STRING_TYPE)) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'comparison' operation have type 'int', 'real', or 'string' (EXPR04)\n");
-      has_error = true;
-    }
-    // skip if operands already has type errors
-    if (!has_error && $1->data_type != $3->data_type) {
-      ST_NON_FATAL_ERROR(@1, "operands of 'comparison' operation must have the same type (EXPR05)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, !=, $3);
+    $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, !=, $3);
     st_free_expression($1);
     st_free_expression($3);
 
@@ -2286,62 +1715,32 @@ comparison_operation:
 boolean_operation:
   expr AND expr
   {
-    // (1) both expressions must have type bool
-    bool has_error = false;
-    if ($1->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
-      has_error = true;
-    }
-    if ($3->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, &&, $3);
+    $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, &&, $3);
     st_free_expression($1);
     st_free_expression($3);
     ST_CODE_GEN("iand\n");
   }
 | expr OR expr
   {
-    // (1) both expressions must have type bool
-    bool has_error = false;
-    if ($1->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@1, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
-      has_error = true;
-    }
-    if ($3->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@3, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
-      has_error = true;
-    }
-    $$ = has_error
-        ? st_create_recovery_expression(ST_BOOL_TYPE)
-        : ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, ||, $3);
+    $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, ||, $3);
     st_free_expression($1);
     st_free_expression($3);
     ST_CODE_GEN("ior\n");
   }
 | NOT expr
   {
-    // (1) the expression must have type bool
-    if ($2->data_type != ST_BOOL_TYPE) {
-      ST_NON_FATAL_ERROR(@2, "operand of 'boolean' operation must have type 'bool' (EXPR03)\n");
-      $$ = st_create_recovery_expression(ST_BOOL_TYPE);
+    // (2) if the expression is a compile-time expression, the operation is also a compile-time operation
+    if ($2->expr_type == ST_COMPILE_TIME_EXPRESSION) {
+      $$ = malloc(sizeof(CompileTimeExpression));
+      $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
+      $$->data_type = ST_BOOL_TYPE;
+      ((CompileTimeExpression*)$$)->bool_val = !((CompileTimeExpression*)$2)->bool_val;
+    } else if ($2->expr_type == ST_RUN_TIME_EXPRESSION) {
+      $$ = malloc(sizeof(RunTimeExpression));
+      $$->expr_type = ST_RUN_TIME_EXPRESSION;
+      $$->data_type = ST_BOOL_TYPE;
     } else {
-      // (2) if the expression is a compile-time expression, the operation is also a compile-time operation
-      if ($2->expr_type == ST_COMPILE_TIME_EXPRESSION) {
-        $$ = malloc(sizeof(CompileTimeExpression));
-        $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
-        $$->data_type = ST_BOOL_TYPE;
-        ((CompileTimeExpression*)$$)->bool_val = !((CompileTimeExpression*)$2)->bool_val;
-      } else if ($2->expr_type == ST_RUN_TIME_EXPRESSION) {
-        $$ = malloc(sizeof(RunTimeExpression));
-        $$->expr_type = ST_RUN_TIME_EXPRESSION;
-        $$->data_type = ST_BOOL_TYPE;
-      } else {
-        ST_UNREACHABLE();
-      }
+      ST_UNREACHABLE();
     }
     st_free_expression($2);
     ST_CODE_GEN("sipush 1\n");
@@ -2356,25 +1755,13 @@ boolean_operation:
 sign_operation:
   '+' expr
   {
-    if (!ST_HAS_ONE_OF_DATA_TYPES($2, ST_INT_TYPE, ST_REAL_TYPE)) {
-      ST_NON_FATAL_ERROR(@2, "operand of 'sign' operation must have type 'int' or 'real' (EXPR02)\n");
-      // NOTE: 'int' can be implicitly converted to 'real', so choose 'int'
-      $$ = st_create_recovery_expression(ST_INT_TYPE);
-    } else {
-      $$ = ST_CREATE_UNARY_SIGN_EXPRESSION(+, $2);
-    }
+    $$ = ST_CREATE_UNARY_SIGN_EXPRESSION(+, $2);
     // no code gen since has no effect
     st_free_expression($2);
   }
 | '-' expr
   {
-    if (!ST_HAS_ONE_OF_DATA_TYPES($2, ST_INT_TYPE, ST_REAL_TYPE)) {
-      ST_NON_FATAL_ERROR(@2, "operand of 'sign' operation must have type 'int' or 'real' (EXPR02)\n");
-      // NOTE: 'int' can be implicitly converted to 'real', so choose 'int'
-      $$ = st_create_recovery_expression(ST_INT_TYPE);
-    } else {
-      $$ = ST_CREATE_UNARY_SIGN_EXPRESSION(-, $2);
-    }
+    $$ = ST_CREATE_UNARY_SIGN_EXPRESSION(-, $2);
     ST_CODE_GEN("ineg\n");
     st_free_expression($2);
   }

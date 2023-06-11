@@ -1,11 +1,10 @@
 #ifndef CODEGEN_CODEGEN_H
 #define CODEGEN_CODEGEN_H
 
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "semant.h"
-#include "semant_macros.h"
 #include "st-lex.h"
 
 extern FILE* st_codegen_out;

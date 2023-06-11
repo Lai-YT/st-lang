@@ -5,10 +5,8 @@
 
 #include "semant.h"
 
-/// @brief The file being semantically checked.
+/// @brief The file to be code generated.
 extern char* input_filename;
-extern int allow_semantic_errors;
-extern int semantic_errors;
 extern bool is_in_global_scope;
 extern int local_number;
 
