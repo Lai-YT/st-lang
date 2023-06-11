@@ -13,8 +13,8 @@ sum := 0
 for index: 1 .. n
   sum := sum + index
 end for
-put "The result is "
-put sum
+put "The result is ", sum
+
 skip
 
 % with loop statement
@@ -23,7 +23,6 @@ index := 1
 loop
   sum := sum + index
   index := index + 1
-  exit when index = n
+  exit when index > n
 end loop
-put "The result is "
-put sum
+put "The result is ", sum

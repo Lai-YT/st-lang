@@ -1,4 +1,4 @@
-.PHONY: codegen fmt tidy clean coverage
+.PHONY: codegen fmt tidy clean tests coverage
 
 CC := gcc
 YSRC := src/st.y
@@ -42,6 +42,10 @@ tidy: codegen
 
 clean:
 	rm -rf $(BUILD_DIR) $(CGEN) $(COVERAGE_DIR)
+
+tests: export CODEGEN=$(BUILD_DIR)/CodeGen
+tests: codegen
+	@./test.sh
 
 # use gcc for gcov (clang needs some more setups)
 coverage: $(CGEN)
