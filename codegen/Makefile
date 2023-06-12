@@ -41,7 +41,7 @@ tidy: codegen
 		-p $(BUILD_DIR)
 
 clean:
-	rm -rf $(BUILD_DIR) $(CGEN) $(COVERAGE_DIR)
+	rm -rf $(BUILD_DIR) $(CGEN) $(COVERAGE_DIR) *.jasm *.class
 
 tests: export CODEGEN=$(BUILD_DIR)/CodeGen
 tests: codegen
