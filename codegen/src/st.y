@@ -96,7 +96,7 @@
 /* non-terminals without semantic value */
 %type program opt_decl_in_main_program_list opt_stmt_list stmt_list decl_in_main_program_list decl_in_main_program
 %type opt_decl_or_stmt_list decl_or_stmt_list decl_or_stmt decl stmt
-%type subprog_decl if_stmt then_block result_stmt exit_stmt
+%type subprog_decl if_stmt if_body then_block result_stmt exit_stmt
 %type loop_stmt for_stmt for_header for_range block get_stmt put_stmt opt_dot_dot
   /* to enforce ending with result statement in a function syntactically */
 %type opt_decl_or_stmt_list_end_with_result_list decl_or_stmt_list_end_with_result_list decl_or_stmt_or_result
@@ -244,11 +244,7 @@ stmt:
     ST_CODE_GEN_SOURCE_COMMENT(@1);
     ST_CODE_GEN("return\n");
   }
-| {
-    // FIXME: line number may be inaccurate
-    ST_CODE_GEN_SOURCE_COMMENT(@0);
-  }
-  if_stmt
+| if_stmt
   { /* no code gen */ }
 | exit_stmt
   { /* no code gen */ }
@@ -277,12 +273,9 @@ stmt:
   { /* no code gen */ }
 | put_stmt
   { /* no code gen */ }
-| {
-    // FIXME: line number may be inaccurate
-    ST_CODE_GEN_SOURCE_COMMENT(@0);
-  }
-  SKIP
+| SKIP
   {
+    ST_CODE_GEN_SOURCE_COMMENT(@1);
     ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
     ST_CODE_GEN("invokevirtual void java.io.PrintStream.println()\n");
   }
@@ -925,14 +918,24 @@ expr_comma_list:
   { $$ = list_create($1, NULL); }
 ;
 
+  /*
+   * NOTE: `IF` is left factored for the line number of the source comment to be correct.
+   */
 if_stmt:
-  IF expr then_block END IF
+  IF
+  { ST_CODE_GEN_SOURCE_COMMENT(@1); }
+  if_body
+  { /* no code gen */}
+;
+
+if_body:
+  expr then_block END IF
   {
-    st_free_expression($2);
+    st_free_expression($1);
     ST_CODE_GEN_SOURCE_COMMENT(@4);
-    ST_CODE_GEN("Lfalse%d:\n", $<label_number>3);
+    ST_CODE_GEN("Lfalse%d:\n", $2);
   }
-| IF expr then_block
+| expr then_block
   {
     int end_branch = label_number++;
     ST_CODE_GEN("goto Lend%d\n", end_branch);
@@ -943,15 +946,15 @@ if_stmt:
     // mid-rule
     st_enter_scope(&env);
     st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
-    ST_CODE_GEN_SOURCE_COMMENT(@5);
-    ST_CODE_GEN("Lfalse%d:\n", $<label_number>3);
+    ST_CODE_GEN_SOURCE_COMMENT(@4);
+    ST_CODE_GEN("Lfalse%d:\n", $2);
   }
   opt_decl_or_stmt_list END IF
   {
     st_exit_scope(&env);
-    st_free_expression($2);
-    ST_CODE_GEN_SOURCE_COMMENT(@8);
-    ST_CODE_GEN("Lend%d:\n", $<label_number>4);
+    st_free_expression($1);
+    ST_CODE_GEN_SOURCE_COMMENT(@7);
+    ST_CODE_GEN("Lend%d:\n", $<label_number>3);
   }
 ;
 
