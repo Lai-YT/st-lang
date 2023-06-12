@@ -6,8 +6,8 @@ This project aims to implement a compiler for a simplified version of the _[Turi
 
 It's split into 3 phases:
 1. [Lexer](./lexer/)
-2. [Parser](./parser/)
-3. Code generation: to _Java Bytecode_
+2. [Parser](./parser/): perform syntax & semantic checks
+3. [CodeGen](./codegen/): generate _Java Assembly_
 
 ## Getting Started
 
