@@ -30,9 +30,12 @@ void handle_flags(int argc, char* argv[]) {
 }
 
 void usage(const char* prog) {
-  fprintf(stderr,
-          "usage: %s FILE\n"
-          "\n"
-          "  FILE            The file to be compiled into .jasm code\n",
-          prog);
+  fprintf(
+      stderr,
+      "usage: %s FILE\n"
+      "\n"
+      "  FILE            The file to be compiled into .jasm code\n"
+      "                  NOTE: is assumed to be syntactically & semantically\n"
+      "                    correct, should already be checked by the Parser\n",
+      prog);
 }
