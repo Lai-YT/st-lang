@@ -12,6 +12,17 @@
   #include "semant_macros.h"
   #include "st-lex.h"
 
+  #ifndef ST_UNSUPPORTED_FEATURE
+  #define ST_UNSUPPORTED_FEATURE(yylloc, ...) \
+    { \
+      fprintf(stderr, "%s:%d:%d: error: use of unsupported feature (", \
+              input_filename, (yylloc).first_line, (yylloc).first_column); \
+      fprintf(stderr, __VA_ARGS__); \
+      fprintf(stderr, ")\n"); \
+      YYABORT; \
+    }
+  #endif
+
   extern StEnvironment* env;
   extern char* input_filename_stem;
 
@@ -304,7 +315,7 @@ var_decl:
   {
     $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $5);
     if (is_in_global_scope && $5->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-      ST_UNIMPLEMENTED_ERROR();
+      ST_UNSUPPORTED_FEATURE(@5, "run-time init expr");
     }
     CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$5;
     ST_CODE_GEN("%s", indentions);
@@ -318,7 +329,7 @@ var_decl:
           ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
           break;
         default:
-          ST_UNIMPLEMENTED_ERROR();
+          ST_UNSUPPORTED_FEATURE(@5, "expr type");
       }
     } else {
       ST_CODE_GEN("istore %d\n", $$->local_number);
@@ -329,7 +340,7 @@ var_decl:
   {
     $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
     st_free_data_type_info($4);
-    ST_UNIMPLEMENTED_ERROR();
+    ST_UNSUPPORTED_FEATURE(@4, "array");
   }
 | VAR ID ':' scalar_type
   { ST_CODE_GEN_SOURCE_COMMENT(@1); }
@@ -347,7 +358,7 @@ var_decl:
       // use the declared type, not the type of the expression
       $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
       if (is_in_global_scope && $6->expr_type != ST_COMPILE_TIME_EXPRESSION) {
-        ST_UNIMPLEMENTED_ERROR();
+        ST_UNSUPPORTED_FEATURE(@6, "run-time init expr");
       }
       CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$6;
       ST_CODE_GEN("%s", indentions);
@@ -361,7 +372,7 @@ var_decl:
             ST_CODE_GEN("field static int %s = %d\n", $2->name, compile_time_expr->bool_val);
             break;
           default:
-            ST_UNIMPLEMENTED_ERROR();
+            ST_UNSUPPORTED_FEATURE(@4, "type");
         }
       } else {
         ST_CODE_GEN("istore %d\n", $$->local_number);
@@ -499,7 +510,7 @@ procedure_decl:
           ST_CODE_GEN("int");
           break;
         default:
-          ST_UNIMPLEMENTED_ERROR();
+          ST_UNSUPPORTED_FEATURE(@1, "formal type");
       }
       formal_types = formal_types->rest;
       if (formal_types) {
@@ -547,7 +558,7 @@ function_decl:
         ST_CODE_GEN("int");
         break;
       default:
-        ST_UNIMPLEMENTED_ERROR();
+        ST_UNSUPPORTED_FEATURE(@1, "return type");
     }
     ST_CODE_GEN(" %s(", $1->name);
     // Since the formals are stored in the reverse order, we'll have to reverse it again.
@@ -568,7 +579,7 @@ function_decl:
           ST_CODE_GEN("int");
           break;
         default:
-          ST_UNIMPLEMENTED_ERROR();
+          ST_UNSUPPORTED_FEATURE(@1, "formal type");
       }
       formal_types = formal_types->rest;
       if (formal_types) {
@@ -868,7 +879,7 @@ subprog_call:
             ST_CODE_GEN("int");
             break;
           default:
-            ST_UNIMPLEMENTED_ERROR();
+            ST_UNSUPPORTED_FEATURE(@1, "return type");
         }
         break;
       default:
@@ -894,7 +905,7 @@ subprog_call:
           ST_CODE_GEN("int");
           break;
         default:
-          ST_UNIMPLEMENTED_ERROR();
+          ST_UNSUPPORTED_FEATURE(@1, "formal type");
       }
       formal_types = formal_types->rest;
       if (formal_types) {
@@ -1305,7 +1316,7 @@ get_stmt:
       refs = refs->rest;
     }
     list_delete($2);
-    ST_UNIMPLEMENTED_ERROR();
+    ST_UNSUPPORTED_FEATURE(@1, "get statement");
   }
 ;
 
@@ -1369,7 +1380,7 @@ put_expr_comma_list:
         ST_CODE_GEN("java.lang.String");
         break;
       default:
-        ST_UNIMPLEMENTED_ERROR();
+        ST_UNSUPPORTED_FEATURE(@4, "expr type");
     }
     ST_CODE_GEN(")\n");
   }
@@ -1389,7 +1400,7 @@ put_expr_comma_list:
         ST_CODE_GEN("java.lang.String");
         break;
       default:
-        ST_UNIMPLEMENTED_ERROR();
+        ST_UNSUPPORTED_FEATURE(@2, "expr type");
     }
     ST_CODE_GEN(")\n");
   }
@@ -1574,7 +1585,7 @@ expr:
                   ST_CODE_GEN("ldc \"%s\"\n", compile_time_const_id->string_val);
                   break;
                 default:
-                  ST_UNIMPLEMENTED_ERROR();
+                  ST_UNSUPPORTED_FEATURE(@1, "identifier type");
               }
             }
           } else if (((ConstIdentifier*)id)->const_id_type == ST_RUN_TIME_CONST_IDENTIFIER) {
@@ -1588,7 +1599,7 @@ expr:
                 if (st_is_global(id)) {
                   // run-time constant has its init expr a run-time expression,
                   // while we only support compile-time expressions
-                  ST_UNIMPLEMENTED_ERROR();
+                  ST_UNSUPPORTED_FEATURE(@1, "run-time init expr");
                 } else {
                   ST_CODE_GEN("%siload %d\n", indentions, id->local_number);
                 }
@@ -1596,7 +1607,7 @@ expr:
               case ST_STRING_TYPE:
                 // variable strings are not allowed
               default:
-                ST_UNIMPLEMENTED_ERROR();
+                ST_UNSUPPORTED_FEATURE(@1, "identifier type");
             }
           } else {
             ST_UNREACHABLE();
@@ -1620,7 +1631,7 @@ expr:
             case ST_STRING_TYPE:
               // variable strings are not allowed
             default:
-              ST_UNIMPLEMENTED_ERROR();
+              ST_UNSUPPORTED_FEATURE(@1, "identifier type");
           }
           break;
         default:
@@ -1633,7 +1644,7 @@ expr:
       $$->expr_type = ST_RUN_TIME_EXPRESSION;
       ST_COPY_TYPE($$, $1);
       st_free_reference($1);
-      ST_UNIMPLEMENTED_ERROR();
+      ST_UNSUPPORTED_FEATURE(@1, "array");
     } else {
       ST_UNREACHABLE();
     }
@@ -1695,7 +1706,7 @@ explicit_const:
     $$->expr_type = ST_COMPILE_TIME_EXPRESSION;
     $$->data_type = ST_REAL_TYPE;
     $$->real_val = $1;
-    ST_UNIMPLEMENTED_ERROR();
+    ST_UNSUPPORTED_FEATURE(@1, "real");
   }
 | STR_CONST
   {
@@ -1797,11 +1808,11 @@ numeric_operation:
           $$->string_type_info->max_length = 255;
         }
       }
-      ST_UNIMPLEMENTED_ERROR();
+      ST_UNSUPPORTED_FEATURE(@1, "run-time string");
     } else { // is arithmetic
       $$ = ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, +, $3);
       if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
-        ST_UNIMPLEMENTED_ERROR();
+        ST_UNSUPPORTED_FEATURE(@1, "real");
       }
       // the two operands are already push onto the operand stack
       ST_CODE_GEN("%siadd\n", indentions);
@@ -1813,7 +1824,7 @@ numeric_operation:
   {
     $$ = ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, -, $3);
     if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
-      ST_UNIMPLEMENTED_ERROR();
+      ST_UNSUPPORTED_FEATURE(@1, "real");
     }
     ST_CODE_GEN("%sisub\n", indentions);
     st_free_expression($1);
@@ -1823,7 +1834,7 @@ numeric_operation:
   {
     $$ = ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, *, $3);
     if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
-      ST_UNIMPLEMENTED_ERROR();
+      ST_UNSUPPORTED_FEATURE(@1, "real");
     }
     ST_CODE_GEN("%simul\n", indentions);
     st_free_expression($1);
@@ -1833,7 +1844,7 @@ numeric_operation:
   {
     $$ = ST_CREATE_BINARY_ARITHMETIC_EXPRESSION($1, /, $3);
     if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
-      ST_UNIMPLEMENTED_ERROR();
+      ST_UNSUPPORTED_FEATURE(@1, "real");
     }
     ST_CODE_GEN("%sidiv\n", indentions);
     st_free_expression($1);

@@ -46,10 +46,6 @@ char indentions[1000];
 #define DEDENT() indentions[strlen(indentions) - 2] = '\0'
 #endif
 
-#ifndef ST_UNIMPLEMENTED_ERROR
-#define ST_UNIMPLEMENTED_ERROR() ST_UNREACHABLE()
-#endif
-
 #ifndef ST_CODE_GEN_COMPARISON_EXPRESSION
 /// @param ifcond The condition instruction. Is a charater string.
 /// @param true_branch The label number of the true branch.
