@@ -1,5 +1,4 @@
 %{
-  #include <assert.h>
   #include <stdbool.h>
   #include <stddef.h>
   #include <stdio.h>
@@ -137,32 +136,34 @@ program:
   {
     // mid-rule: new block scope
     // NOTE: all subprogram type identifiers will be added to this scope
+    INIT_INDENTION();
+    code_gen_class_name = st_strdup(input_filename_stem);
+    ST_CODE_GEN("%sclass %s {\n", indentions, code_gen_class_name);
+    is_in_global_scope = true;
     st_enter_scope(&env);
     st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
-    code_gen_class_name = st_strdup(input_filename_stem);
-    ST_CODE_GEN("class %s {\n", code_gen_class_name);
-    is_in_global_scope = true;
+    INDENT();
   }
   opt_decl_in_main_program_list  // code of global identifiers & subprograms are generated
   {
     is_in_global_scope = false;
     // all statements are wrapped into the main function
-    ST_CODE_GEN(
-      "method public static void main(java.lang.String[])\n"
-      "max_stack 15\n"
-      "max_locals 15\n"
-      "{\n"
-    );
+    ST_CODE_GEN("\n");  // vertical space between fields and methods
+    ST_CODE_GEN("%smethod public static void main(java.lang.String[])\n", indentions);
+    ST_CODE_GEN("%smax_stack 15\n", indentions);
+    ST_CODE_GEN("%smax_locals 15\n", indentions);
+    ST_CODE_GEN("%s{\n", indentions);
+    INDENT();
   }
   opt_stmt_list  // code of statements are generated
   {
-    ST_CODE_GEN(
-      "return\n"
-      "}\n"
-      "}\n"
-    );
+    ST_CODE_GEN("%sreturn\n", indentions);
+    DEDENT();
+    ST_CODE_GEN("%s}\n", indentions);
+    DEDENT();
     free(code_gen_class_name);
     st_exit_scope(&env);
+    ST_CODE_GEN("%s}\n", indentions);
   }
 ;
 
@@ -230,9 +231,9 @@ stmt:
   {
     Identifier* id_ref = ((IdentifierReference*)$1)->id;
     if (st_is_global(id_ref)) {
-      ST_CODE_GEN("putstatic int %s.%s\n", code_gen_class_name, id_ref->name);
+      ST_CODE_GEN("%sputstatic int %s.%s\n", indentions, code_gen_class_name, id_ref->name);
     } else {
-      ST_CODE_GEN("istore %d\n", id_ref->local_number);
+      ST_CODE_GEN("%sistore %d\n", indentions, id_ref->local_number);
     }
     st_free_reference($1);
     st_free_expression($4);
@@ -242,7 +243,7 @@ stmt:
 | RETURN
   {
     ST_CODE_GEN_SOURCE_COMMENT(@1);
-    ST_CODE_GEN("return\n");
+    ST_CODE_GEN("%sreturn\n", indentions);
   }
 | if_stmt
   { /* no code gen */ }
@@ -252,23 +253,35 @@ stmt:
     // mid-rule: new loop scope
     st_enter_scope(&env);
     st_add_to_scope(env, ST_LOOP_SCOPE_NAME);
+    INDENT();
   }
   loop_stmt
-  { st_exit_scope(&env); }
+  {
+    DEDENT();
+    st_exit_scope(&env);
+  }
 | {
     // mid-rule: new loop scope
     st_enter_scope(&env);
     st_add_to_scope(env, ST_LOOP_SCOPE_NAME);
+    INDENT();
   }
   for_stmt
-  { st_exit_scope(&env); }
+  {
+    DEDENT();
+    st_exit_scope(&env);
+  }
 | {
     // mid-rule: new block scope
     st_enter_scope(&env);
     st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
+    INDENT();
   }
   block
-  { st_exit_scope(&env); }
+  {
+    DEDENT();
+    st_exit_scope(&env);
+  }
 | get_stmt
   { /* no code gen */ }
 | put_stmt
@@ -276,8 +289,8 @@ stmt:
 | SKIP
   {
     ST_CODE_GEN_SOURCE_COMMENT(@1);
-    ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
-    ST_CODE_GEN("invokevirtual void java.io.PrintStream.println()\n");
+    ST_CODE_GEN("%sgetstatic java.io.PrintStream java.lang.System.out\n", indentions);
+    ST_CODE_GEN("%sinvokevirtual void java.io.PrintStream.println()\n", indentions);
   }
 ;
 
@@ -294,6 +307,7 @@ var_decl:
       ST_UNIMPLEMENTED_ERROR();
     }
     CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$5;
+    ST_CODE_GEN("%s", indentions);
     if (is_in_global_scope) {
       switch ($5->data_type) {
         case ST_INT_TYPE:
@@ -325,7 +339,7 @@ var_decl:
       $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
       st_free_data_type_info($4);
       if (is_in_global_scope) {
-        ST_CODE_GEN("field static int %s\n", $2->name);
+        ST_CODE_GEN("%sfield static int %s\n", indentions, $2->name);
       } else {
         /* the location of the variable is kept by the symbol table */
       }
@@ -336,6 +350,7 @@ var_decl:
         ST_UNIMPLEMENTED_ERROR();
       }
       CompileTimeExpression* compile_time_expr = (CompileTimeExpression*)$6;
+      ST_CODE_GEN("%s", indentions);
       if (is_in_global_scope) {
         switch ($4->data_type) {
           case ST_INT_TYPE:
@@ -386,7 +401,7 @@ const_decl:
       /* kept by the symbol table, no code gen */
     } else {
       // the value of the expression is on the top of the stack, store to the identifier
-      ST_CODE_GEN("istore %d\n", $$->local_number);
+      ST_CODE_GEN("%sistore %d\n", indentions, $$->local_number);
     }
     st_free_expression($5);
     is_in_const_decl = false;
@@ -408,7 +423,7 @@ const_decl:
       /* kept by the symbol table, no code gen */
     } else {
       // the value of the expression is on the top of the stack, store to the identifier
-      ST_CODE_GEN("istore %d\n", $$->local_number);
+      ST_CODE_GEN("%sistore %d\n", indentions, $$->local_number);
     }
     st_free_expression($7);
     is_in_const_decl = false;
@@ -424,6 +439,7 @@ subprog_decl:
     // mid-rule: enter a function scope
     st_enter_scope(&env);
     st_add_to_scope(env, ST_FUNCTION_SCOPE_NAME);
+    INDENT();
     is_in_global_scope = false;
   }
   function_decl
@@ -435,6 +451,7 @@ subprog_decl:
         ->attribute = NULL;
     st_probe_environment(env, $2->name)
         ->attribute = NULL;
+    DEDENT();
     st_exit_scope(&env);
     is_in_global_scope = true;
     Symbol* symbol = st_add_to_scope(env, $2->name);
@@ -444,6 +461,7 @@ subprog_decl:
     // mid-rule: enter a procedure scope
     st_enter_scope(&env);
     st_add_to_scope(env, ST_PROCEDURE_SCOPE_NAME);
+    INDENT();
     is_in_global_scope = false;
   }
   procedure_decl
@@ -451,6 +469,7 @@ subprog_decl:
     // the subprogram identifier is stored for type checks on recursive calls,
     // but we don't want it to be freed when the scope exit, so replace it with a NULL
     st_probe_environment(env, $2->name)->attribute = NULL;
+    DEDENT();
     st_exit_scope(&env);
     is_in_global_scope = true;
     Symbol* symbol = st_add_to_scope(env, $2->name);
@@ -461,7 +480,7 @@ subprog_decl:
 procedure_decl:
   procedure_header
   {
-    ST_CODE_GEN("method public static void %s(", $1->name);
+    ST_CODE_GEN("%smethod public static void %s(", indentions, $1->name);
     // Since the formals are stored in the reverse order, we'll have to reverse it again.
     List* stack = NULL;
     List* formals = $1->formals;
@@ -489,22 +508,20 @@ procedure_decl:
     }
     list_delete(stack);
     ST_CODE_GEN(")\n");
-    ST_CODE_GEN(
-      "max_stack 15\n"
-      "max_locals 15\n"
-      "{\n"
-    );
+    ST_CODE_GEN("%smax_stack 15\n", indentions);
+    ST_CODE_GEN("%smax_locals 15\n", indentions);
+    ST_CODE_GEN("%s{\n", indentions);
+    INDENT();
   }
   opt_decl_or_stmt_list END
   {
-    ST_CODE_GEN("return\n");
+    ST_CODE_GEN("%sreturn\n", indentions);
     ST_CODE_GEN_SOURCE_COMMENT(@4); }
   ID
   {
-    ST_CODE_GEN(
-      "}\n"
-      "\n"
-    );
+    DEDENT();
+    ST_CODE_GEN("%s}\n", indentions);
+    ST_CODE_GEN("\n");
     // Reset the location number since the stack frame of the procedure is popped.
     // NOTE: since the statements can only appear after the global declarations,
     // there isn't any local identifiers yet (excluding those inside
@@ -522,7 +539,7 @@ procedure_decl:
 function_decl:
   function_header
   {
-    ST_CODE_GEN("method public static ");
+    ST_CODE_GEN("%smethod public static ", indentions);
     switch ($1->result_type->data_type) {
       case ST_INT_TYPE:
         /* fallthrough */
@@ -560,20 +577,18 @@ function_decl:
     }
     list_delete(stack);
     ST_CODE_GEN(")\n");
-    ST_CODE_GEN(
-      "max_stack 15\n"
-      "max_locals 15\n"
-      "{\n"
-    );
+    ST_CODE_GEN("%smax_stack 15\n", indentions);
+    ST_CODE_GEN("%smax_locals 15\n", indentions);
+    ST_CODE_GEN("%s{\n", indentions);
+    INDENT();
   }
   opt_decl_or_stmt_list_end_with_result_list END
   { ST_CODE_GEN_SOURCE_COMMENT(@4); }
   ID
   {
-    ST_CODE_GEN(
-      "}\n"
-      "\n"
-    );
+    DEDENT();
+    ST_CODE_GEN("%s}\n", indentions);
+    ST_CODE_GEN("\n");
     // Reset the location number since the stack frame of the function is popped.
     // NOTE: there isn't any local identifiers yet (excluding those inside
     // subprogram declarations, which use a difference stack frame), it is ok
@@ -839,7 +854,7 @@ subprog_call:
     Subprogram* subprogram = (Subprogram*)id;
     $$ = subprogram;
     // actuals are already pushed onto the operand stack
-    ST_CODE_GEN("invokestatic ");
+    ST_CODE_GEN("%sinvokestatic ", indentions);
     // 1. the return type
     switch (subprogram->subprogram_type) {
       case ST_PROCEDURE_SUBPROGRAM:
@@ -933,12 +948,12 @@ if_body:
   {
     st_free_expression($1);
     ST_CODE_GEN_SOURCE_COMMENT(@4);
-    ST_CODE_GEN("Lfalse%d:\n", $2);
+    ST_CODE_GEN("%sLfalse%d:\n", indentions, $2);
   }
 | expr then_block
   {
     int end_branch = label_number++;
-    ST_CODE_GEN("goto Lend%d\n", end_branch);
+    ST_CODE_GEN("%sgoto Lend%d\n", indentions, end_branch);
     $<label_number>$ = end_branch;
   }
   ELSE
@@ -946,15 +961,17 @@ if_body:
     // mid-rule
     st_enter_scope(&env);
     st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
+    INDENT();
     ST_CODE_GEN_SOURCE_COMMENT(@4);
-    ST_CODE_GEN("Lfalse%d:\n", $2);
+    ST_CODE_GEN("%sLfalse%d:\n", indentions, $2);
   }
   opt_decl_or_stmt_list END IF
   {
+    DEDENT();
     st_exit_scope(&env);
     st_free_expression($1);
     ST_CODE_GEN_SOURCE_COMMENT(@7);
-    ST_CODE_GEN("Lend%d:\n", $<label_number>3);
+    ST_CODE_GEN("%sLend%d:\n", indentions, $<label_number>3);
   }
 ;
 
@@ -965,16 +982,18 @@ then_block:
   THEN
   {
     // mid-rule
+    int false_branch = label_number++;
+    ST_CODE_GEN("%sifeq Lfalse%d\n", indentions, false_branch);
+    $<label_number>$ = false_branch;
+
     st_enter_scope(&env);
     st_add_to_scope(env, ST_BLOCK_SCOPE_NAME);
-
-    int false_branch = label_number++;
-    ST_CODE_GEN("ifeq Lfalse%d\n", false_branch);
-    $<label_number>$ = false_branch;
+    INDENT();
   }
   opt_decl_or_stmt_list
   {
     $$ = $<label_number>2;
+    DEDENT();
     st_exit_scope(&env);
   }
 ;
@@ -984,7 +1003,7 @@ result_stmt:
   { ST_CODE_GEN_SOURCE_COMMENT(@1); }
   expr
   {
-    ST_CODE_GEN("ireturn\n");
+    ST_CODE_GEN("%sireturn\n", indentions);
     st_free_expression($3);
   }
 ;
@@ -994,7 +1013,7 @@ exit_stmt:
   {
     ST_CODE_GEN_SOURCE_COMMENT(@1);
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
-    ST_CODE_GEN("goto Lend%d\n", loop_info->end_branch);
+    ST_CODE_GEN("%sgoto Lend%d\n", indentions, loop_info->end_branch);
   }
 | EXIT
   { ST_CODE_GEN_SOURCE_COMMENT(@1); }
@@ -1002,7 +1021,7 @@ exit_stmt:
   {
     st_free_expression($4);
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
-    ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
+    ST_CODE_GEN("%sifne Lend%d\n", indentions, loop_info->end_branch);
   }
 ;
 
@@ -1014,7 +1033,7 @@ loop_stmt:
     LoopInfo* loop_info = malloc(sizeof(LoopInfo));
     symbol->attribute = loop_info;
     loop_info->begin_branch = label_number++;
-    ST_CODE_GEN("Lbegin%d:\n", loop_info->begin_branch);
+    ST_CODE_GEN("%sLbegin%d:\n", indentions, loop_info->begin_branch);
     // Also we create an end_branch so that the exit statement knows where to
     // jump out of the loop.
     // Note that the label might not be used, but that's ok.
@@ -1023,14 +1042,14 @@ loop_stmt:
   opt_decl_or_stmt_list
   {
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
-    ST_CODE_GEN("goto Lbegin%d\n", loop_info->begin_branch);
+    ST_CODE_GEN("%sgoto Lbegin%d\n", indentions, loop_info->begin_branch);
   }
   END LOOP
   {
     ST_CODE_GEN_SOURCE_COMMENT(@5);
     Symbol* symbol = st_probe_environment(env, ST_LOOP_SCOPE_NAME);
     LoopInfo* loop_info = symbol->attribute;
-    ST_CODE_GEN("Lend%d:\n", loop_info->end_branch);
+    ST_CODE_GEN("%sLend%d:\n", indentions, loop_info->end_branch);
     free(loop_info);
     symbol->attribute = NULL;
   }
@@ -1070,6 +1089,7 @@ for_stmt:
   {
     // Generate code for `counter := counter +/- 1`.
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
+    ST_CODE_GEN("%s", indentions);
     switch (loop_info->for_loop_kind) {
       case INCREASING_LOOP:
         ST_CODE_GEN_COMMENT("%s := %s + 1", loop_info->name_of_counter, loop_info->name_of_counter);
@@ -1082,8 +1102,9 @@ for_stmt:
     }
     VarIdentifier* counter
         = st_probe_environment(env, loop_info->name_of_counter)->attribute;
-    ST_CODE_GEN("iload %d\n", counter->local_number);
-    ST_CODE_GEN("sipush 1\n");
+    ST_CODE_GEN("%siload %d\n", indentions, counter->local_number);
+    ST_CODE_GEN("%ssipush 1\n", indentions);
+    ST_CODE_GEN("%s", indentions);
     switch (loop_info->for_loop_kind) {
       case INCREASING_LOOP:
         ST_CODE_GEN("iadd\n");
@@ -1094,16 +1115,16 @@ for_stmt:
       default:
         ST_UNREACHABLE();
     }
-    ST_CODE_GEN("istore %d\n", counter->local_number);
+    ST_CODE_GEN("%sistore %d\n", indentions, counter->local_number);
     // Back to the beginning of the loop.
-    ST_CODE_GEN("goto Lbegin%d\n", loop_info->begin_branch);
+    ST_CODE_GEN("%sgoto Lbegin%d\n", indentions, loop_info->begin_branch);
   }
   END FOR
   {
     ST_CODE_GEN_SOURCE_COMMENT(@4);
     Symbol* symbol = st_probe_environment(env, ST_LOOP_SCOPE_NAME);
     LoopInfo* loop_info = symbol->attribute;
-    ST_CODE_GEN("Lend%d:\n", loop_info->end_branch);
+    ST_CODE_GEN("%sLend%d:\n", indentions, loop_info->end_branch);
     free(loop_info);
     symbol->attribute = NULL;
   }
@@ -1113,6 +1134,7 @@ for_header:
   ':'
   {
     // Create a counting identifier.
+    ST_CODE_GEN("%s", indentions);
     ST_CODE_GEN_COMMENT("__i: int");
     StDataTypeInfo type_info = { .data_type = ST_INT_TYPE };
     VarIdentifier* counter = ST_CREATE_VAR_IDENTIFIER("__i", &type_info);
@@ -1137,16 +1159,17 @@ for_header:
     // `end` is already on the top of the stack
     VarIdentifier* counter
         = st_probe_environment(env, loop_info->name_of_counter)->attribute;
-    ST_CODE_GEN("iload %d\n", counter->local_number);
+    ST_CODE_GEN("%siload %d\n", indentions, counter->local_number);
     const int true_branch = label_number++;
     const int false_branch = label_number++;
     ST_CODE_GEN_COMPARISON_EXPRESSION("iflt", true_branch, false_branch);
     // 2. exit when expr
-    ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
+    ST_CODE_GEN("%sifne Lend%d\n", indentions, loop_info->end_branch);
   }
 | DECREASING
   {
     // Create a counting identifier.
+    ST_CODE_GEN("%s", indentions);
     ST_CODE_GEN_COMMENT("__i: int");
     StDataTypeInfo type_info = { .data_type = ST_INT_TYPE };
     VarIdentifier* counter = ST_CREATE_VAR_IDENTIFIER("__i", &type_info);
@@ -1164,12 +1187,12 @@ for_header:
     // `end` is already on the top of the stack
     VarIdentifier* counter
         = st_probe_environment(env, loop_info->name_of_counter)->attribute;
-    ST_CODE_GEN("iload %d\n", counter->local_number);
+    ST_CODE_GEN("%siload %d\n", indentions, counter->local_number);
     const int true_branch = label_number++;
     const int false_branch = label_number++;
     ST_CODE_GEN_COMPARISON_EXPRESSION("ifgt", true_branch, false_branch);
     // 2. exit when expr
-    ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
+    ST_CODE_GEN("%sifne Lend%d\n", indentions, loop_info->end_branch);
   }
 | ID
   {
@@ -1192,12 +1215,12 @@ for_header:
     // `end` is already on the top of the stack
     VarIdentifier* counter
         = st_probe_environment(env, loop_info->name_of_counter)->attribute;
-    ST_CODE_GEN("iload %d\n", counter->local_number);
+    ST_CODE_GEN("%siload %d\n", indentions, counter->local_number);
     const int true_branch = label_number++;
     const int false_branch = label_number++;
     ST_CODE_GEN_COMPARISON_EXPRESSION("iflt", true_branch, false_branch);
     // 2. exit when expr
-    ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
+    ST_CODE_GEN("%sifne Lend%d\n", indentions, loop_info->end_branch);
   }
 | DECREASING ID
   {
@@ -1220,18 +1243,19 @@ for_header:
     // `end` is already on the top of the stack
     VarIdentifier* counter
         = st_probe_environment(env, loop_info->name_of_counter)->attribute;
-    ST_CODE_GEN("iload %d\n", counter->local_number);
+    ST_CODE_GEN("%siload %d\n", indentions, counter->local_number);
     const int true_branch = label_number++;
     const int false_branch = label_number++;
     ST_CODE_GEN_COMPARISON_EXPRESSION("ifgt", true_branch, false_branch);
     // 2. exit when expr
-    ST_CODE_GEN("ifne Lend%d\n", loop_info->end_branch);
+    ST_CODE_GEN("%sifne Lend%d\n", indentions, loop_info->end_branch);
   }
 ;
 
 for_range:
   {
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
+    ST_CODE_GEN("%s", indentions);
     ST_CODE_GEN_COMMENT("%s := begin", loop_info->name_of_counter);
   }
   expr
@@ -1240,7 +1264,7 @@ for_range:
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
     VarIdentifier* counter
         = st_probe_environment(env, loop_info->name_of_counter)->attribute;
-    ST_CODE_GEN("istore %d\n", counter->local_number);
+    ST_CODE_GEN("%sistore %d\n", indentions, counter->local_number);
   }
   '.' '.'
   {
@@ -1248,7 +1272,8 @@ for_range:
     // so we can generate the label for begin.
     LoopInfo* loop_info = st_probe_environment(env, ST_LOOP_SCOPE_NAME)->attribute;
     loop_info->begin_branch = label_number++;
-    ST_CODE_GEN("Lbegin%d:\n", loop_info->begin_branch);
+    ST_CODE_GEN("%sLbegin%d:\n", indentions, loop_info->begin_branch);
+    ST_CODE_GEN("%s", indentions);
     switch (loop_info->for_loop_kind) {
       case INCREASING_LOOP:
         ST_CODE_GEN_COMMENT("exit when end < %s", loop_info->name_of_counter);
@@ -1309,12 +1334,16 @@ put_stmt:
 
 opt_dot_dot:
   '.' '.'
-  { ST_CODE_GEN_COMMENT(".., no newline"); }
+  {
+    ST_CODE_GEN("%s", indentions);
+    ST_CODE_GEN_COMMENT(".., no newline");
+  }
 | /* empty */
   {
+    ST_CODE_GEN("%s", indentions);
     ST_CODE_GEN_COMMENT("newline");
-    ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n");
-    ST_CODE_GEN("invokevirtual void java.io.PrintStream.println()\n");
+    ST_CODE_GEN("%sgetstatic java.io.PrintStream java.lang.System.out\n", indentions);
+    ST_CODE_GEN("%sinvokevirtual void java.io.PrintStream.println()\n", indentions);
   }
 ;
 
@@ -1324,11 +1353,11 @@ opt_dot_dot:
   */
 put_expr_comma_list:
   put_expr_comma_list ','
-  { ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n"); }
+  { ST_CODE_GEN("%sgetstatic java.io.PrintStream java.lang.System.out\n", indentions); }
   expr
   {
     $$ = list_create($4, $1);
-    ST_CODE_GEN("invokevirtual void java.io.PrintStream.print(");
+    ST_CODE_GEN("%sinvokevirtual void java.io.PrintStream.print(", indentions);
     switch ($4->data_type) {
       case ST_INT_TYPE:
         ST_CODE_GEN("int");
@@ -1344,11 +1373,11 @@ put_expr_comma_list:
     }
     ST_CODE_GEN(")\n");
   }
-| { ST_CODE_GEN("getstatic java.io.PrintStream java.lang.System.out\n"); }
+| { ST_CODE_GEN("%sgetstatic java.io.PrintStream java.lang.System.out\n", indentions); }
   expr
   {
     $$ = list_create($2, NULL);
-    ST_CODE_GEN("invokevirtual void java.io.PrintStream.print(");
+    ST_CODE_GEN("%sinvokevirtual void java.io.PrintStream.print(", indentions);
     switch ($2->data_type) {
       case ST_INT_TYPE:
         ST_CODE_GEN("int");
@@ -1533,6 +1562,7 @@ expr:
             ST_COPY_SCALAR_VALUE((CompileTimeExpression*)$$, compile_time_const_id);
             // constant propagation
             if (!is_in_const_decl && !is_in_global_scope) {
+              ST_CODE_GEN("%s", indentions);
               switch (id->data_type) {
                 case ST_INT_TYPE:
                   ST_CODE_GEN("sipush %d\n", compile_time_const_id->int_val);
@@ -1560,7 +1590,7 @@ expr:
                   // while we only support compile-time expressions
                   ST_UNIMPLEMENTED_ERROR();
                 } else {
-                  ST_CODE_GEN("iload %d\n", id->local_number);
+                  ST_CODE_GEN("%siload %d\n", indentions, id->local_number);
                 }
                 break;
               case ST_STRING_TYPE:
@@ -1580,6 +1610,7 @@ expr:
             case ST_INT_TYPE:
               // since boolean uses int as also, can fallthrough
             case ST_BOOL_TYPE:
+              ST_CODE_GEN("%s", indentions);
               if (st_is_global(id)) {
                 ST_CODE_GEN("getstatic int %s.%s\n", code_gen_class_name, id->name);
               } else {
@@ -1655,7 +1686,7 @@ explicit_const:
       // compile-time constant identifiers are record by the symbol table, no code
     } else {
       // push onto the operand stack
-      ST_CODE_GEN("sipush %d\n", $1);
+      ST_CODE_GEN("%ssipush %d\n", indentions, $1);
     }
   }
 | REAL_CONST
@@ -1680,7 +1711,7 @@ explicit_const:
     } else if (is_in_const_decl) {
       // compile-time constant identifiers are record by the symbol table, no code
     } else {
-      ST_CODE_GEN("ldc \"%s\"\n", $1);
+      ST_CODE_GEN("%sldc \"%s\"\n", indentions, $1);
     }
   }
 | bool_const
@@ -1703,7 +1734,7 @@ bool_const:
       // compile-time constant identifiers are record by the symbol table, no code
     } else {
       // push onto the operand stack
-      ST_CODE_GEN("iconst_1\n");
+      ST_CODE_GEN("%siconst_1\n", indentions);
     }
   }
 | FALSE
@@ -1718,7 +1749,7 @@ bool_const:
       // compile-time constant identifiers are record by the symbol table, no code
     } else {
       // push onto the operand stack
-      ST_CODE_GEN("iconst_0\n");
+      ST_CODE_GEN("%siconst_0\n", indentions);
     }
   }
 ;
@@ -1773,7 +1804,7 @@ numeric_operation:
         ST_UNIMPLEMENTED_ERROR();
       }
       // the two operands are already push onto the operand stack
-      ST_CODE_GEN("iadd\n");
+      ST_CODE_GEN("%siadd\n", indentions);
     }
     st_free_expression($1);
     st_free_expression($3);
@@ -1784,7 +1815,7 @@ numeric_operation:
     if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
       ST_UNIMPLEMENTED_ERROR();
     }
-    ST_CODE_GEN("isub\n");
+    ST_CODE_GEN("%sisub\n", indentions);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1794,7 +1825,7 @@ numeric_operation:
     if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
       ST_UNIMPLEMENTED_ERROR();
     }
-    ST_CODE_GEN("imul\n");
+    ST_CODE_GEN("%simul\n", indentions);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1804,7 +1835,7 @@ numeric_operation:
     if ($1->data_type == ST_REAL_TYPE || $3->data_type == ST_REAL_TYPE) {
       ST_UNIMPLEMENTED_ERROR();
     }
-    ST_CODE_GEN("idiv\n");
+    ST_CODE_GEN("%sidiv\n", indentions);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1823,7 +1854,7 @@ numeric_operation:
       $$->expr_type = ST_RUN_TIME_EXPRESSION;
       $$->data_type = ST_INT_TYPE;
     }
-    ST_CODE_GEN("irem\n");
+    ST_CODE_GEN("%sirem\n", indentions);
     st_free_expression($1);
     st_free_expression($3);
   }
@@ -1903,14 +1934,14 @@ boolean_operation:
     $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, &&, $3);
     st_free_expression($1);
     st_free_expression($3);
-    ST_CODE_GEN("iand\n");
+    ST_CODE_GEN("%siand\n", indentions);
   }
 | expr OR expr
   {
     $$ = ST_CREATE_BINARY_BOOLEAN_EXPRESSION($1, ||, $3);
     st_free_expression($1);
     st_free_expression($3);
-    ST_CODE_GEN("ior\n");
+    ST_CODE_GEN("%sior\n", indentions);
   }
 | NOT expr
   {
@@ -1928,8 +1959,8 @@ boolean_operation:
       ST_UNREACHABLE();
     }
     st_free_expression($2);
-    ST_CODE_GEN("sipush 1\n");
-    ST_CODE_GEN("ixor\n");
+    ST_CODE_GEN("%ssipush 1\n", indentions);
+    ST_CODE_GEN("%sixor\n", indentions);
   }
 ;
 
@@ -1947,7 +1978,7 @@ sign_operation:
 | '-' expr
   {
     $$ = ST_CREATE_UNARY_SIGN_EXPRESSION(-, $2);
-    ST_CODE_GEN("ineg\n");
+    ST_CODE_GEN("%sineg\n", indentions);
     st_free_expression($2);
   }
 ;
