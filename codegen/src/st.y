@@ -12,6 +12,8 @@
   #include "semant_macros.h"
   #include "st-lex.h"
 
+  extern char* input_filename;
+
   #ifndef ST_UNSUPPORTED_FEATURE
   #define ST_UNSUPPORTED_FEATURE(yylloc, ...) \
     { \
