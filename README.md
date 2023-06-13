@@ -16,6 +16,31 @@ The required tools and build steps for each phase are described in detail in the
 The common tools required across the phases include `gcc`, as the _sT_ compiler is written in _C_, as well as `make` and `cmake`, which generate the executables.
 All tools required by the _sT_ compiler are packed into containers, which you can use to build or develop the compiler.
 
+## Usage
+
+Compile the phases of the _sT_ compiler.
+
+```
+$ make
+```
+
+> We may get a lot of warnings due to the legacy _Javaa_ tool.
+
+Then, you can run the _sT_ program with the `st.sh` script.
+
+```
+$ chmod +x st.sh
+$ ./st.sh -h
+Usage: ./st.sh [-h] FILE
+
+Description:
+  runs the FILE, which is a sT program,
+  and outputs Java Assembly to .jasm and ByteCode to .class
+
+Options:
+  -h, --help     show this help message and exit
+```
+
 ### Non-dev Container
 
 We provide a Docker image that contains only the necessary tools for compiling the _sT_ compiler. "Non-Dev" indicates that the image doesn't include test tools, format tools, or other utilities.
@@ -69,6 +94,7 @@ You will then be taken into the container. Here you have all the tools you need,
 - [The lexical definition of _sT_](./lexer/lexical-definition.md)
 - [The syntactic & semantic definition of _sT_](./parser/syntactic_and_semantic_definition.md)
 - [The _Turing_ Language Report](https://txl.ca/tplus/Turing_Report.pdf)
+- [Unsupported features](./codegen/unsupported_features.md)
 
 ## License
 
