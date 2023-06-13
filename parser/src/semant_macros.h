@@ -5,11 +5,6 @@
 
 #include "semant.h"
 
-/// @brief The file being semantically checked.
-extern char* input_filename;
-extern int allow_semantic_errors;
-extern int semantic_errors;
-
 #ifndef ST_TRACE
 #define ST_TRACE(...) fprintf(stderr, __VA_ARGS__)
 #endif
