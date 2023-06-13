@@ -26,7 +26,7 @@ if (COVERAGE)
             NAME "run_bad_${filename}"
             # these tests will and should exit 1,
             # which makes gcov unable to collect coverage data,
-            # so use the `--coverage` option to always exit 0
+            # so use the `--allow-semantic-errors` option to always exit 0
             COMMAND $<TARGET_FILE:Parser> --allow-semantic-errors ${test_file}
         )
     endforeach()

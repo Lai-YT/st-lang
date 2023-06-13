@@ -6,13 +6,13 @@ status=0
 for file in tests/bad/*.st; do
   # Get the error message.
   ./build/Parser "${file}" 2>tmp
-  # Every error message ends with it error code inside a pair of parenthsis,
+  # Every error message ends with it error code inside a pair of parenthesis,
   # so here we extract the string inside the parenthesis.
   sed <tmp -n 's/.*(\(.*\))$/\1/p' >code
   # Every bad test has the expected error code as the prefix of its name, extract it.
   echo "${file}" | sed -n 's/.*\/\(.*\)\..*$/\1/p' |
     # Some error code has several tests file, only get the error code itself, no test number ("-").
-    # Muliple errors can be encoded into the filename with "_" as the separater.
+    # Multiple errors can be encoded into the filename with "_" as the separator.
     awk '{
       split($0, errs, "_");
       for (i in errs) {  # get errors
