@@ -12,6 +12,11 @@
   #include "semant_macros.h"
   #include "st-lex.h"
 
+  /// @brief The file being semantically checked.
+  extern char* input_filename;
+  extern int allow_semantic_errors;
+  extern int semantic_errors;
+
   #ifndef ST_FATAL_ERROR
   /// @brief Prints the format message to stderr and exits as failure.
   /// @note If allow_semantic_errors is a non-zero value, exits as success.
