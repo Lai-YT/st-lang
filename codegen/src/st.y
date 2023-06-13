@@ -350,9 +350,16 @@ var_decl:
   {
     if (!$6 /* no init */ ) {
       $$ = ST_CREATE_VAR_IDENTIFIER($2->name, $4);
-      st_free_data_type_info($4);
       if (is_in_global_scope) {
-        ST_CODE_GEN("%sfield static int %s\n", indentions, $2->name);
+        switch ($4->data_type) {
+          case ST_INT_TYPE:
+            /* fallthrough */
+          case ST_BOOL_TYPE:
+            ST_CODE_GEN("%sfield static int %s\n", indentions, $2->name);
+            break;
+          default:
+            ST_UNSUPPORTED_FEATURE(@4, "type");
+        }
       } else {
         /* the location of the variable is kept by the symbol table */
       }
@@ -379,9 +386,9 @@ var_decl:
       } else {
         ST_CODE_GEN("istore %d\n", $$->local_number);
       }
-      st_free_data_type_info($4);
       st_free_expression($6);
     }
+    st_free_data_type_info($4);
   }
 ;
 
