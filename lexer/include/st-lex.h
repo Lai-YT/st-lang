@@ -7,4 +7,4 @@
 #include "lex_macros.h"
 
 /// @brief The content of the line which the lexer is scanning on.
-extern char st_cur_line[255 + 1];
+extern char st_cur_line[ST_MAX_LINE_LENGTH + 1];
