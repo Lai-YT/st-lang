@@ -19,10 +19,6 @@ static Symbol* symbol_create(const char* name, void* attribute) {
   return symbol;
 }
 
-static inline void symbol_delete(Symbol* symbol) {
-  free(symbol);
-}
-
 SymbolTable* symtab_create() {
   SymbolTable* table = malloc(sizeof(SymbolTable));
   table->symbols = hashtab_create();
