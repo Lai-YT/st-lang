@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "hash.h"
+
 static bool is_prime(int n);
 /// @return The first prime equal or larger than n.
 static int next_prime(int n);
@@ -67,33 +69,12 @@ void hashtab_delete(HashTable* ht) {
   free(ht);
 }
 
-/// @return The integer hash of the string s, which is in range (0,
-/// num_of_buckets].
-/// @param s The string to be hashed.
-/// @param prime Can be roughly equal to the number of characters in the
-/// alphabet of s.
-/// @param num_of_buckets
-/// @details Using the polynomial rolling hash.
-static int hashtab_hash(const char* s, int prime, int num_of_buckets) {
-  int hash = 0;
-  int prime_pow = 1;
-  for (size_t i = 0; s[i] != '\0'; i++) {
-    hash += (s[i] * prime_pow) % num_of_buckets;
-    prime_pow = (prime_pow * prime) % num_of_buckets;
-  }
-  return hash;
-}
-
 /// @brief A double hashing function that hashes the key into [0, capacity).
 /// @note Hashing is a large topic. This hash function is easy but may not be
 /// good.
 static int hashtab_get_hashed_key(const char* key, int capacity, int attempt) {
-  // Our alphabet is the ASCII codes, which has 128 characters.
-  // Choose two primes larger than that.
-  int prime_1 = 131;
-  int hash_1 = hashtab_hash(key, prime_1, capacity);
-  int prime_2 = 151;
-  int hash_2 = hashtab_hash(key, prime_2, capacity);
+  int hash_1 = (int)(djb2_hash(key) % capacity);
+  int hash_2 = (int)(sdbm_hash(key) % capacity);
   return (hash_1 + attempt * (hash_2 + 1 /* never zero */)) % capacity;
 }
 
