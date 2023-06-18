@@ -5,6 +5,12 @@
 The _CodeGen_ is generated using [Bison](https://www.gnu.org/software/bison/manual/). It assumes that the input file for code generation is syntactically and semantically correct. You can check it with the *[Parser](../parser/)*. \
 While not all _sT_ features are supported, you can check the [unsupported feature](unsupported_features.md) for more information.
 
+### Technical Details
+
+1. To simplify the code generation process, an _sT_ program is converted into a single _Java_ class. In this transformation, the global *identifier*s are represented as *static field*s within the class, while the *procedure*s are converted into *static method*s. The remaining *statement*s of the _sT_ program are incorporated into the static `main` method, which serves as the entry point of the resulting _Java_ program.
+2. The _sT_ compiler is implemented as a one-pass compiler. This means that the number of local *identifier*s in the program is not known beforehand. To handle this limitation, the stack size is hardcoded as _15_. A _procedure_ should not have more than _15_ *identifier*s, including the *formal*s. Similarly, the remaining *statement*s should not introduce more than _15_ local *identifier*s.
+3. The _CodeGen_ performs two types of optimizations during parsing and code generation: [constant folding](https://en.wikipedia.org/wiki/Constant_folding) and [constant propagation](https://en.wikipedia.org/wiki/Constant_folding#Constant_propagation). _Constant folding_ involves evaluating constant expressions at compile-time, reducing runtime computations. _Constant propagation_ replaces variables with their constant values when possible, eliminating redundant computations.
+
 ## Getting Started
 
 ### Prerequisites
