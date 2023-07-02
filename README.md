@@ -2,7 +2,7 @@
 
 ## About
 
-This project aims to implement a compiler for a simplified version of the _[Turing](https://en.wikipedia.org/wiki/Turing_(programming_language))_ programming language, which is [not fully compatible](#known-incompatibility).
+This project aims to implement a compiler for a simplified version of the _[Turing](https://en.wikipedia.org/wiki/Turing_(programming_language))_ programming language, which is [not fully compatible](#known-incompatibilities).
 
 It's split into 3 phases:
 1. [Lexer](./lexer/)
